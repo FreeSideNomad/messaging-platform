@@ -1,0 +1,80 @@
+micronaut:
+  application:
+    name: reliable-messaging-worker
+  server:
+    port: ${WORKER_PORT:9090}  # Minimal HTTP for health checks
+    thread-selection: AUTO
+    netty:
+      worker:
+        threads: ${NETTY_WORKER_THREADS:50}  # Minimal (only health checks)
+      parent:
+        threads: ${NETTY_PARENT_THREADS:4}
+  test-resources:
+    enabled: false
+
+logger:
+  levels:
+    root: WARN
+    io.micronaut: INFO
+    com.acme.reliable: INFO
+    com.zaxxer.hikari: WARN
+    io.netty: WARN
+    org.apache.kafka: WARN
+
+datasources:
+  default:
+    enabled: true
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:reliable}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driverClassName: org.postgresql.Driver
+    maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:200}  # Larger pool for workers (heavy DB access)
+    minimum-idle: ${HIKARI_MIN_IDLE:50}
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000
+    leak-detection-threshold: 60000
+
+flyway:
+  datasources:
+    default:
+      enabled: true
+
+# JMS configuration - CONSUMER ENABLED
+jms:
+  consumers:
+    enabled: true  # YES - JMS consumers in Worker
+
+kafka:
+  bootstrap:
+    servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  producers:
+    default:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  required-topics: ${KAFKA_REQUIRED_TOPICS:events.CreateUser}
+  topic-partitions: ${KAFKA_TOPIC_PARTITIONS:3}
+  topic-replication-factor: ${KAFKA_TOPIC_REPLICATION_FACTOR:1}
+  health:
+    enabled: false
+
+# Messaging configuration
+messaging:
+  queue-naming:
+    command-prefix: ${MQ_COMMAND_PREFIX:APP.CMD.}
+    queue-suffix: ${MQ_QUEUE_SUFFIX:.Q}
+    reply-queue: ${MQ_REPLY_QUEUE:APP.CMD.REPLY.Q}
+  topic-naming:
+    event-prefix: ${KAFKA_EVENT_PREFIX:events.}
+
+# Timeout configuration
+timeout:
+  command-lease: ${COMMAND_LEASE_DURATION:5m}
+  max-backoff: ${MAX_BACKOFF_DURATION:5m}
+  sync-wait: ${SYNC_WAIT_DURATION:0s}
+  outbox-sweep-interval: ${OUTBOX_SWEEP_INTERVAL:1s}
+  outbox-batch-size: ${OUTBOX_BATCH_SIZE:2000}
+
+# MQ configuration
+mq:
+  required-queues: ${MQ_REQUIRED_QUEUES:APP.CMD.CreateUser.Q,APP.CMD.REPLY.Q}

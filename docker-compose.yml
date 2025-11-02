@@ -1,0 +1,327 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: messaging-postgres
+    environment:
+      POSTGRES_DB: reliable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-network
+
+  # IBM MQ
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:latest
+    container_name: messaging-ibmmq
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_APP_PASSWORD: passw0rd
+      MQ_ADMIN_PASSWORD: passw0rd
+    ports:
+      - "1414:1414"
+      - "9443:9443"
+    volumes:
+      - ibmmq_data:/mnt/mqm
+    healthcheck:
+      test: ["CMD", "/opt/mqm/bin/dspmq"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - messaging-network
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: messaging-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: messaging-cluster-001
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - messaging-network
+
+  # API Instance 1
+  api-1:
+    build:
+      context: .
+      dockerfile: msg-platform-api/Dockerfile
+    container_name: messaging-api-1
+    environment:
+      MICRONAUT_SERVER_PORT: 8080
+      NETTY_WORKER_THREADS: 200
+      HIKARI_MAX_POOL_SIZE: 100
+      JMS_CONSUMERS_ENABLED: "false"
+      SYNC_WAIT_DURATION: 0s
+      DATASOURCES_DEFAULT_URL: jdbc:postgresql://postgres:5432/reliable
+      DATASOURCES_DEFAULT_USERNAME: postgres
+      DATASOURCES_DEFAULT_PASSWORD: postgres
+      IBM_MQ_QUEUEMANAGER: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_CONNNAME: ibmmq(1414)
+      IBM_MQ_USER: app
+      IBM_MQ_PASSWORD: passw0rd
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # API Instance 2
+  api-2:
+    build:
+      context: .
+      dockerfile: msg-platform-api/Dockerfile
+    container_name: messaging-api-2
+    environment:
+      MICRONAUT_SERVER_PORT: 8080
+      NETTY_WORKER_THREADS: 200
+      HIKARI_MAX_POOL_SIZE: 100
+      JMS_CONSUMERS_ENABLED: "false"
+      SYNC_WAIT_DURATION: 0s
+      DATASOURCES_DEFAULT_URL: jdbc:postgresql://postgres:5432/reliable
+      DATASOURCES_DEFAULT_USERNAME: postgres
+      DATASOURCES_DEFAULT_PASSWORD: postgres
+      IBM_MQ_QUEUEMANAGER: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_CONNNAME: ibmmq(1414)
+      IBM_MQ_USER: app
+      IBM_MQ_PASSWORD: passw0rd
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # API Instance 3
+  api-3:
+    build:
+      context: .
+      dockerfile: msg-platform-api/Dockerfile
+    container_name: messaging-api-3
+    environment:
+      MICRONAUT_SERVER_PORT: 8080
+      NETTY_WORKER_THREADS: 200
+      HIKARI_MAX_POOL_SIZE: 100
+      JMS_CONSUMERS_ENABLED: "false"
+      SYNC_WAIT_DURATION: 0s
+      DATASOURCES_DEFAULT_URL: jdbc:postgresql://postgres:5432/reliable
+      DATASOURCES_DEFAULT_USERNAME: postgres
+      DATASOURCES_DEFAULT_PASSWORD: postgres
+      IBM_MQ_QUEUEMANAGER: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_CONNNAME: ibmmq(1414)
+      IBM_MQ_USER: app
+      IBM_MQ_PASSWORD: passw0rd
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # Worker Instance 1
+  worker-1:
+    build:
+      context: .
+      dockerfile: msg-platform-worker/Dockerfile
+    container_name: messaging-worker-1
+    environment:
+      WORKER_ID: worker-1
+      MICRONAUT_SERVER_PORT: 9090
+      NETTY_WORKER_THREADS: 50
+      HIKARI_MAX_POOL_SIZE: 200
+      JMS_CONSUMERS_ENABLED: "true"
+      JMS_CONCURRENCY: 10
+      OUTBOX_SWEEP_INTERVAL: 1s
+      DATASOURCES_DEFAULT_URL: jdbc:postgresql://postgres:5432/reliable
+      DATASOURCES_DEFAULT_USERNAME: postgres
+      DATASOURCES_DEFAULT_PASSWORD: postgres
+      IBM_MQ_QUEUEMANAGER: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_CONNNAME: ibmmq(1414)
+      IBM_MQ_USER: app
+      IBM_MQ_PASSWORD: passw0rd
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # Worker Instance 2
+  worker-2:
+    build:
+      context: .
+      dockerfile: msg-platform-worker/Dockerfile
+    container_name: messaging-worker-2
+    environment:
+      WORKER_ID: worker-2
+      MICRONAUT_SERVER_PORT: 9090
+      NETTY_WORKER_THREADS: 50
+      HIKARI_MAX_POOL_SIZE: 200
+      JMS_CONSUMERS_ENABLED: "true"
+      JMS_CONCURRENCY: 10
+      OUTBOX_SWEEP_INTERVAL: 1s
+      DATASOURCES_DEFAULT_URL: jdbc:postgresql://postgres:5432/reliable
+      DATASOURCES_DEFAULT_USERNAME: postgres
+      DATASOURCES_DEFAULT_PASSWORD: postgres
+      IBM_MQ_QUEUEMANAGER: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_CONNNAME: ibmmq(1414)
+      IBM_MQ_USER: app
+      IBM_MQ_PASSWORD: passw0rd
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # Worker Instance 3
+  worker-3:
+    build:
+      context: .
+      dockerfile: msg-platform-worker/Dockerfile
+    container_name: messaging-worker-3
+    environment:
+      WORKER_ID: worker-3
+      MICRONAUT_SERVER_PORT: 9090
+      NETTY_WORKER_THREADS: 50
+      HIKARI_MAX_POOL_SIZE: 200
+      JMS_CONSUMERS_ENABLED: "true"
+      JMS_CONCURRENCY: 10
+      OUTBOX_SWEEP_INTERVAL: 1s
+      DATASOURCES_DEFAULT_URL: jdbc:postgresql://postgres:5432/reliable
+      DATASOURCES_DEFAULT_USERNAME: postgres
+      DATASOURCES_DEFAULT_PASSWORD: postgres
+      IBM_MQ_QUEUEMANAGER: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_CONNNAME: ibmmq(1414)
+      IBM_MQ_USER: app
+      IBM_MQ_PASSWORD: passw0rd
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # Nginx Load Balancer
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: messaging-nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+      api-3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/nginx-health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    networks:
+      - messaging-network
+
+networks:
+  messaging-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  ibmmq_data:
+  kafka_data:

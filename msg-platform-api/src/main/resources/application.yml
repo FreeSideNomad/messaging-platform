@@ -1,0 +1,88 @@
+micronaut:
+  application:
+    name: reliable-messaging-api
+  server:
+    port: ${API_PORT:8080}
+    thread-selection: AUTO
+    netty:
+      worker:
+        threads: ${NETTY_WORKER_THREADS:200}
+      parent:
+        threads: ${NETTY_PARENT_THREADS:8}
+      max-initial-line-length: 8192
+      max-header-size: 16384
+      max-chunk-size: 16384
+      initial-buffer-size: 256
+      compression-threshold: 1024
+      compression-level: 6
+      http2:
+        max-concurrent-streams: 100
+  test-resources:
+    enabled: false
+
+logger:
+  levels:
+    root: WARN
+    io.micronaut: INFO
+    com.acme.reliable: INFO
+    com.zaxxer.hikari: WARN
+    io.netty: WARN
+    org.apache.kafka: WARN
+
+datasources:
+  default:
+    enabled: true
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:reliable}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driverClassName: org.postgresql.Driver
+    maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:100}  # Smaller pool for API (only writes)
+    minimum-idle: ${HIKARI_MIN_IDLE:25}
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000
+    leak-detection-threshold: 60000
+
+flyway:
+  datasources:
+    default:
+      enabled: true
+
+# JMS configuration - PRODUCER ONLY (no consumers)
+jms:
+  consumers:
+    enabled: false  # NO JMS consumers in API
+
+kafka:
+  bootstrap:
+    servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  producers:
+    default:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  required-topics: ${KAFKA_REQUIRED_TOPICS:events.CreateUser}
+  topic-partitions: ${KAFKA_TOPIC_PARTITIONS:3}
+  topic-replication-factor: ${KAFKA_TOPIC_REPLICATION_FACTOR:1}
+  health:
+    enabled: false
+
+# Messaging configuration
+messaging:
+  queue-naming:
+    command-prefix: ${MQ_COMMAND_PREFIX:APP.CMD.}
+    queue-suffix: ${MQ_QUEUE_SUFFIX:.Q}
+    reply-queue: ${MQ_REPLY_QUEUE:APP.CMD.REPLY.Q}
+  topic-naming:
+    event-prefix: ${KAFKA_EVENT_PREFIX:events.}
+
+# Timeout configuration
+timeout:
+  command-lease: ${COMMAND_LEASE_DURATION:5m}
+  max-backoff: ${MAX_BACKOFF_DURATION:5m}
+  sync-wait: ${SYNC_WAIT_DURATION:0s}            # HTTP sync wait (0s = fully async)
+  outbox-sweep-interval: ${OUTBOX_SWEEP_INTERVAL:1s}
+  outbox-batch-size: ${OUTBOX_BATCH_SIZE:2000}
+
+# MQ configuration
+mq:
+  required-queues: ${MQ_REQUIRED_QUEUES:APP.CMD.CreateUser.Q,APP.CMD.REPLY.Q}
