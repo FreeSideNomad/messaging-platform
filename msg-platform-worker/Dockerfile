@@ -2,23 +2,21 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy parent pom and module poms
+# Copy all pom files
 COPY pom.xml .
 COPY msg-platform-core/pom.xml msg-platform-core/
 COPY msg-platform-messaging-ibmmq/pom.xml msg-platform-messaging-ibmmq/
 COPY msg-platform-events-kafka/pom.xml msg-platform-events-kafka/
+COPY msg-platform-api/pom.xml msg-platform-api/
 COPY msg-platform-worker/pom.xml msg-platform-worker/
 
-# Download dependencies (cached layer)
-RUN mvn dependency:go-offline -B -pl msg-platform-worker -am
-
-# Copy source code
+# Copy source code for dependencies
 COPY msg-platform-core/src msg-platform-core/src
 COPY msg-platform-messaging-ibmmq/src msg-platform-messaging-ibmmq/src
 COPY msg-platform-events-kafka/src msg-platform-events-kafka/src
 COPY msg-platform-worker/src msg-platform-worker/src
 
-# Build
+# Build only Worker module
 RUN mvn clean package -DskipTests -pl msg-platform-worker -am
 
 # Runtime stage
