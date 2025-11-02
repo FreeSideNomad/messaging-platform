@@ -20,7 +20,7 @@ COPY msg-platform-api/src msg-platform-api/src
 RUN mvn clean package -DskipTests -pl msg-platform-api -am
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Copy JAR
