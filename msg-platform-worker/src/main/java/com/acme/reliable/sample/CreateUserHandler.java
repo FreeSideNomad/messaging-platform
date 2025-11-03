@@ -1,12 +1,12 @@
 package com.acme.reliable.sample;
 
-import com.acme.reliable.core.Executor;
 import com.acme.reliable.core.PermanentException;
 import com.acme.reliable.core.TransientException;
+import com.acme.reliable.spi.HandlerRegistry;
 import jakarta.inject.Singleton;
 
 @Singleton
-public class CreateUserHandler implements Executor.HandlerRegistry {
+public class CreateUserHandler implements HandlerRegistry {
 
     @Override
     public String invoke(String name, String payload) {

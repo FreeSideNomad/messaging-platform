@@ -1,6 +1,4 @@
-package com.acme.reliable.core;
-
-import com.acme.reliable.relay.OutboxRelay;
+package com.acme.reliable.processor;
 import io.micronaut.transaction.TransactionOperations;
 import io.micronaut.transaction.support.TransactionSynchronization;
 import jakarta.inject.Singleton;

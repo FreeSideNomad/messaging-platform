@@ -1,7 +1,7 @@
 package com.acme.reliable.core;
 
 import com.acme.reliable.config.MessagingConfig;
-import com.acme.reliable.spi.OutboxService.OutboxRow;
+import com.acme.reliable.spi.OutboxRow;
 import jakarta.inject.Singleton;
 import java.util.Map;
 import java.util.UUID;

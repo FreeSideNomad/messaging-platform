@@ -2,8 +2,8 @@ package com.acme.reliable.web;
 
 import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.config.TimeoutConfig;
-import com.acme.reliable.core.CommandBus;
-import com.acme.reliable.core.ResponseRegistry;
+import com.acme.reliable.processor.CommandBus;
+import com.acme.reliable.processor.ResponseRegistry;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

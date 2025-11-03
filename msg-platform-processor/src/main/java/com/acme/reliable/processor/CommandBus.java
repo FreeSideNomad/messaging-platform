@@ -1,9 +1,11 @@
-package com.acme.reliable.core;
+package com.acme.reliable.processor;
 
-import com.acme.reliable.spi.CommandService;
-import com.acme.reliable.spi.OutboxService;
+import com.acme.reliable.core.Jsons;
+import com.acme.reliable.core.Outbox;
+import com.acme.reliable.persistence.jdbc.service.CommandService;
+import com.acme.reliable.persistence.jdbc.service.OutboxService;
+import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
-import jakarta.transaction.Transactional;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,7 +30,7 @@ public class CommandBus {
         }
         UUID id = commands.savePending(name, idem, bizKey, payload, Jsons.toJson(reply));
         UUID outboxId = outboxStore.addReturningId(outbox.rowCommandRequested(name, id, bizKey, payload, reply));
-        fastPath.registerAfterCommit(outboxId);
+        // fastPath.registerAfterCommit(outboxId); // DISABLED: causing transaction leak
         return id;
     }
 }

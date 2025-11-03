@@ -80,6 +80,7 @@ public class ConfigurationLogger implements ApplicationEventListener<ServerStart
         LOG.info("  Async Mode:         {} (Returns HTTP 202 immediately if true)", timeoutConfig.isAsync());
         LOG.info("  Outbox Sweep:       {} (How often to check for unpublished outbox entries)", timeoutConfig.getOutboxSweepInterval());
         LOG.info("  Outbox Batch Size:  {} (Number of outbox entries processed per sweep)", timeoutConfig.getOutboxBatchSize());
+        LOG.info("  Claim Timeout:      {} (Timeout to reclaim stuck CLAIMED outbox messages)", timeoutConfig.getOutboxClaimTimeout());
         LOG.info("");
 
         // Messaging Configuration

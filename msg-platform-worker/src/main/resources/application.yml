@@ -74,6 +74,7 @@ timeout:
   sync-wait: ${SYNC_WAIT_DURATION:0s}
   outbox-sweep-interval: ${OUTBOX_SWEEP_INTERVAL:1s}
   outbox-batch-size: ${OUTBOX_BATCH_SIZE:2000}
+  outbox-claim-timeout: ${OUTBOX_CLAIM_TIMEOUT:1s}  # Timeout to reclaim stuck CLAIMED messages
 
 # MQ configuration
 mq:

@@ -1,4 +1,4 @@
-package com.acme.reliable.core;
+package com.acme.reliable.processor;
 
 import jakarta.inject.Singleton;
 import java.util.Map;

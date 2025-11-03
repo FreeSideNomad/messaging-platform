@@ -8,6 +8,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +84,14 @@ public final class KafkaTopicInitializer implements ApplicationEventListener<Sta
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while ensuring Kafka topics", e);
-        } catch (ExecutionException | TimeoutException e) {
+        } catch (ExecutionException e) {
+            // Handle race condition where another instance created topics concurrently
+            if (e.getCause() instanceof TopicExistsException) {
+                LOG.info("Kafka topics already exist (created by another instance): {}", topics);
+            } else {
+                throw new IllegalStateException("Failed to ensure Kafka topics", e);
+            }
+        } catch (TimeoutException e) {
             throw new IllegalStateException("Failed to ensure Kafka topics", e);
         }
     }

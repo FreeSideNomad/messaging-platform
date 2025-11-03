@@ -1,7 +1,10 @@
-package com.acme.reliable.spi;
+package com.acme.reliable.persistence.jdbc.service;
 
+import com.acme.reliable.spi.OutboxRow;
+
+import com.acme.reliable.config.TimeoutConfig;
 import com.acme.reliable.core.Jsons;
-import com.acme.reliable.domain.OutboxRepository;
+import com.acme.reliable.persistence.jdbc.OutboxRepository;
 import io.micronaut.transaction.TransactionOperations;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
@@ -25,10 +28,13 @@ import java.util.UUID;
 public class OutboxService {
     private final OutboxRepository repository;
     private final TransactionOperations<Connection> transactionOps;
+    private final long claimTimeoutSeconds;
 
-    public OutboxService(OutboxRepository repository, TransactionOperations<Connection> transactionOps) {
+    public OutboxService(OutboxRepository repository, TransactionOperations<Connection> transactionOps,
+                         TimeoutConfig timeoutConfig) {
         this.repository = repository;
         this.transactionOps = transactionOps;
+        this.claimTimeoutSeconds = timeoutConfig.getOutboxClaimTimeoutSeconds();
     }
 
     @Transactional
@@ -84,7 +90,9 @@ public class OutboxService {
                     Connection conn = (Connection) status.getConnection();
                     try (var ps = conn.prepareStatement(
                         "WITH c AS (" +
-                        "  SELECT id FROM outbox WHERE status='NEW' AND (next_at IS NULL OR next_at <= now()) " +
+                        "  SELECT id FROM outbox " +
+                        "  WHERE (status='NEW' OR (status='CLAIMED' AND created_at < now() - interval '" + claimTimeoutSeconds + " seconds')) " +
+                        "    AND (next_at IS NULL OR next_at <= now()) " +
                         "  ORDER BY created_at LIMIT ? FOR UPDATE SKIP LOCKED" +
                         ") " +
                         "UPDATE outbox o SET status='CLAIMED', claimed_by=?, attempts=o.attempts FROM c " +
@@ -138,15 +146,4 @@ public class OutboxService {
             return "unknown-host";
         }
     }
-
-    public record OutboxRow(
-        UUID id,
-        String category,
-        String topic,
-        String key,
-        String type,
-        String payload,
-        Map<String,String> headers,
-        int attempts
-    ) {}
 }

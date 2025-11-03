@@ -1,10 +1,21 @@
-package com.acme.reliable.core;
+package com.acme.reliable.processor;
 
 import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.config.TimeoutConfig;
-import com.acme.reliable.spi.*;
+import com.acme.reliable.core.Aggregates;
+import com.acme.reliable.core.Envelope;
+import com.acme.reliable.core.Jsons;
+import com.acme.reliable.core.Outbox;
+import com.acme.reliable.core.PermanentException;
+import com.acme.reliable.core.RetryableBusinessException;
+import com.acme.reliable.core.TransientException;
+import com.acme.reliable.persistence.jdbc.service.CommandService;
+import com.acme.reliable.persistence.jdbc.service.DlqService;
+import com.acme.reliable.persistence.jdbc.service.InboxService;
+import com.acme.reliable.persistence.jdbc.service.OutboxService;
+import com.acme.reliable.spi.HandlerRegistry;
+import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
-import jakarta.transaction.Transactional;
 import java.time.Instant;
 
 @Singleton
@@ -49,8 +60,8 @@ public class Executor {
                 "CommandCompleted",
                 Aggregates.snapshot(env.key())
             ));
-            fastPath.registerAfterCommit(replyId);
-            fastPath.registerAfterCommit(eventId);
+            // fastPath.registerAfterCommit(replyId); // DISABLED: causing transaction leak
+            // fastPath.registerAfterCommit(eventId); // DISABLED: causing transaction leak
         } catch (PermanentException e) {
             commands.markFailed(env.commandId(), e.getMessage());
             dlq.park(env.commandId(), env.name(), env.key(), env.payload(), "FAILED", "Permanent", e.getMessage(), 0, "worker");
@@ -61,16 +72,12 @@ public class Executor {
                 "CommandFailed",
                 Jsons.of("error", e.getMessage())
             ));
-            fastPath.registerAfterCommit(replyId);
-            fastPath.registerAfterCommit(eventId);
+            // fastPath.registerAfterCommit(replyId); // DISABLED: causing transaction leak
+            // fastPath.registerAfterCommit(eventId); // DISABLED: causing transaction leak
             // Don't re-throw for permanent failures - we want to commit the DLQ entry and failure state
         } catch (RetryableBusinessException | TransientException e) {
             commands.bumpRetry(env.commandId(), e.getMessage());
             throw e;
         }
-    }
-
-    public interface HandlerRegistry {
-        String invoke(String name, String payload);
     }
 }

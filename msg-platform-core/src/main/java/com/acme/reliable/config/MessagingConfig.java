@@ -58,10 +58,10 @@ public class MessagingConfig {
 
         /**
          * Build a command queue name from a command name.
-         * Example: CreateUser -> APP.CMD.CreateUser.Q
+         * Example: CreateUser -> APP.CMD.CREATEUSER.Q (IBM MQ uses uppercase)
          */
         public String buildCommandQueue(String commandName) {
-            return commandPrefix + commandName + queueSuffix;
+            return commandPrefix + commandName.toUpperCase() + queueSuffix;
         }
     }
 

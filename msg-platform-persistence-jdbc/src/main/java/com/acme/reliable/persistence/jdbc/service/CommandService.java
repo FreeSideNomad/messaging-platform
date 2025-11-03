@@ -1,6 +1,6 @@
-package com.acme.reliable.spi;
+package com.acme.reliable.persistence.jdbc.service;
 
-import com.acme.reliable.domain.CommandRepository;
+import com.acme.reliable.persistence.jdbc.CommandRepository;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
 

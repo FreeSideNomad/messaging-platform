@@ -40,6 +40,13 @@ Thumbs.db
 # Performance test results
 endurance-docker-stats.txt
 endurance-logs.txt
+load-test-results-*/
+scripts/run-load-test.sh
+
+# Working files
+library-refactoring-plan.md
+process-manager-prompt.md
+docker-build-fixed.log
 
 # Temporary files
 *.swp

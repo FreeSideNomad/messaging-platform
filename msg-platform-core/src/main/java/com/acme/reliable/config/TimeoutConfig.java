@@ -14,6 +14,7 @@ public class TimeoutConfig {
     private Duration syncWait = Duration.ZERO;  // Async by default (no blocking wait)
     private Duration outboxSweepInterval = Duration.ofSeconds(1);  // Fast sweep for high throughput
     private int outboxBatchSize = 2000;  // 4x increased from 500 for high throughput
+    private Duration outboxClaimTimeout = Duration.ofSeconds(1);  // Timeout for reclaiming stuck CLAIMED messages
 
     public Duration getCommandLease() {
         return commandLease;
@@ -73,5 +74,17 @@ public class TimeoutConfig {
 
     public String getOutboxSweepIntervalString() {
         return outboxSweepInterval.toMillis() + "ms";
+    }
+
+    public Duration getOutboxClaimTimeout() {
+        return outboxClaimTimeout;
+    }
+
+    public void setOutboxClaimTimeout(Duration outboxClaimTimeout) {
+        this.outboxClaimTimeout = outboxClaimTimeout;
+    }
+
+    public long getOutboxClaimTimeoutSeconds() {
+        return outboxClaimTimeout.toSeconds();
     }
 }
