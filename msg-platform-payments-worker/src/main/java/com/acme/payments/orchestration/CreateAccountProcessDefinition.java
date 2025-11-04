@@ -1,6 +1,8 @@
 package com.acme.payments.orchestration;
 
+import com.acme.payments.application.command.CompleteAccountCreationCommand;
 import com.acme.payments.application.command.CreateAccountCommand;
+import com.acme.payments.application.command.CreateLimitsCommand;
 import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.ProcessConfiguration;
 import com.acme.reliable.process.ProcessGraph;
@@ -12,14 +14,14 @@ import java.util.Map;
 import static com.acme.reliable.process.ProcessGraphBuilder.process;
 
 /**
- * Account creation process definition.
- *
- * This is a simple single-step process without compensation since account
- * creation is idempotent (attempting to create an account with the same
- * parameters is safe to retry).
+ * Account creation process definition with optional limit creation.
  *
  * Process flow:
- * 1. CreateAccount (terminal, no compensation needed)
+ * 1. CreateAccount (creates the account aggregate)
+ * 2. CreateLimits (conditionally creates limits if limitBased=true)
+ *
+ * Both steps are idempotent and can be safely retried.
+ * No compensation needed since these are creation operations.
  *
  * Also acts as a handler for CreateAccountCommand to start the process.
  */
@@ -41,8 +43,8 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
      * @return initial process state as a map
      */
     public Map<String, Object> handleCreateAccount(CreateAccountCommand cmd) {
-        log.info("Initializing CreateAccount process for customer {} with currency {}",
-            cmd.customerId(), cmd.currencyCode());
+        log.info("Initializing CreateAccount process for customer {} with currency {} limitBased={}",
+            cmd.customerId(), cmd.currencyCode(), cmd.limitBased());
 
         // Serialize the entire command to a map for process state
         Map<String, Object> processState = Jsons.toMap(cmd);
@@ -55,9 +57,19 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
 
     @Override
     public ProcessGraph defineProcess() {
-        // Simple linear process with single step
+        // Conditional flow: CreateAccount -> (if limitBased) CreateLimits -> Complete
+        // If limitBased=false, skip CreateLimits and go directly to Complete
         return process()
             .startWith(CreateAccountCommand.class)
+            .thenIf(data -> {
+                // Check if limitBased is true and limits exist
+                Object limitBased = data.get("limitBased");
+                Object limits = data.get("limits");
+                return Boolean.TRUE.equals(limitBased) && limits != null;
+            })
+            .whenTrue(CreateLimitsCommand.class)
+                .then(CompleteAccountCreationCommand.class)
+            .then(CompleteAccountCreationCommand.class) // Continue after optional branch
             .end();
     }
 

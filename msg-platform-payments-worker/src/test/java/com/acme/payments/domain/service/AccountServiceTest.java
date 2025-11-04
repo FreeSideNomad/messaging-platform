@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,22 +54,17 @@ class AccountServiceTest {
             "USD",
             "001",
             AccountType.CHECKING,
-            false
+            false,
+            null // No limits
         );
 
         // When
-        Account result = accountService.handleCreateAccount(command);
+        Map<String, Object> result = accountService.handleCreateAccount(command);
 
-        // Then
+        // Then: Result contains accountId and accountNumber
         assertThat(result).isNotNull();
-        assertThat(result.getAccountId()).isNotNull();
-        assertThat(result.getCustomerId()).isEqualTo(customerId);
-        assertThat(result.getCurrencyCode()).isEqualTo("USD");
-        assertThat(result.getAccountType()).isEqualTo(AccountType.CHECKING);
-        assertThat(result.getTransitNumber()).isEqualTo("001");
-        assertThat(result.isLimitBased()).isFalse();
-        assertThat(result.getAvailableBalance()).isEqualTo(Money.zero("USD"));
-        assertThat(result.getAccountNumber()).startsWith("ACC");
+        assertThat(result.get("accountId")).isNotNull();
+        assertThat(result.get("accountNumber")).asString().startsWith("ACC");
 
         // Verify repository was called
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
@@ -76,29 +73,43 @@ class AccountServiceTest {
         Account savedAccount = accountCaptor.getValue();
         assertThat(savedAccount.getCustomerId()).isEqualTo(customerId);
         assertThat(savedAccount.getCurrencyCode()).isEqualTo("USD");
+        assertThat(savedAccount.getAccountType()).isEqualTo(AccountType.CHECKING);
+        assertThat(savedAccount.getTransitNumber()).isEqualTo("001");
+        assertThat(savedAccount.isLimitBased()).isFalse();
+        assertThat(savedAccount.getAvailableBalance()).isEqualTo(Money.zero("USD"));
     }
 
     @Test
     @DisplayName("createAccount - should create limit-based account")
     void testCreateAccount_LimitBased() {
-        // Given
+        // Given: limit-based account with limits
+        Map<PeriodType, Money> limits = Map.of(
+            PeriodType.DAY, Money.of(new BigDecimal("1000.00"), "EUR")
+        );
         CreateAccountCommand command = new CreateAccountCommand(
             customerId,
             "EUR",
             "002",
             AccountType.SAVINGS,
-            true  // limit-based
+            true,  // limit-based
+            limits
         );
 
         // When
-        Account result = accountService.handleCreateAccount(command);
+        Map<String, Object> result = accountService.handleCreateAccount(command);
 
         // Then
-        assertThat(result.isLimitBased()).isTrue();
-        assertThat(result.getAccountType()).isEqualTo(AccountType.SAVINGS);
-        assertThat(result.getCurrencyCode()).isEqualTo("EUR");
+        assertThat(result).isNotNull();
+        assertThat(result.get("accountId")).isNotNull();
+        assertThat(result.get("accountNumber")).asString().startsWith("ACC");
 
-        verify(accountRepository).save(any(Account.class));
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository).save(accountCaptor.capture());
+
+        Account savedAccount = accountCaptor.getValue();
+        assertThat(savedAccount.isLimitBased()).isTrue();
+        assertThat(savedAccount.getAccountType()).isEqualTo(AccountType.SAVINGS);
+        assertThat(savedAccount.getCurrencyCode()).isEqualTo("EUR");
     }
 
     @Test

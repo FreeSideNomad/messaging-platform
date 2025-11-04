@@ -61,6 +61,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
                        currency_code, period_start, period_end
                 FROM account_limit
                 WHERE account_id = ?
+                AND period_start <= CURRENT_TIMESTAMP
                 AND period_end > CURRENT_TIMESTAMP
                 ORDER BY period_type
                 """;
@@ -95,6 +96,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
                 FROM account_limit
                 WHERE account_id = ?
                 AND period_type = ?
+                AND period_start <= CURRENT_TIMESTAMP
                 AND period_end > CURRENT_TIMESTAMP
                 ORDER BY period_start DESC
                 """;

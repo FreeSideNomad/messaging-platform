@@ -1,16 +1,22 @@
 package com.acme.payments.domain.service;
 
 import com.acme.payments.application.command.BookLimitsCommand;
+import com.acme.payments.application.command.CreateLimitsCommand;
 import com.acme.payments.application.command.ReverseLimitsCommand;
 import com.acme.payments.domain.model.AccountLimit;
 import com.acme.payments.domain.model.Money;
+import com.acme.payments.domain.model.PeriodType;
 import com.acme.payments.domain.repository.AccountLimitRepository;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -21,6 +27,59 @@ import java.util.UUID;
 @Slf4j
 public class LimitService {
     private final AccountLimitRepository limitRepository;
+
+    /**
+     * Command handler for CreateLimitsCommand.
+     * Creates initial time-bucketed limits for an account.
+     * This method will be auto-discovered by AutoCommandHandlerRegistry.
+     *
+     * @param cmd the create limits command
+     * @return map containing created limit IDs and count
+     */
+    @Transactional
+    public Map<String, Object> handleCreateLimits(CreateLimitsCommand cmd) {
+        log.info("Creating {} limits for account {}",
+            cmd.limits().size(), cmd.accountId());
+
+        List<String> createdLimitIds = new ArrayList<>();
+        Instant now = Instant.now();
+
+        // Create a limit bucket for each period type
+        for (Map.Entry<PeriodType, Money> entry : cmd.limits().entrySet()) {
+            PeriodType periodType = entry.getKey();
+            Money limitAmount = entry.getValue();
+
+            // Calculate time bucket start aligned to period boundaries
+            Instant bucketStart = periodType.alignToBucketStart(now);
+
+            AccountLimit limit = new AccountLimit(
+                UUID.randomUUID(),
+                cmd.accountId(),
+                periodType,
+                bucketStart,
+                limitAmount
+            );
+
+            limitRepository.save(limit);
+            createdLimitIds.add(limit.getLimitId().toString());
+
+            log.info("Created {} limit for account {}: {} (bucket: {} to {})",
+                periodType,
+                cmd.accountId(),
+                limitAmount.amount(),
+                bucketStart,
+                limit.getEndTime());
+        }
+
+        log.info("Successfully created {} limits for account {}",
+            createdLimitIds.size(), cmd.accountId());
+
+        // Return created limit IDs for auditing
+        Map<String, Object> result = new HashMap<>();
+        result.put("limitIds", createdLimitIds);
+        result.put("limitCount", createdLimitIds.size());
+        return result;
+    }
 
     @Transactional
     public void bookLimits(BookLimitsCommand cmd) {

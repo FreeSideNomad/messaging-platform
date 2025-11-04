@@ -1,5 +1,6 @@
 package com.acme.payments.domain.service;
 
+import com.acme.payments.application.command.CompleteAccountCreationCommand;
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateTransactionCommand;
 import com.acme.payments.application.command.ReverseTransactionCommand;
@@ -13,6 +14,7 @@ import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -25,7 +27,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
 
     @Transactional
-    public Account handleCreateAccount(CreateAccountCommand cmd) {
+    public Map<String, Object> handleCreateAccount(CreateAccountCommand cmd) {
         log.info("Creating account for customer {} with currency {}",
             cmd.customerId(), cmd.currencyCode());
 
@@ -43,7 +45,21 @@ public class AccountService {
         accountRepository.save(account);
         log.info("Account created: {}", account.getAccountId());
 
-        return account;
+        // Return account details for next process step
+        return Map.of(
+            "accountId", account.getAccountId().toString(),
+            "accountNumber", account.getAccountNumber()
+        );
+    }
+
+    /**
+     * Command handler for CompleteAccountCreationCommand.
+     * This is a no-op terminal command that marks completion.
+     * Auto-discovered by AutoCommandHandlerRegistry.
+     */
+    public Map<String, Object> handleCompleteAccountCreation(CompleteAccountCreationCommand cmd) {
+        log.info("Account creation process completed for account: {}", cmd.accountId());
+        return Map.of("status", "completed");
     }
 
     @Transactional
