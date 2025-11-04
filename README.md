@@ -1,5 +1,11 @@
 # Messaging Platform
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=FreeSideNomad_messaging-platform&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=FreeSideNomad_messaging-platform)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=FreeSideNomad_messaging-platform&metric=coverage)](https://sonarcloud.io/summary/new_code?id=FreeSideNomad_messaging-platform)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=FreeSideNomad_messaging-platform&metric=bugs)](https://sonarcloud.io/summary/new_code?id=FreeSideNomad_messaging-platform)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=FreeSideNomad_messaging-platform&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=FreeSideNomad_messaging-platform)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=FreeSideNomad_messaging-platform&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=FreeSideNomad_messaging-platform)
+
 High-performance messaging platform with saga orchestration, transactional outbox pattern, and payments microservice.
 
 ## 🎯 Features
@@ -130,8 +136,11 @@ mvn clean install
 - **Database**: PostgreSQL 16
 - **Messaging**: IBM MQ 9.4
 - **Testing**: JUnit 5, Testcontainers, Mockito, AssertJ
+- **Code Quality**: SonarCloud with automated analysis
+- **Code Coverage**: JaCoCo
 - **Migrations**: Flyway
 - **Build**: Maven
+- **CI/CD**: GitHub Actions
 
 ## 🔧 Configuration
 
@@ -148,6 +157,7 @@ Key configurations:
 - [Implementation Guide](IMPLEMENTATION-COMPLETE-GUIDE.md)
 - [Process Manager Status](PROCESS-MANAGER-STATUS.md)
 - [Testing Summary](TESTING-COMPLETE-SUMMARY.md)
+- [SonarCloud Setup Guide](SONARCLOUD-SETUP.md)
 
 ## 🤝 Contributing
 
