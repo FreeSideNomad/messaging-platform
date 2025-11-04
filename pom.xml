@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.acme</groupId>
+  <artifactId>messaging-platform</artifactId>
+  <version>2.0.0</version>
+  <packaging>pom</packaging>
+
+  <name>Messaging Platform</name>
+  <description>Scalable reliable messaging platform with separate API and Worker components</description>
+
+  <parent>
+    <groupId>io.micronaut.platform</groupId>
+    <artifactId>micronaut-parent</artifactId>
+    <version>4.10.0</version>
+  </parent>
+
+  <modules>
+    <module>msg-platform-core</module>
+    <module>msg-platform-persistence-jdbc</module>
+    <module>msg-platform-messaging-ibmmq</module>
+    <module>msg-platform-events-kafka</module>
+    <module>msg-platform-processor</module>
+    <module>msg-platform-api</module>
+    <module>msg-platform-worker</module>
+    <module>msg-platform-payments-worker</module>
+  </modules>
+
+  <properties>
+    <packaging>jar</packaging>
+    <jdk.version>17</jdk.version>
+    <release.version>17</release.version>
+    <maven.compiler.release>17</maven.compiler.release>
+    <micronaut.version>4.10.0</micronaut.version>
+    <micronaut.test.resources.enabled>true</micronaut.test.resources.enabled>
+    <micronaut.runtime>netty</micronaut.runtime>
+    <micronaut.aot.enabled>false</micronaut.aot.enabled>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <ibmmq.version>9.4.3.1</ibmmq.version>
+    <flyway.version>11.1.0</flyway.version>
+    <junit.excludeTags>e2e</junit.excludeTags>
+    <junit.includeTags></junit.includeTags>
+
+    <!-- SonarCloud -->
+    <sonar.projectKey>FreeSideNomad_messaging-platform</sonar.projectKey>
+    <sonar.organization>freesidenomad</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.java.source>17</sonar.java.source>
+    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/**/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <jacoco.version>0.8.12</jacoco.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+  </repositories>
+
+  <!-- Shared dependency management for all modules -->
+  <dependencyManagement>
+    <dependencies>
+      <!-- Internal modules -->
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>msg-platform-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>msg-platform-messaging-ibmmq</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>msg-platform-events-kafka</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>msg-platform-persistence-jdbc</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.acme</groupId>
+        <artifactId>msg-platform-processor</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <!-- IBM MQ -->
+      <dependency>
+        <groupId>com.ibm.mq</groupId>
+        <artifactId>com.ibm.mq.jakarta.client</artifactId>
+        <version>${ibmmq.version}</version>
+      </dependency>
+
+      <!-- Flyway PostgreSQL -->
+      <dependency>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-database-postgresql</artifactId>
+        <version>${flyway.version}</version>
+      </dependency>
+
+      <!-- Testcontainers -->
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>1.20.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>1.20.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>kafka</artifactId>
+        <version>1.20.3</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>io.micronaut.maven</groupId>
+          <artifactId>micronaut-maven-plugin</artifactId>
+          <configuration>
+            <shared>true</shared>
+          </configuration>
+        </plugin>
+        <!-- SonarScanner for Maven -->
+        <plugin>
+          <groupId>org.sonarsource.scanner.maven</groupId>
+          <artifactId>sonar-maven-plugin</artifactId>
+          <version>5.2.0.4988</version>
+        </plugin>
+        <!-- JaCoCo for code coverage -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <annotationProcessorPaths combine.self="override">
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+              </path>
+              <path>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-inject-java</artifactId>
+                <version>${micronaut.core.version}</version>
+              </path>
+              <path>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-graal</artifactId>
+                <version>${micronaut.core.version}</version>
+              </path>
+              <path>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-http-validation</artifactId>
+                <version>${micronaut.core.version}</version>
+              </path>
+              <path>
+                <groupId>io.micronaut.serde</groupId>
+                <artifactId>micronaut-serde-processor</artifactId>
+                <version>${micronaut.serialization.version}</version>
+                <exclusions>
+                  <exclusion>
+                    <groupId>io.micronaut</groupId>
+                    <artifactId>micronaut-inject</artifactId>
+                  </exclusion>
+                </exclusions>
+              </path>
+              <path>
+                <groupId>io.micronaut.data</groupId>
+                <artifactId>micronaut-data-processor</artifactId>
+                <version>${micronaut.data.version}</version>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.2.5</version>
+          <configuration>
+            <useSystemClassLoader>false</useSystemClassLoader>
+            <properties>
+              <configurationParameters>junit.jupiter.excludeTags=${junit.excludeTags}&#10;junit.jupiter.includeTags=${junit.includeTags}</configurationParameters>
+            </properties>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>e2e</id>
+      <properties>
+        <junit.excludeTags></junit.excludeTags>
+        <junit.includeTags>e2e</junit.includeTags>
+      </properties>
+    </profile>
+    <profile>
+      <id>performance</id>
+      <properties>
+        <junit.excludeTags></junit.excludeTags>
+        <junit.includeTags>performance</junit.includeTags>
+      </properties>
+    </profile>
+    <profile>
+      <id>endurance</id>
+      <properties>
+        <junit.excludeTags></junit.excludeTags>
+        <junit.includeTags>endurance</junit.includeTags>
+      </properties>
+    </profile>
+    <profile>
+      <id>coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>report</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

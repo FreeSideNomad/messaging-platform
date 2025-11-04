@@ -1,5 +1,6 @@
 package com.acme.payments.domain.service;
 
+import com.acme.payments.application.command.CompleteAccountCreationCommand;
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateTransactionCommand;
 import com.acme.payments.domain.model.*;
@@ -221,6 +222,20 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.getAccountById(accountId))
             .isInstanceOf(AccountService.AccountNotFoundException.class)
             .hasMessageContaining(accountId.toString());
+    }
+
+    @Test
+    @DisplayName("handleCompleteAccountCreation - should return completion status")
+    void testHandleCompleteAccountCreation() {
+        // Given
+        CompleteAccountCreationCommand command = new CompleteAccountCreationCommand(accountId);
+
+        // When
+        Map<String, Object> result = accountService.handleCompleteAccountCreation(command);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.get("status")).isEqualTo("completed");
     }
 
     @Test
