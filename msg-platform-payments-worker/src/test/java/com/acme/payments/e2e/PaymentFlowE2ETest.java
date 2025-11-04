@@ -101,14 +101,16 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "USD",
             "001",
             AccountType.CHECKING,
-            false
+            false,
+            null // No limits
         );
 
         // When - Create account through service
-        Account account = accountService.handleCreateAccount(command);
+        Map<String, Object> result = accountService.handleCreateAccount(command);
+        UUID accountId = UUID.fromString((String) result.get("accountId"));
 
         // Then - Verify account was persisted
-        Optional<Account> retrieved = accountRepository.findById(account.getAccountId());
+        Optional<Account> retrieved = accountRepository.findById(accountId);
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getCustomerId()).isEqualTo(customerId);
         assertThat(retrieved.get().getCurrencyCode()).isEqualTo("USD");
@@ -127,9 +129,12 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "USD",
             "001",
             AccountType.CHECKING,
-            false
+            false,
+            null // No limits
         );
-        Account debitAccount = accountService.handleCreateAccount(accountCmd);
+        Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
+        UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
+        Account debitAccount = accountRepository.findById(accountId).orElseThrow();
 
         // Add initial balance via transaction
         debitAccount.createTransaction(
@@ -181,9 +186,12 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "USD",
             "001",
             AccountType.CHECKING,
-            false
+            false,
+            null // No limits
         );
-        Account debitAccount = accountService.handleCreateAccount(accountCmd);
+        Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
+        UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
+        Account debitAccount = accountRepository.findById(accountId).orElseThrow();
 
         // Add initial balance
         debitAccount.createTransaction(
@@ -231,10 +239,12 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "EUR",
             "002",
             AccountType.SAVINGS,
-            false
+            false,
+            null // No limits
         );
-        Account account = accountService.handleCreateAccount(accountCmd);
-        UUID accountId = account.getAccountId();
+        Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
+        UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
+        Account account = accountRepository.findById(accountId).orElseThrow();
 
         // When - Add multiple transactions
         account.createTransaction(TransactionType.CREDIT, Money.of(500.00, "EUR"), "Deposit 1");
@@ -262,12 +272,17 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
         UUID customer1 = UUID.randomUUID();
         UUID customer2 = UUID.randomUUID();
 
-        Account account1 = accountService.handleCreateAccount(new CreateAccountCommand(
-            customer1, "USD", "001", AccountType.CHECKING, false
+        Map<String, Object> result1 = accountService.handleCreateAccount(new CreateAccountCommand(
+            customer1, "USD", "001", AccountType.CHECKING, false, null
         ));
-        Account account2 = accountService.handleCreateAccount(new CreateAccountCommand(
-            customer2, "EUR", "002", AccountType.SAVINGS, false
+        UUID accountId1 = UUID.fromString((String) result1.get("accountId"));
+        Account account1 = accountRepository.findById(accountId1).orElseThrow();
+
+        Map<String, Object> result2 = accountService.handleCreateAccount(new CreateAccountCommand(
+            customer2, "EUR", "002", AccountType.SAVINGS, false, null
         ));
+        UUID accountId2 = UUID.fromString((String) result2.get("accountId"));
+        Account account2 = accountRepository.findById(accountId2).orElseThrow();
 
         // Add balances
         account1.createTransaction(TransactionType.CREDIT, Money.of(1000.00, "USD"), "Initial");
@@ -309,9 +324,11 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
     void testPaymentIdempotency() {
         // Given - Create account
         UUID customerId = UUID.randomUUID();
-        Account account = accountService.handleCreateAccount(new CreateAccountCommand(
-            customerId, "USD", "001", AccountType.CHECKING, false
+        Map<String, Object> accountResult = accountService.handleCreateAccount(new CreateAccountCommand(
+            customerId, "USD", "001", AccountType.CHECKING, false, null
         ));
+        UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
+        Account account = accountRepository.findById(accountId).orElseThrow();
         account.createTransaction(TransactionType.CREDIT, Money.of(500.00, "USD"), "Initial");
         accountRepository.save(account);
 

@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * JMS Consumer for payment commands
  */
+@Requires(notEnv = "test")
 @Requires(property = "jms.consumers.enabled", value = "true", defaultValue = "false")
 @JMSListener("mqConnectionFactory")
 @Slf4j

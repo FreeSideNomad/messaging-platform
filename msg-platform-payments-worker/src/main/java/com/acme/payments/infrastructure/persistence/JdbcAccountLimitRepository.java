@@ -171,7 +171,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
         UUID accountId = (UUID) rs.getObject("account_id");
         PeriodType periodType = PeriodType.valueOf(rs.getString("period_type"));
         String currencyCode = rs.getString("currency_code");
-        Money limitAmount = new Money(rs.getBigDecimal("limit_amount"), currencyCode);
+        Money limitAmount = new Money(rs.getBigDecimal("limit_amount").setScale(2, java.math.RoundingMode.HALF_UP), currencyCode);
         Instant startTime = rs.getTimestamp("period_start").toInstant();
 
         AccountLimit limit = new AccountLimit(
@@ -183,7 +183,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
         );
 
         // Restore utilized amount by booking it
-        Money utilized = new Money(rs.getBigDecimal("utilized"), currencyCode);
+        Money utilized = new Money(rs.getBigDecimal("utilized").setScale(2, java.math.RoundingMode.HALF_UP), currencyCode);
         if (utilized.isPositive()) {
             limit.book(utilized);
         }
