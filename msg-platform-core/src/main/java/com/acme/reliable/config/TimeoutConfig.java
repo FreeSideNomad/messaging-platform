@@ -1,12 +1,11 @@
 package com.acme.reliable.config;
 
-import io.micronaut.context.annotation.ConfigurationProperties;
 import java.time.Duration;
 
 /**
  * Configuration for various timeout, retry, and performance settings.
+ * Pure POJO - no framework dependencies.
  */
-@ConfigurationProperties("timeout")
 public class TimeoutConfig {
 
     private Duration commandLease = Duration.ofMinutes(5);

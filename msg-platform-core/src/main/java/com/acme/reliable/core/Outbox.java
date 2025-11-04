@@ -2,11 +2,13 @@ package com.acme.reliable.core;
 
 import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.spi.OutboxRow;
-import jakarta.inject.Singleton;
 import java.util.Map;
 import java.util.UUID;
 
-@Singleton
+/**
+ * Outbox helper for creating outbox entries.
+ * Pure POJO - no framework dependencies.
+ */
 public final class Outbox {
 
     private final MessagingConfig config;

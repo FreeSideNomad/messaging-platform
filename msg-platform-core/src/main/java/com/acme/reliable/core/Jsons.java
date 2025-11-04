@@ -1,11 +1,13 @@
 package com.acme.reliable.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class Jsons {
-    private static final ObjectMapper M = new ObjectMapper();
+    private static final ObjectMapper M = new ObjectMapper()
+        .registerModule(new JavaTimeModule());
 
     public static String toJson(Object o) {
         try {
@@ -32,5 +34,18 @@ public final class Jsons {
         m.putAll(a);
         m.putAll(b);
         return m;
+    }
+
+    /**
+     * Convert an object to a Map<String, Object> by serializing through Jackson.
+     * Useful for converting domain objects to process data.
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> toMap(Object o) {
+        try {
+            return M.convertValue(o, Map.class);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

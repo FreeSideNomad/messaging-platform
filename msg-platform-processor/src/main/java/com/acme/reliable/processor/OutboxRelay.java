@@ -1,7 +1,7 @@
 package com.acme.reliable.processor;
 
 import com.acme.reliable.config.TimeoutConfig;
-import com.acme.reliable.persistence.jdbc.service.OutboxService;
+import com.acme.reliable.service.OutboxService;
 import com.acme.reliable.spi.CommandQueue;
 import com.acme.reliable.spi.EventPublisher;
 import com.acme.reliable.spi.OutboxRow;

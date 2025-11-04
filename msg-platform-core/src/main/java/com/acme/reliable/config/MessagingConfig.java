@@ -1,11 +1,9 @@
 package com.acme.reliable.config;
 
-import io.micronaut.context.annotation.ConfigurationProperties;
-
 /**
  * Configuration for messaging naming patterns and conventions.
+ * Pure POJO - no framework dependencies.
  */
-@ConfigurationProperties("messaging")
 public class MessagingConfig {
 
     private QueueNaming queueNaming = new QueueNaming();
