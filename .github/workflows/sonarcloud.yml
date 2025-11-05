@@ -45,7 +45,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn -B clean verify \
-            -Pcoverage \
+            -Pcoverage,e2e \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=FreeSideNomad_messaging-platform \
             -Dsonar.organization=freesidenomad \
