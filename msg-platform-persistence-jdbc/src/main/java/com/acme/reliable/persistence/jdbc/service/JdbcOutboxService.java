@@ -87,17 +87,16 @@ public class JdbcOutboxService implements OutboxService {
                     conn.prepareStatement(
                         "WITH c AS ("
                             + "  SELECT id FROM outbox "
-                            + "  WHERE (status='NEW' OR (status='CLAIMED' AND created_at < now() - interval '"
-                            + claimTimeoutSeconds
-                            + " seconds')) "
+                            + "  WHERE (status='NEW' OR (status='CLAIMED' AND created_at < (now() - ? * interval '1 second'))) "
                             + "    AND (next_at IS NULL OR next_at <= now()) "
                             + "  ORDER BY created_at LIMIT ? FOR UPDATE SKIP LOCKED"
                             + ") "
                             + "UPDATE outbox o SET status='CLAIMED', claimed_by=?, attempts=o.attempts FROM c "
                             + "WHERE o.id=c.id "
                             + "RETURNING o.id, o.category, o.topic, o.key, o.type, o.payload, o.headers, o.attempts")) {
-                  ps.setInt(1, max);
-                  ps.setString(2, claimer);
+                  ps.setLong(1, claimTimeoutSeconds);
+                  ps.setInt(2, max);
+                  ps.setString(3, claimer);
                   try (ResultSet rs = ps.executeQuery()) {
                     List<OutboxRow> results = new ArrayList<>();
                     while (rs.next()) {
