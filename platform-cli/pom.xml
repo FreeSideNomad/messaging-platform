@@ -23,7 +23,7 @@
         <jline.version>3.25.0</jline.version>
         <postgresql.version>42.7.1</postgresql.version>
         <hikaricp.version>5.1.0</hikaricp.version>
-        <kafka-clients.version>3.6.1</kafka-clients.version>
+        <kafka-clients.version>3.9.1</kafka-clients.version>
         <rabbitmq.version>5.20.0</rabbitmq.version>
         <docker-java.version>3.3.4</docker-java.version>
         <okhttp.version>4.12.0</okhttp.version>
