@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.micronaut.platform</groupId>
+    <artifactId>micronaut-parent</artifactId>
+    <version>4.10.0</version>
+  </parent>
 
   <groupId>com.acme</groupId>
   <artifactId>messaging-platform</artifactId>
@@ -10,12 +15,6 @@
 
   <name>Messaging Platform</name>
   <description>Scalable reliable messaging platform with separate API and Worker components</description>
-
-  <parent>
-    <groupId>io.micronaut.platform</groupId>
-    <artifactId>micronaut-parent</artifactId>
-    <version>4.10.0</version>
-  </parent>
 
   <modules>
     <module>msg-platform-core</module>
@@ -41,7 +40,7 @@
     <ibmmq.version>9.4.3.1</ibmmq.version>
     <flyway.version>11.1.0</flyway.version>
     <junit.excludeTags>e2e</junit.excludeTags>
-    <junit.includeTags></junit.includeTags>
+    <junit.includeTags/>
 
     <!-- SonarCloud -->
     <sonar.projectKey>FreeSideNomad_messaging-platform</sonar.projectKey>
@@ -51,13 +50,6 @@
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/**/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <jacoco.version>0.8.12</jacoco.version>
   </properties>
-
-  <repositories>
-    <repository>
-      <id>central</id>
-      <url>https://repo.maven.apache.org/maven2</url>
-    </repository>
-  </repositories>
 
   <!-- Shared dependency management for all modules -->
   <dependencyManagement>
@@ -121,6 +113,13 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <repositories>
+    <repository>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+  </repositories>
 
   <build>
     <pluginManagement>
@@ -195,8 +194,71 @@
           <configuration>
             <useSystemClassLoader>false</useSystemClassLoader>
             <properties>
-              <configurationParameters>junit.jupiter.excludeTags=${junit.excludeTags}&#10;junit.jupiter.includeTags=${junit.includeTags}</configurationParameters>
+              <configurationParameters>junit.jupiter.excludeTags=${junit.excludeTags}
+junit.jupiter.includeTags=${junit.includeTags}</configurationParameters>
             </properties>
+          </configuration>
+        </plugin>
+        <!-- PMD for static code analysis -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>3.21.2</version>
+          <configuration>
+            <rulesets>
+              <ruleset>/rulesets/java/quickstart.xml</ruleset>
+            </rulesets>
+            <printFailingErrors>true</printFailingErrors>
+            <linkXRef>false</linkXRef>
+            <excludeRoots>
+              <excludeRoot>target/generated-sources</excludeRoot>
+            </excludeRoots>
+          </configuration>
+        </plugin>
+        <!-- Checkstyle for code style enforcement -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.3.1</version>
+          <configuration>
+            <configLocation>google_checks.xml</configLocation>
+            <consoleOutput>true</consoleOutput>
+            <violationSeverity>warning</violationSeverity>
+            <failOnViolation>false</failOnViolation>
+            <linkXRef>false</linkXRef>
+            <excludes>**/target/**/*,**/generated-sources/**/*</excludes>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>10.12.7</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <!-- Spotless for code formatting -->
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.43.0</version>
+          <configuration>
+            <java>
+              <googleJavaFormat>
+                <version>1.19.1</version>
+                <style>GOOGLE</style>
+              </googleJavaFormat>
+              <removeUnusedImports/>
+              <formatAnnotations/>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+            </java>
+            <pom>
+              <sortPom>
+                <expandEmptyElements>false</expandEmptyElements>
+              </sortPom>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+            </pom>
           </configuration>
         </plugin>
       </plugins>
@@ -207,21 +269,21 @@
     <profile>
       <id>e2e</id>
       <properties>
-        <junit.excludeTags></junit.excludeTags>
+        <junit.excludeTags/>
         <junit.includeTags>e2e</junit.includeTags>
       </properties>
     </profile>
     <profile>
       <id>performance</id>
       <properties>
-        <junit.excludeTags></junit.excludeTags>
+        <junit.excludeTags/>
         <junit.includeTags>performance</junit.includeTags>
       </properties>
     </profile>
     <profile>
       <id>endurance</id>
       <properties>
-        <junit.excludeTags></junit.excludeTags>
+        <junit.excludeTags/>
         <junit.includeTags>endurance</junit.includeTags>
       </properties>
     </profile>
@@ -241,10 +303,59 @@
               </execution>
               <execution>
                 <id>report</id>
-                <phase>test</phase>
                 <goals>
                   <goal>report</goal>
                 </goals>
+                <phase>test</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>code-quality</id>
+      <build>
+        <plugins>
+          <!-- Spotless: Auto-format code -->
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>spotless-check</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- PMD: Static code analysis -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-pmd-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>pmd-check</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Checkstyle: Code style checks -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>checkstyle-check</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
               </execution>
             </executions>
           </plugin>

@@ -2,18 +2,14 @@ package com.acme.reliable.persistence.jdbc.model;
 
 import io.micronaut.data.annotation.*;
 import io.micronaut.data.model.DataType;
+import java.io.Serializable;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
-import java.time.Instant;
-
-/**
- * Persistence model for Inbox table.
- * Contains Micronaut Data annotations for JDBC mapping.
- */
+/** Persistence model for Inbox table. Contains Micronaut Data annotations for JDBC mapping. */
 @MappedEntity("inbox")
 @Getter
 @Setter
@@ -21,23 +17,22 @@ import java.time.Instant;
 @AllArgsConstructor
 public class InboxEntity {
 
-    @EmbeddedId
-    private InboxId id;
+  @EmbeddedId private InboxId id;
 
-    @DateCreated
-    @MappedProperty(value = "processed_at", type = DataType.TIMESTAMP)
-    private Instant processedAt;
+  @DateCreated
+  @MappedProperty(value = "processed_at", type = DataType.TIMESTAMP)
+  private Instant processedAt;
 
-    @Embeddable
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class InboxId implements Serializable {
-        @MappedProperty(value = "message_id", type = DataType.STRING)
-        private String messageId;
+  @Embeddable
+  @Getter
+  @Setter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class InboxId implements Serializable {
+    @MappedProperty(value = "message_id", type = DataType.STRING)
+    private String messageId;
 
-        @MappedProperty(type = DataType.STRING)
-        private String handler;
-    }
+    @MappedProperty(type = DataType.STRING)
+    private String handler;
+  }
 }

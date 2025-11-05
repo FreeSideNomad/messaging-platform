@@ -8,13 +8,16 @@ import io.micronaut.data.model.query.builder.sql.Dialect;
 import io.micronaut.data.repository.GenericRepository;
 
 @JdbcRepository(dialect = Dialect.POSTGRES)
-public interface JdbcInboxRepository extends InboxRepository, GenericRepository<InboxEntity, InboxEntity.InboxId> {
+public interface JdbcInboxRepository
+    extends InboxRepository, GenericRepository<InboxEntity, InboxEntity.InboxId> {
 
-    @Query(value = """
+  @Query(
+      value =
+          """
         INSERT INTO inbox (message_id, handler)
         VALUES (:messageId, :handler)
         ON CONFLICT DO NOTHING
         """,
-        nativeQuery = true)
-    int insertIfAbsent(String messageId, String handler);
+      nativeQuery = true)
+  int insertIfAbsent(String messageId, String handler);
 }

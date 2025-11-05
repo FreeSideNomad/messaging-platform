@@ -1,9 +1,7 @@
 package com.acme.payments.domain.model;
 
-/**
- * Foreign exchange contract status
- */
+/** Foreign exchange contract status */
 public enum FxStatus {
-    BOOKED,
-    UNWOUND
+  BOOKED,
+  UNWOUND
 }

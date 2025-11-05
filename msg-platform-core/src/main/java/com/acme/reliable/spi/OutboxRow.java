@@ -10,6 +10,5 @@ public record OutboxRow(
     String key,
     String type,
     String payload,
-    Map<String,String> headers,
-    int attempts
-) {}
+    Map<String, String> headers,
+    int attempts) {}

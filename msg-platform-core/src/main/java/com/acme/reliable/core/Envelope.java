@@ -13,6 +13,5 @@ public record Envelope(
     UUID causationId,
     Instant occurredAt,
     String key,
-    Map<String,String> headers,
-    String payload
-) {}
+    Map<String, String> headers,
+    String payload) {}

@@ -11,44 +11,36 @@ import jakarta.inject.Singleton;
 /**
  * Factory for creating core domain beans with framework-specific configuration.
  *
- * This factory bridges the gap between framework-agnostic core POJOs and
- * Micronaut's dependency injection system. The core module remains free of
- * framework dependencies, while this processor module handles the DI wiring.
+ * <p>This factory bridges the gap between framework-agnostic core POJOs and Micronaut's dependency
+ * injection system. The core module remains free of framework dependencies, while this processor
+ * module handles the DI wiring.
  */
 @Factory
 public class CoreBeansFactory {
 
-    /**
-     * Creates TimeoutConfig bean populated from application.yml timeout.* properties
-     */
-    @Singleton
-    @ConfigurationProperties("timeout")
-    public TimeoutConfig timeoutConfig() {
-        return new TimeoutConfig();
-    }
+  /** Creates TimeoutConfig bean populated from application.yml timeout.* properties */
+  @Singleton
+  @ConfigurationProperties("timeout")
+  public TimeoutConfig timeoutConfig() {
+    return new TimeoutConfig();
+  }
 
-    /**
-     * Creates MessagingConfig bean populated from application.yml messaging.* properties
-     */
-    @Singleton
-    @ConfigurationProperties("messaging")
-    public MessagingConfig messagingConfig() {
-        return new MessagingConfig();
-    }
+  /** Creates MessagingConfig bean populated from application.yml messaging.* properties */
+  @Singleton
+  @ConfigurationProperties("messaging")
+  public MessagingConfig messagingConfig() {
+    return new MessagingConfig();
+  }
 
-    /**
-     * Creates CommandHandlerRegistry singleton
-     */
-    @Singleton
-    public CommandHandlerRegistry commandHandlerRegistry() {
-        return new CommandHandlerRegistry();
-    }
+  /** Creates CommandHandlerRegistry singleton */
+  @Singleton
+  public CommandHandlerRegistry commandHandlerRegistry() {
+    return new CommandHandlerRegistry();
+  }
 
-    /**
-     * Creates Outbox singleton with MessagingConfig dependency
-     */
-    @Singleton
-    public Outbox outbox(MessagingConfig messagingConfig) {
-        return new Outbox(messagingConfig);
-    }
+  /** Creates Outbox singleton with MessagingConfig dependency */
+  @Singleton
+  public Outbox outbox(MessagingConfig messagingConfig) {
+    return new Outbox(messagingConfig);
+  }
 }
