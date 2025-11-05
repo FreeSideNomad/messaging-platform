@@ -47,7 +47,6 @@
     <sonar.organization>freesidenomad</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.java.source>17</sonar.java.source>
-    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/**/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <sonar.exclusions>**/pmd-ruleset.xml,**/*.md,**/Dockerfile,**/.github/**,**/scripts/**</sonar.exclusions>
     <jacoco.version>0.8.12</jacoco.version>
   </properties>
