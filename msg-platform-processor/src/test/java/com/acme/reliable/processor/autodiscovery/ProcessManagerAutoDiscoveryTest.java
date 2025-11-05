@@ -5,7 +5,7 @@ import com.acme.reliable.process.ProcessConfiguration;
 import com.acme.reliable.process.ProcessGraph;
 import com.acme.reliable.process.ProcessGraphBuilder;
 import com.acme.reliable.command.DomainCommand;
-import com.acme.reliable.processor.CommandBus;
+import com.acme.reliable.command.CommandBus;
 import com.acme.reliable.processor.process.ProcessManager;
 import io.micronaut.context.BeanContext;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
@@ -159,7 +159,7 @@ class ProcessManagerAutoDiscoveryTest {
             () -> processManager.onApplicationEvent(mock(ServerStartupEvent.class))
         );
 
-        assertTrue(exception.getMessage().contains("Ambiguous process definition"));
+        assertTrue(exception.getMessage().contains("Ambiguous process configuration"));
         assertTrue(exception.getMessage().contains("TestProcess"));
     }
 

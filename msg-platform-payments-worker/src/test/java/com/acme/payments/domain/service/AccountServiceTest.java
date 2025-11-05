@@ -55,8 +55,7 @@ class AccountServiceTest {
             "USD",
             "001",
             AccountType.CHECKING,
-            false,
-            null // No limits
+            false
         );
 
         // When
@@ -83,17 +82,13 @@ class AccountServiceTest {
     @Test
     @DisplayName("createAccount - should create limit-based account")
     void testCreateAccount_LimitBased() {
-        // Given: limit-based account with limits
-        Map<PeriodType, Money> limits = Map.of(
-            PeriodType.DAY, Money.of(new BigDecimal("1000.00"), "EUR")
-        );
+        // Given: limit-based account (limits are created separately via CreateLimitsCommand)
         CreateAccountCommand command = new CreateAccountCommand(
             customerId,
             "EUR",
             "002",
             AccountType.SAVINGS,
-            true,  // limit-based
-            limits
+            true  // limit-based
         );
 
         // When

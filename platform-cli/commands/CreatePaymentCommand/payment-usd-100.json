@@ -1,0 +1,18 @@
+{
+  "debitAccountId": "650e8400-e29b-41d4-a716-446655440100",
+  "debitAmount": {
+    "amount": 100.00,
+    "currencyCode": "USD"
+  },
+  "creditAmount": {
+    "amount": 100.00,
+    "currencyCode": "USD"
+  },
+  "valueDate": "2025-11-05",
+  "beneficiary": {
+    "name": "Utility Company",
+    "accountNumber": "7777888899",
+    "transitNumber": "22222",
+    "bankName": "Utility Bank"
+  }
+}

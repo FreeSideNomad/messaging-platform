@@ -101,8 +101,7 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "USD",
             "001",
             AccountType.CHECKING,
-            false,
-            null // No limits
+            false
         );
 
         // When - Create account through service
@@ -129,8 +128,7 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "USD",
             "001",
             AccountType.CHECKING,
-            false,
-            null // No limits
+            false
         );
         Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
         UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
@@ -186,8 +184,7 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "USD",
             "001",
             AccountType.CHECKING,
-            false,
-            null // No limits
+            false
         );
         Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
         UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
@@ -229,7 +226,6 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
 
     @Test
     @Transactional
-    @Disabled("TODO: Transaction loading needs investigation - transactions not being retrieved")
     @DisplayName("E2E: Account transaction management")
     void testAccountTransactionManagement() {
         // Given - Create account
@@ -239,8 +235,7 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
             "EUR",
             "002",
             AccountType.SAVINGS,
-            false,
-            null // No limits
+            false
         );
         Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
         UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
@@ -273,13 +268,13 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
         UUID customer2 = UUID.randomUUID();
 
         Map<String, Object> result1 = accountService.handleCreateAccount(new CreateAccountCommand(
-            customer1, "USD", "001", AccountType.CHECKING, false, null
+            customer1, "USD", "001", AccountType.CHECKING, false
         ));
         UUID accountId1 = UUID.fromString((String) result1.get("accountId"));
         Account account1 = accountRepository.findById(accountId1).orElseThrow();
 
         Map<String, Object> result2 = accountService.handleCreateAccount(new CreateAccountCommand(
-            customer2, "EUR", "002", AccountType.SAVINGS, false, null
+            customer2, "EUR", "002", AccountType.SAVINGS, false
         ));
         UUID accountId2 = UUID.fromString((String) result2.get("accountId"));
         Account account2 = accountRepository.findById(accountId2).orElseThrow();
@@ -325,7 +320,7 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
         // Given - Create account
         UUID customerId = UUID.randomUUID();
         Map<String, Object> accountResult = accountService.handleCreateAccount(new CreateAccountCommand(
-            customerId, "USD", "001", AccountType.CHECKING, false, null
+            customerId, "USD", "001", AccountType.CHECKING, false
         ));
         UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
         Account account = accountRepository.findById(accountId).orElseThrow();

@@ -1,0 +1,21 @@
+{
+  "customerId": "550e8400-e29b-41d4-a716-446655440003",
+  "currencyCode": "CAD",
+  "transitNumber": "67890",
+  "accountType": "CHECKING",
+  "limitBased": true,
+  "limits": {
+    "DAY": {
+      "amount": 5000.00,
+      "currencyCode": "CAD"
+    },
+    "WEEK": {
+      "amount": 25000.00,
+      "currencyCode": "CAD"
+    },
+    "MONTH": {
+      "amount": 100000.00,
+      "currencyCode": "CAD"
+    }
+  }
+}

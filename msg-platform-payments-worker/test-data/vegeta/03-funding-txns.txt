@@ -1,0 +1,155 @@
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","transactionType":"CREDIT","amount":{"amount":5165.50,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Account funding - Gorgeous Concrete Bottle"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","transactionType":"CREDIT","amount":{"amount":6202.35,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Account funding - Ergonomic Steel Plate"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","transactionType":"CREDIT","amount":{"amount":9446.68,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Account funding - Mediocre Plastic Wallet"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","transactionType":"CREDIT","amount":{"amount":7357.48,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Account funding - Small Silk Computer"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","transactionType":"CREDIT","amount":{"amount":18586.54,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Account funding - Small Wool Shirt"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","transactionType":"CREDIT","amount":{"amount":6027.10,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Account funding - Aerodynamic Rubber Knife"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","transactionType":"CREDIT","amount":{"amount":17150.17,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"description":"Account funding - Sleek Copper Coat"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","transactionType":"CREDIT","amount":{"amount":3033.03,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"description":"Account funding - Sleek Bronze Hat"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","transactionType":"CREDIT","amount":{"amount":9959.96,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"description":"Account funding - Rustic Marble Lamp"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","transactionType":"CREDIT","amount":{"amount":1755.80,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"description":"Account funding - Rustic Marble Shirt"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","transactionType":"CREDIT","amount":{"amount":3092.63,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Intelligent Aluminum Chair"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","transactionType":"CREDIT","amount":{"amount":9658.79,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Mediocre Bronze Car"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","transactionType":"CREDIT","amount":{"amount":1775.95,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Enormous Linen Computer"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","transactionType":"CREDIT","amount":{"amount":5976.20,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Synergistic Aluminum Bag"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","transactionType":"CREDIT","amount":{"amount":5852.63,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Durable Rubber Table"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","transactionType":"CREDIT","amount":{"amount":12647.97,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Heavy Duty Steel Shirt"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","transactionType":"CREDIT","amount":{"amount":6464.61,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Fantastic Cotton Pants"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","transactionType":"CREDIT","amount":{"amount":17348.11,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Intelligent Wooden Clock"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","transactionType":"CREDIT","amount":{"amount":9607.12,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Incredible Granite Plate"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","transactionType":"CREDIT","amount":{"amount":6495.92,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Lightweight Wool Computer"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","transactionType":"CREDIT","amount":{"amount":6640.19,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Ergonomic Copper Computer"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","transactionType":"CREDIT","amount":{"amount":16630.85,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Enormous Wool Bench"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","transactionType":"CREDIT","amount":{"amount":8878.79,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Synergistic Cotton Hat"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","transactionType":"CREDIT","amount":{"amount":3909.88,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Incredible Steel Bag"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","transactionType":"CREDIT","amount":{"amount":8834.93,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Account funding - Gorgeous Linen Clock"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"0270276c-d0be-4878-9785-8fc24d676b12","transactionType":"CREDIT","amount":{"amount":11781.89,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Durable Wooden Coat"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"0270276c-d0be-4878-9785-8fc24d676b12","transactionType":"CREDIT","amount":{"amount":10758.17,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Lightweight Bronze Bottle"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"0270276c-d0be-4878-9785-8fc24d676b12","transactionType":"CREDIT","amount":{"amount":15769.91,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Gorgeous Paper Bench"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","transactionType":"CREDIT","amount":{"amount":6434.21,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Heavy Duty Cotton Car"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","transactionType":"CREDIT","amount":{"amount":9966.40,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Ergonomic Paper Hat"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","transactionType":"CREDIT","amount":{"amount":14815.32,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Account funding - Ergonomic Bronze Keyboard"}
+

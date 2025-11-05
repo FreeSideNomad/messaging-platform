@@ -1,0 +1,365 @@
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":1503.34,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":1503.34,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Malcolm Parker III","accountNumber":"ACC4818228687","transitNumber":"001","bankName":"United Credit Bank"},"description":"Payment for Synergistic Marble Computer"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":1202.80,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":1202.80,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Ebonie Nitzsche","accountNumber":"ACC9745626037","transitNumber":"010","bankName":"Metropolitan Bank"},"description":"Payment for Intelligent Copper Watch"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":113.11,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":113.11,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Simone Schowalter","accountNumber":"ACC8590574485","transitNumber":"005","bankName":"Global Trust Bank"},"description":"Payment for Rustic Plastic Pants"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":289.11,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":289.11,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Enid Jacobson","accountNumber":"ACC6678782391","transitNumber":"004","bankName":"City Savings Bank"},"description":"Payment for Rustic Silk Coat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":44.68,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":44.68,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Arielle Hessel","accountNumber":"ACC9388015028","transitNumber":"006","bankName":"Metropolitan Bank"},"description":"Payment for Fantastic Steel Bag"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":232.18,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":232.18,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Peter Hettinger","accountNumber":"ACC1118042748","transitNumber":"007","bankName":"United Credit Bank"},"description":"Payment for Aerodynamic Aluminum Bench"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":269.05,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":269.05,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Maude Jenkins","accountNumber":"ACC8673274300","transitNumber":"004","bankName":"Metropolitan Bank"},"description":"Payment for Incredible Linen Bag"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":1486.16,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":1486.16,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Lilia Lind","accountNumber":"ACC2728076214","transitNumber":"001","bankName":"Metropolitan Bank"},"description":"Payment for Lightweight Wooden Chair"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":2020.10,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":2020.10,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Shelton Champlin","accountNumber":"ACC5382212243","transitNumber":"006","bankName":"First National Bank"},"description":"Payment for Awesome Plastic Knife"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","debitAccountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","debitAmount":{"amount":359.04,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":359.04,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Kenneth Wuckert","accountNumber":"ACC1062685835","transitNumber":"006","bankName":"Metropolitan Bank"},"description":"Payment for Synergistic Granite Gloves"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":4658.51,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":4658.51,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Vania Wisoky II","accountNumber":"ACC7329803511","transitNumber":"007","bankName":"Metropolitan Bank"},"description":"Payment for Aerodynamic Leather Keyboard"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":1580.89,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":1580.89,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Aurelio Reilly Jr.","accountNumber":"ACC1000313223","transitNumber":"002","bankName":"United Credit Bank"},"description":"Payment for Small Concrete Pants"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":616.73,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":616.73,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Fairy Dietrich Jr.","accountNumber":"ACC1790189597","transitNumber":"001","bankName":"United Credit Bank"},"description":"Payment for Incredible Marble Keyboard"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":732.59,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":732.59,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Nathanial Hoppe DDS","accountNumber":"ACC5861434290","transitNumber":"010","bankName":"Metropolitan Bank"},"description":"Payment for Enormous Steel Hat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":702.95,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":702.95,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Neva Ernser V","accountNumber":"ACC6727707017","transitNumber":"009","bankName":"Global Trust Bank"},"description":"Payment for Synergistic Paper Keyboard"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":3258.61,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":3258.61,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Hermelinda Blanda","accountNumber":"ACC9486318871","transitNumber":"007","bankName":"City Savings Bank"},"description":"Payment for Synergistic Concrete Hat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":484.18,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":484.18,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Alysia Macejkovic","accountNumber":"ACC0353521252","transitNumber":"007","bankName":"United Credit Bank"},"description":"Payment for Incredible Plastic Pants"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":4065.04,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":4065.04,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Miss Loria Baumbach","accountNumber":"ACC2852857768","transitNumber":"001","bankName":"City Savings Bank"},"description":"Payment for Incredible Steel Coat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","debitAccountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","debitAmount":{"amount":467.17,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":467.17,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Terrell Mohr","accountNumber":"ACC4571887385","transitNumber":"007","bankName":"United Credit Bank"},"description":"Payment for Durable Linen Shoes"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","debitAccountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","debitAmount":{"amount":570.72,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":570.72,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Willa Hilpert DDS","accountNumber":"ACC2528374258","transitNumber":"008","bankName":"City Savings Bank"},"description":"Payment for Gorgeous Cotton Hat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","debitAccountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","debitAmount":{"amount":7301.93,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":7301.93,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Hulda Wilkinson V","accountNumber":"ACC0025620730","transitNumber":"009","bankName":"First National Bank"},"description":"Payment for Small Steel Watch"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","debitAccountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","debitAmount":{"amount":6172.86,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":6172.86,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Madeleine Wyman","accountNumber":"ACC8302421958","transitNumber":"002","bankName":"Metropolitan Bank"},"description":"Payment for Aerodynamic Plastic Car"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","debitAccountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","debitAmount":{"amount":251.83,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":251.83,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Brittni Grady","accountNumber":"ACC0568116553","transitNumber":"004","bankName":"First National Bank"},"description":"Payment for Incredible Copper Car"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","debitAccountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","debitAmount":{"amount":391.02,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":391.02,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Gwen Ledner","accountNumber":"ACC8791173883","transitNumber":"007","bankName":"Global Trust Bank"},"description":"Payment for Practical Plastic Knife"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","debitAccountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","debitAmount":{"amount":831.19,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":831.19,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Aundrea Lowe Sr.","accountNumber":"ACC0388075824","transitNumber":"010","bankName":"Metropolitan Bank"},"description":"Payment for Heavy Duty Concrete Gloves"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","debitAccountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","debitAmount":{"amount":8167.74,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":8167.74,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Luigi Sawayn","accountNumber":"ACC6732143606","transitNumber":"001","bankName":"Global Trust Bank"},"description":"Payment for Aerodynamic Granite Knife"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"f067a53b-c3d0-4149-ac78-a1545d75ee58","debitAccountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","debitAmount":{"amount":395.29,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":395.29,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Sandee Purdy","accountNumber":"ACC3975786058","transitNumber":"004","bankName":"United Credit Bank"},"description":"Payment for Practical Cotton Plate"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"f067a53b-c3d0-4149-ac78-a1545d75ee58","debitAccountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","debitAmount":{"amount":15.96,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":15.96,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Corey Zemlak","accountNumber":"ACC0844117563","transitNumber":"006","bankName":"Metropolitan Bank"},"description":"Payment for Fantastic Iron Coat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"f067a53b-c3d0-4149-ac78-a1545d75ee58","debitAccountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","debitAmount":{"amount":20.11,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":20.11,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Darell Lubowitz","accountNumber":"ACC9811405500","transitNumber":"009","bankName":"First National Bank"},"description":"Payment for Durable Leather Bag"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"f067a53b-c3d0-4149-ac78-a1545d75ee58","debitAccountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","debitAmount":{"amount":200.15,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":200.15,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Vito O'Reilly","accountNumber":"ACC0803507870","transitNumber":"001","bankName":"City Savings Bank"},"description":"Payment for Mediocre Linen Knife"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"f067a53b-c3d0-4149-ac78-a1545d75ee58","debitAccountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","debitAmount":{"amount":1574.15,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":1574.15,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Beatris Deckow","accountNumber":"ACC2037114384","transitNumber":"005","bankName":"United Credit Bank"},"description":"Payment for Heavy Duty Iron Shoes"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":4750.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":4750.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Chantell Conn","accountNumber":"ACC2594644304","transitNumber":"002","bankName":"United Credit Bank"},"description":"Payment for Durable Linen Clock"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":115.83,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":115.83,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Mr. Alonso Schoen","accountNumber":"ACC3362773883","transitNumber":"001","bankName":"First National Bank"},"description":"Payment for Lightweight Copper Keyboard"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":1064.07,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":1064.07,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Dr. Naida Denesik","accountNumber":"ACC5288203606","transitNumber":"005","bankName":"First National Bank"},"description":"Payment for Fantastic Steel Bottle"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":238.24,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":238.24,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Rupert Haag","accountNumber":"ACC5087742636","transitNumber":"001","bankName":"Global Trust Bank"},"description":"Payment for Mediocre Bronze Watch"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":104.01,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":104.01,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Loren Reichert","accountNumber":"ACC8562439064","transitNumber":"006","bankName":"Global Trust Bank"},"description":"Payment for Ergonomic Wool Table"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":433.41,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":433.41,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Lise Keeling","accountNumber":"ACC4077399213","transitNumber":"004","bankName":"First National Bank"},"description":"Payment for Heavy Duty Iron Bench"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":407.45,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":407.45,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Moses Rutherford","accountNumber":"ACC4234047204","transitNumber":"001","bankName":"Metropolitan Bank"},"description":"Payment for Sleek Bronze Gloves"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":242.46,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":242.46,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Ling Walsh","accountNumber":"ACC9930852792","transitNumber":"008","bankName":"City Savings Bank"},"description":"Payment for Aerodynamic Bronze Knife"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","debitAccountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","debitAmount":{"amount":3904.99,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":3904.99,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Ramon McLaughlin","accountNumber":"ACC8806911586","transitNumber":"002","bankName":"Metropolitan Bank"},"description":"Payment for Mediocre Steel Bench"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"fb7da5b9-aca0-4d38-806a-5197a6fddb35","debitAccountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","debitAmount":{"amount":9500.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":9500.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Aundrea Crooks","accountNumber":"ACC6807363433","transitNumber":"008","bankName":"Metropolitan Bank"},"description":"Payment for Awesome Marble Computer"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"fb7da5b9-aca0-4d38-806a-5197a6fddb35","debitAccountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","debitAmount":{"amount":560.06,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":300.11,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Misty Jaskolski","accountNumber":"ACC2641136576","transitNumber":"001","bankName":"City Savings Bank"},"description":"FX Payment for Aerodynamic Marble Car"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"fb7da5b9-aca0-4d38-806a-5197a6fddb35","debitAccountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","debitAmount":{"amount":931.78,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":931.78,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Pauline Emard","accountNumber":"ACC1604962664","transitNumber":"007","bankName":"Metropolitan Bank"},"description":"Payment for Mediocre Bronze Computer"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"fb7da5b9-aca0-4d38-806a-5197a6fddb35","debitAccountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","debitAmount":{"amount":7050.92,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":7050.92,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Estefana Wolff","accountNumber":"ACC6831739426","transitNumber":"004","bankName":"First National Bank"},"description":"Payment for Small Linen Table"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"fb7da5b9-aca0-4d38-806a-5197a6fddb35","debitAccountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","debitAmount":{"amount":3930.82,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":3930.82,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Jeramy Keebler DVM","accountNumber":"ACC1585821440","transitNumber":"008","bankName":"United Credit Bank"},"description":"Payment for Lightweight Plastic Shirt"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"fb7da5b9-aca0-4d38-806a-5197a6fddb35","debitAccountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","debitAmount":{"amount":9500.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":9500.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Nguyet Durgan DVM","accountNumber":"ACC4041761854","transitNumber":"007","bankName":"United Credit Bank"},"description":"Payment for Awesome Concrete Table"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0308ac98-6c48-4567-98d4-f3f5cc85c4cf","debitAccountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","debitAmount":{"amount":311.24,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":311.24,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Elmer Streich","accountNumber":"ACC5015140617","transitNumber":"001","bankName":"First National Bank"},"description":"Payment for Mediocre Paper Shirt"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0308ac98-6c48-4567-98d4-f3f5cc85c4cf","debitAccountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","debitAmount":{"amount":464.31,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":464.31,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Jeffie Hills","accountNumber":"ACC4982579264","transitNumber":"004","bankName":"Metropolitan Bank"},"description":"Payment for Heavy Duty Leather Shoes"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0308ac98-6c48-4567-98d4-f3f5cc85c4cf","debitAccountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","debitAmount":{"amount":90.36,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":90.36,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Bernice Kilback","accountNumber":"ACC5652412535","transitNumber":"010","bankName":"City Savings Bank"},"description":"Payment for Sleek Copper Hat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0308ac98-6c48-4567-98d4-f3f5cc85c4cf","debitAccountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","debitAmount":{"amount":385.07,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":385.07,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Dorian Pollich","accountNumber":"ACC6008541032","transitNumber":"006","bankName":"Metropolitan Bank"},"description":"Payment for Ergonomic Bronze Bench"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"0308ac98-6c48-4567-98d4-f3f5cc85c4cf","debitAccountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","debitAmount":{"amount":1957.56,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":1957.56,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Cammie Wisozk","accountNumber":"ACC7516746920","transitNumber":"005","bankName":"Metropolitan Bank"},"description":"Payment for Mediocre Plastic Bottle"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"1af07375-0fad-408e-ab31-5a69a00899b2","debitAccountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","debitAmount":{"amount":279.46,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":279.46,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Mei Carter","accountNumber":"ACC1708107434","transitNumber":"002","bankName":"First National Bank"},"description":"Payment for Small Plastic Shirt"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"1af07375-0fad-408e-ab31-5a69a00899b2","debitAccountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","debitAmount":{"amount":3954.86,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":3954.86,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Minh Rau","accountNumber":"ACC1470293977","transitNumber":"009","bankName":"Global Trust Bank"},"description":"Payment for Mediocre Concrete Chair"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"1af07375-0fad-408e-ab31-5a69a00899b2","debitAccountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","debitAmount":{"amount":2651.19,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":2651.19,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Cory Funk IV","accountNumber":"ACC8489317627","transitNumber":"010","bankName":"City Savings Bank"},"description":"Payment for Rustic Wooden Knife"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"1af07375-0fad-408e-ab31-5a69a00899b2","debitAccountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","debitAmount":{"amount":2461.26,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":2461.26,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Bruce Heller DVM","accountNumber":"ACC4399439167","transitNumber":"010","bankName":"Metropolitan Bank"},"description":"Payment for Intelligent Linen Hat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"1af07375-0fad-408e-ab31-5a69a00899b2","debitAccountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","debitAmount":{"amount":793.08,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":793.08,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Miss Hedy Pfeffer","accountNumber":"ACC3715695670","transitNumber":"006","bankName":"United Credit Bank"},"description":"Payment for Gorgeous Silk Bag"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"1af07375-0fad-408e-ab31-5a69a00899b2","debitAccountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","debitAmount":{"amount":3720.73,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":3720.73,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Gerardo Johnson","accountNumber":"ACC7113272116","transitNumber":"007","bankName":"United Credit Bank"},"description":"Payment for Lightweight Linen Clock"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":575.14,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":575.14,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Dr. Rod Bartoletti","accountNumber":"ACC1654312542","transitNumber":"006","bankName":"First National Bank"},"description":"Payment for Synergistic Silk Clock"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":3718.85,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":3718.85,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Alta Hickle","accountNumber":"ACC4213861368","transitNumber":"006","bankName":"Global Trust Bank"},"description":"Payment for Incredible Wooden Table"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":7068.16,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":7068.16,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Gino Skiles","accountNumber":"ACC2827518703","transitNumber":"004","bankName":"United Credit Bank"},"description":"Payment for Fantastic Silk Watch"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":145.57,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":145.57,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Kasey Prohaska Jr.","accountNumber":"ACC9560972709","transitNumber":"003","bankName":"United Credit Bank"},"description":"Payment for Synergistic Wool Plate"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":491.81,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":491.81,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Dustin Reichert","accountNumber":"ACC2418337518","transitNumber":"005","bankName":"First National Bank"},"description":"Payment for Fantastic Plastic Computer"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":7962.81,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":7962.81,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Dr. Francesco Schmidt","accountNumber":"ACC8263188335","transitNumber":"004","bankName":"First National Bank"},"description":"Payment for Awesome Copper Coat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":935.55,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":935.55,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Therese Quitzon","accountNumber":"ACC8164118324","transitNumber":"003","bankName":"First National Bank"},"description":"Payment for Awesome Plastic Hat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","debitAccountId":"0270276c-d0be-4878-9785-8fc24d676b12","debitAmount":{"amount":4321.02,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":5502.65,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-07","beneficiary":{"name":"Miss Bernita Mann","accountNumber":"ACC5962254617","transitNumber":"001","bankName":"City Savings Bank"},"description":"FX Payment for Awesome Wooden Pants"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":971.90,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":971.90,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Scott Dickinson","accountNumber":"ACC8366147401","transitNumber":"006","bankName":"United Credit Bank"},"description":"Payment for Ergonomic Copper Hat"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":905.71,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":905.71,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Clair Olson","accountNumber":"ACC8444685772","transitNumber":"008","bankName":"United Credit Bank"},"description":"Payment for Enormous Wool Gloves"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":2474.41,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":2474.41,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-09","beneficiary":{"name":"Miss Branda Klein","accountNumber":"ACC2102347524","transitNumber":"002","bankName":"City Savings Bank"},"description":"Payment for Enormous Linen Clock"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":5672.70,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":5672.70,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Miss Janie Powlowski","accountNumber":"ACC4806872068","transitNumber":"001","bankName":"First National Bank"},"description":"Payment for Ergonomic Copper Knife"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":5255.28,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":5255.28,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-05","beneficiary":{"name":"Forest Kovacek","accountNumber":"ACC3432236352","transitNumber":"005","bankName":"First National Bank"},"description":"Payment for Ergonomic Aluminum Chair"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":238.18,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":238.18,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-10","beneficiary":{"name":"Amelia Rohan","accountNumber":"ACC5305320546","transitNumber":"005","bankName":"First National Bank"},"description":"Payment for Gorgeous Plastic Table"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":180.56,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":180.56,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-08","beneficiary":{"name":"Candyce Hane PhD","accountNumber":"ACC3828112335","transitNumber":"005","bankName":"United Credit Bank"},"description":"Payment for Small Granite Shirt"}
+
+POST http://localhost:8080/api/payments
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","debitAccountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","debitAmount":{"amount":7450.80,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"creditAmount":{"amount":7450.80,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"valueDate":"2025-11-06","beneficiary":{"name":"Van West","accountNumber":"ACC4718475319","transitNumber":"003","bankName":"Global Trust Bank"},"description":"Payment for Lightweight Wooden Car"}
+

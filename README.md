@@ -154,6 +154,7 @@ Key configurations:
 
 ## 📚 Documentation
 
+- **[Developer's Guide](DEVELOPERS-GUIDE.md)** - Complete guide for building applications on this framework
 - [Implementation Guide](IMPLEMENTATION-COMPLETE-GUIDE.md)
 - [Process Manager Status](PROCESS-MANAGER-STATUS.md)
 - [Testing Summary](TESTING-COMPLETE-SUMMARY.md)

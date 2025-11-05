@@ -1,7 +1,9 @@
 package com.acme.payments.infrastructure.persistence;
 
 import com.acme.payments.domain.model.Account;
+import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.Transaction;
+import com.acme.payments.domain.model.TransactionType;
 import com.acme.payments.domain.repository.AccountRepository;
 import io.micronaut.data.annotation.Query;
 import io.micronaut.data.jdbc.annotation.JdbcRepository;
@@ -48,7 +50,8 @@ public class JdbcAccountRepository implements AccountRepository {
             // Save transactions
             saveTransactions(conn, account);
 
-            conn.commit();
+            // Don't commit here - let the ambient transaction (if any) handle it
+            // This allows repositories to work both in tests (@Transactional) and production
         } catch (SQLException e) {
             log.error("Error saving account: {}", account.getAccountId(), e);
             throw new RuntimeException("Failed to save account", e);
@@ -210,11 +213,37 @@ public class JdbcAccountRepository implements AccountRepository {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    // Transactions are already loaded into the account during construction
-                    // This is a read operation, so we don't need to modify the account
+                    Transaction transaction = mapTransaction(rs);
+                    account.restoreTransaction(transaction);
                 }
             }
         }
+    }
+
+    private Transaction mapTransaction(ResultSet rs) throws SQLException {
+        UUID transactionId = (UUID) rs.getObject("transaction_id");
+        UUID accountId = (UUID) rs.getObject("account_id");
+        java.time.Instant transactionDate = rs.getTimestamp("transaction_date").toInstant();
+        TransactionType transactionType = TransactionType.valueOf(rs.getString("transaction_type"));
+        Money amount = new Money(
+            rs.getBigDecimal("amount").setScale(2, java.math.RoundingMode.HALF_UP),
+            rs.getString("currency_code")
+        );
+        String description = rs.getString("description");
+        Money balance = new Money(
+            rs.getBigDecimal("balance").setScale(2, java.math.RoundingMode.HALF_UP),
+            rs.getString("currency_code")
+        );
+
+        return new Transaction(
+            transactionId,
+            accountId,
+            transactionDate,
+            transactionType,
+            amount,
+            description,
+            balance
+        );
     }
 
     private Account mapAccount(ResultSet rs) throws SQLException {

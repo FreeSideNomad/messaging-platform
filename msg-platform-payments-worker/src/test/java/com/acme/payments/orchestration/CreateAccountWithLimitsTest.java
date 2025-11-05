@@ -1,6 +1,6 @@
 package com.acme.payments.orchestration;
 
-import com.acme.payments.application.command.CreateAccountCommand;
+import com.acme.payments.application.command.InitiateCreateAccountProcess;
 import com.acme.payments.domain.model.AccountType;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
@@ -13,13 +13,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for CreateAccountCommand with limits
+ * Tests for InitiateCreateAccountProcess command validation with limits
  */
 class CreateAccountWithLimitsTest {
 
     @Test
-    void testCreateAccountCommand_WithLimits_Success() {
-        // Given: A create account command with limits
+    void testInitiateCreateAccountProcess_WithLimits_Success() {
+        // Given: An initiate process command with limits
         UUID customerId = UUID.randomUUID();
         Map<PeriodType, Money> limits = Map.of(
             PeriodType.HOUR, Money.of(BigDecimal.valueOf(1000.00), "USD"),
@@ -28,7 +28,7 @@ class CreateAccountWithLimitsTest {
         );
 
         // When: Creating the command
-        CreateAccountCommand cmd = new CreateAccountCommand(
+        InitiateCreateAccountProcess cmd = new InitiateCreateAccountProcess(
             customerId,
             "USD",
             "12345",
@@ -46,13 +46,13 @@ class CreateAccountWithLimitsTest {
     }
 
     @Test
-    void testCreateAccountCommand_LimitBased_NoLimits_ThrowsException() {
+    void testInitiateCreateAccountProcess_LimitBased_NoLimits_ThrowsException() {
         // Given: A limit-based account without limits
         UUID customerId = UUID.randomUUID();
 
         // When/Then: Creating the command should throw exception
         assertThrows(IllegalArgumentException.class, () -> {
-            new CreateAccountCommand(
+            new InitiateCreateAccountProcess(
                 customerId,
                 "USD",
                 "12345",
@@ -64,7 +64,7 @@ class CreateAccountWithLimitsTest {
     }
 
     @Test
-    void testCreateAccountCommand_NotLimitBased_WithLimits_ThrowsException() {
+    void testInitiateCreateAccountProcess_NotLimitBased_WithLimits_ThrowsException() {
         // Given: A non-limit-based account with limits
         UUID customerId = UUID.randomUUID();
         Map<PeriodType, Money> limits = Map.of(
@@ -73,30 +73,30 @@ class CreateAccountWithLimitsTest {
 
         // When/Then: Creating the command should throw exception
         assertThrows(IllegalArgumentException.class, () -> {
-            new CreateAccountCommand(
+            new InitiateCreateAccountProcess(
                 customerId,
                 "USD",
                 "12345",
                 AccountType.CHECKING,
-                false, // Not limit-based
-                limits // But limits provided
+                false,
+                limits // Limits provided for non-limit-based account
             );
         });
     }
 
     @Test
-    void testCreateAccountCommand_NotLimitBased_NoLimits_Success() {
+    void testInitiateCreateAccountProcess_NotLimitBased_NoLimits_Success() {
         // Given: A non-limit-based account without limits
         UUID customerId = UUID.randomUUID();
 
         // When: Creating the command
-        CreateAccountCommand cmd = new CreateAccountCommand(
+        InitiateCreateAccountProcess cmd = new InitiateCreateAccountProcess(
             customerId,
             "USD",
             "12345",
             AccountType.CHECKING,
             false,
-            null
+            null // No limits
         );
 
         // Then: Command is created successfully
@@ -106,7 +106,7 @@ class CreateAccountWithLimitsTest {
     }
 
     @Test
-    void testCreateAccountCommand_MismatchedCurrency_ThrowsException() {
+    void testInitiateCreateAccountProcess_MismatchedCurrency_ThrowsException() {
         // Given: Limits with different currency than account
         UUID customerId = UUID.randomUUID();
         Map<PeriodType, Money> limits = Map.of(
@@ -115,13 +115,13 @@ class CreateAccountWithLimitsTest {
 
         // When/Then: Creating the command should throw exception
         assertThrows(IllegalArgumentException.class, () -> {
-            new CreateAccountCommand(
+            new InitiateCreateAccountProcess(
                 customerId,
                 "USD", // USD currency
                 "12345",
                 AccountType.CHECKING,
                 true,
-                limits
+                limits // EUR limits for USD account
             );
         });
     }

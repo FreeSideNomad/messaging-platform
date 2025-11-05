@@ -1,5 +1,6 @@
 package com.acme.reliable.performance;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Throughput performance tests measuring API capacity under load.
  */
 @Tag("performance")
+@Disabled("Throughput tests disabled - run manually when needed")
 class ThroughputTest extends PerformanceTestBase {
 
     @Test

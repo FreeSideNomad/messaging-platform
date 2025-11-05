@@ -6,6 +6,7 @@ import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.CommandReply;
 import io.micronaut.context.BeanContext;
 import io.micronaut.context.annotation.Context;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.inject.BeanDefinition;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Auto-discovers and registers command handlers using reflection and convention.
@@ -38,17 +38,40 @@ import java.util.UUID;
  * </pre>
  */
 @Context
+@Requires(notEnv = "test")
 @RequiredArgsConstructor
 @Slf4j
 public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
     private final BeanContext beanContext;
 
+    /**
+     * Holds a candidate handler method with its bean and metadata
+     */
+    private static class HandlerCandidate {
+        final String commandType;
+        final Object bean;
+        final Method method;
+        final Class<?> commandClass;
+        final boolean isProxy;
+        final String beanClassName;
+
+        HandlerCandidate(String commandType, Object bean, Method method, Class<?> commandClass, boolean isProxy, String beanClassName) {
+            this.commandType = commandType;
+            this.bean = bean;
+            this.method = method;
+            this.commandClass = commandClass;
+            this.isProxy = isProxy;
+            this.beanClassName = beanClassName;
+        }
+    }
+
     @PostConstruct
     public void discoverAndRegisterHandlers() {
         log.info("Auto-discovering command handlers...");
-        int handlersRegistered = 0;
 
-        // Scan all bean definitions
+        // Phase 1: Collect all candidates (including duplicates from proxies)
+        Map<String, List<HandlerCandidate>> candidatesByCommandType = new HashMap<>();
+
         for (BeanDefinition<?> beanDefinition : beanContext.getAllBeanDefinitions()) {
             Class<?> beanClass = beanDefinition.getBeanType();
 
@@ -57,11 +80,28 @@ public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
                 continue;
             }
 
-            // Get the actual bean instance
-            Object bean = beanContext.getBean(beanClass);
+            // Get the actual bean instance - skip if not available yet
+            Object bean;
+            try {
+                bean = beanContext.getBean(beanClass);
+            } catch (Exception e) {
+                // Skip beans that aren't available yet during initialization
+                log.debug("Skipping bean {} - not yet available: {}", beanClass.getSimpleName(), e.getMessage());
+                continue;
+            }
 
-            // Scan all methods in the bean
-            for (Method method : beanClass.getMethods()) {
+            // Determine if this bean is a proxy (has transactional or other AOP)
+            Class<?> actualBeanClass = bean.getClass();
+            boolean isProxy = actualBeanClass.getName().contains("$Intercepted") ||
+                            actualBeanClass.getName().contains("$Proxy");
+
+            // Scan all methods in the bean class
+            for (Method method : actualBeanClass.getMethods()) {
+                // Skip Micronaut AOP accessor methods (e.g., $$access$$methodName)
+                if (method.getName().contains("$$access$$")) {
+                    continue;
+                }
+
                 // Check if method has exactly one parameter that implements DomainCommand
                 if (method.getParameterCount() == 1) {
                     Parameter param = method.getParameters()[0];
@@ -71,32 +111,79 @@ public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
                         // Derive command type from class name
                         String commandType = deriveCommandType(paramType);
 
-                        // Register handler with detailed error on conflict
-                        try {
-                            registerAutoHandler(commandType, bean, method, paramType);
-                            handlersRegistered++;
+                        // Add to candidates list
+                        HandlerCandidate candidate = new HandlerCandidate(
+                            commandType,
+                            bean,
+                            method,
+                            paramType,
+                            isProxy,
+                            actualBeanClass.getSimpleName()
+                        );
 
-                            log.info("Auto-registered handler: {} -> {}.{}({})",
-                                commandType,
-                                beanClass.getSimpleName(),
-                                method.getName(),
-                                paramType.getSimpleName());
-                        } catch (IllegalStateException e) {
-                            String errorMsg = String.format(
-                                "Ambiguous handler registration for command type '%s': " +
-                                "Cannot register %s.%s(%s) - a handler is already registered. " +
-                                "Only one method per command type is allowed.",
-                                commandType,
-                                beanClass.getName(),
-                                method.getName(),
-                                paramType.getSimpleName()
-                            );
-                            log.error(errorMsg);
-                            throw new IllegalStateException(errorMsg, e);
-                        }
+                        candidatesByCommandType
+                            .computeIfAbsent(commandType, k -> new ArrayList<>())
+                            .add(candidate);
+
+                        log.debug("Found candidate handler: {} -> {}.{}({}) [proxy={}]",
+                            commandType,
+                            actualBeanClass.getSimpleName(),
+                            method.getName(),
+                            paramType.getSimpleName(),
+                            isProxy);
                     }
                 }
             }
+        }
+
+        // Phase 2: Consolidate and register one handler per command type
+        // Prefer proxies (for @Transactional support) over plain beans
+        int handlersRegistered = 0;
+        for (Map.Entry<String, List<HandlerCandidate>> entry : candidatesByCommandType.entrySet()) {
+            String commandType = entry.getKey();
+            List<HandlerCandidate> candidates = entry.getValue();
+
+            if (candidates.isEmpty()) {
+                continue;
+            }
+
+            // Select the best candidate: prefer proxies, then first available
+            HandlerCandidate selected = candidates.stream()
+                .filter(c -> c.isProxy)
+                .findFirst()
+                .orElse(candidates.get(0));
+
+            // Check if we have multiple different implementations (not just proxy vs non-proxy of same class)
+            Set<String> uniqueBaseClasses = new HashSet<>();
+            for (HandlerCandidate c : candidates) {
+                String baseClassName = c.beanClassName.replaceAll("\\$Intercepted.*", "").replaceAll("\\$Proxy.*", "");
+                uniqueBaseClasses.add(baseClassName);
+            }
+
+            if (uniqueBaseClasses.size() > 1) {
+                String errorMsg = String.format(
+                    "Ambiguous handler registration for command type '%s': " +
+                    "Found %d different implementations: %s. " +
+                    "Only one implementation per command type is allowed.",
+                    commandType,
+                    uniqueBaseClasses.size(),
+                    uniqueBaseClasses
+                );
+                log.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
+            }
+
+            // Register the selected handler
+            registerAutoHandler(selected.commandType, selected.bean, selected.method, selected.commandClass);
+            handlersRegistered++;
+
+            log.info("Auto-registered handler: {} -> {}.{}({}) [proxy={}, candidates={}]",
+                selected.commandType,
+                selected.beanClassName,
+                selected.method.getName(),
+                selected.commandClass.getSimpleName(),
+                selected.isProxy,
+                candidates.size());
         }
 
         log.info("Auto-discovery complete: {} handler(s) registered", handlersRegistered);

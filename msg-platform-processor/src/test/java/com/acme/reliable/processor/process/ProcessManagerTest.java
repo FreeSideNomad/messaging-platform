@@ -3,9 +3,7 @@ package com.acme.reliable.processor.process;
 import com.acme.reliable.repository.ProcessRepository;
 import com.acme.reliable.process.*;
 import com.acme.reliable.command.DomainCommand;
-import com.acme.reliable.processor.CommandBus;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import jakarta.inject.Inject;
+import com.acme.reliable.command.CommandBus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -19,9 +17,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for ProcessManager
+ * Unit tests for ProcessManager using mocks (no DI container needed)
  */
-@MicronautTest
 class ProcessManagerTest {
 
     private ProcessManager processManager;

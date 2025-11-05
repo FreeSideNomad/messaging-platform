@@ -94,521 +94,105 @@ services:
     networks:
       - messaging-network
 
-  # API Instance 1
-  api-1:
+  # API Instance
+  api:
     build:
       context: .
       dockerfile: msg-platform-api/Dockerfile
-    container_name: messaging-api-1
-    environment:
-      MICRONAUT_SERVER_PORT: ${API_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API}
-      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_API}
-      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # API Instance 2
-  api-2:
-    build:
-      context: .
-      dockerfile: msg-platform-api/Dockerfile
-    container_name: messaging-api-2
-    environment:
-      MICRONAUT_SERVER_PORT: ${API_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API}
-      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_API}
-      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # API Instance 3
-  api-3:
-    build:
-      context: .
-      dockerfile: msg-platform-api/Dockerfile
-    container_name: messaging-api-3
-    environment:
-      MICRONAUT_SERVER_PORT: ${API_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API}
-      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_API}
-      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # API Instance 4
-  api-4:
-    build:
-      context: .
-      dockerfile: msg-platform-api/Dockerfile
-    container_name: messaging-api-4
-    environment:
-      MICRONAUT_SERVER_PORT: ${API_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API}
-      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_API}
-      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # API Instance 5
-  api-5:
-    build:
-      context: .
-      dockerfile: msg-platform-api/Dockerfile
-    container_name: messaging-api-5
-    environment:
-      MICRONAUT_SERVER_PORT: ${API_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API}
-      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_API}
-      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # Worker Instance 1
-  worker-1:
-    build:
-      context: .
-      dockerfile: msg-platform-worker/Dockerfile
-    container_name: messaging-worker-1
-    environment:
-      WORKER_ID: worker-1
-      MICRONAUT_SERVER_PORT: ${WORKER_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_WORKER}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_WORKER}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_WORKER}
-      JMS_CONCURRENCY: ${JMS_CONCURRENCY}
-      OUTBOX_SWEEP_INTERVAL: ${OUTBOX_SWEEP_INTERVAL}
-      OUTBOX_CLAIM_TIMEOUT: ${OUTBOX_CLAIM_TIMEOUT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # Worker Instance 2
-  worker-2:
-    build:
-      context: .
-      dockerfile: msg-platform-worker/Dockerfile
-    container_name: messaging-worker-2
-    environment:
-      WORKER_ID: worker-2
-      MICRONAUT_SERVER_PORT: ${WORKER_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_WORKER}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_WORKER}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_WORKER}
-      JMS_CONCURRENCY: ${JMS_CONCURRENCY}
-      OUTBOX_SWEEP_INTERVAL: ${OUTBOX_SWEEP_INTERVAL}
-      OUTBOX_CLAIM_TIMEOUT: ${OUTBOX_CLAIM_TIMEOUT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # Worker Instance 3
-  worker-3:
-    build:
-      context: .
-      dockerfile: msg-platform-worker/Dockerfile
-    container_name: messaging-worker-3
-    environment:
-      WORKER_ID: worker-3
-      MICRONAUT_SERVER_PORT: ${WORKER_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_WORKER}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_WORKER}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_WORKER}
-      JMS_CONCURRENCY: ${JMS_CONCURRENCY}
-      OUTBOX_SWEEP_INTERVAL: ${OUTBOX_SWEEP_INTERVAL}
-      OUTBOX_CLAIM_TIMEOUT: ${OUTBOX_CLAIM_TIMEOUT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # Worker Instance 4
-  worker-4:
-    build:
-      context: .
-      dockerfile: msg-platform-worker/Dockerfile
-    container_name: messaging-worker-4
-    environment:
-      WORKER_ID: worker-4
-      MICRONAUT_SERVER_PORT: ${WORKER_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_WORKER}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_WORKER}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_WORKER}
-      JMS_CONCURRENCY: ${JMS_CONCURRENCY}
-      OUTBOX_SWEEP_INTERVAL: ${OUTBOX_SWEEP_INTERVAL}
-      OUTBOX_CLAIM_TIMEOUT: ${OUTBOX_CLAIM_TIMEOUT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # Worker Instance 5
-  worker-5:
-    build:
-      context: .
-      dockerfile: msg-platform-worker/Dockerfile
-    container_name: messaging-worker-5
-    environment:
-      WORKER_ID: worker-5
-      MICRONAUT_SERVER_PORT: ${WORKER_PORT}
-      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_WORKER}
-      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_WORKER}
-      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_WORKER}
-      JMS_CONCURRENCY: ${JMS_CONCURRENCY}
-      OUTBOX_SWEEP_INTERVAL: ${OUTBOX_SWEEP_INTERVAL}
-      OUTBOX_CLAIM_TIMEOUT: ${OUTBOX_CLAIM_TIMEOUT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MQ_HOST: ${MQ_HOST}
-      MQ_PORT: ${MQ_PORT}
-      MQ_QMGR: ${MQ_QMGR}
-      MQ_CHANNEL: ${MQ_CHANNEL}
-      MQ_USER: ${MQ_USER}
-      MQ_PASS: ${MQ_PASS}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      JAVA_OPTS: ${JAVA_OPTS}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-      nproc:
-        soft: 10000
-        hard: 10000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ibmmq:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-    networks:
-      - messaging-network
-
-  # Nginx Load Balancer
-  nginx:
-    build:
-      context: .
-      dockerfile: nginx/Dockerfile
-    container_name: messaging-nginx
+    container_name: messaging-api
     ports:
-      - "8080:80"
+      - "8080:8080"
+    environment:
+      MICRONAUT_SERVER_PORT: ${API_PORT}
+      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API}
+      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API}
+      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API}
+      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_API}
+      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MQ_HOST: ${MQ_HOST}
+      MQ_PORT: ${MQ_PORT}
+      MQ_QMGR: ${MQ_QMGR}
+      MQ_CHANNEL: ${MQ_CHANNEL}
+      MQ_USER: ${MQ_USER}
+      MQ_PASS: ${MQ_PASS}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      JAVA_OPTS: ${JAVA_OPTS}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 10000
+        hard: 10000
     depends_on:
-      api-1:
+      postgres:
         condition: service_healthy
-      api-2:
-        condition: service_healthy
-      api-3:
-        condition: service_healthy
-      api-4:
-        condition: service_healthy
-      api-5:
+      ibmmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost/nginx-health"]
-      interval: 10s
-      timeout: 3s
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
       retries: 3
-      start_period: 20s
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # Payments Worker Instance
+  payments-worker:
+    build:
+      context: .
+      dockerfile: msg-platform-payments-worker/Dockerfile
+    container_name: messaging-payments-worker
+    ports:
+      - "9091:9091"
+    environment:
+      WORKER_ID: payments-worker-1
+      MICRONAUT_SERVER_PORT: ${PAYMENTS_WORKER_PORT:-9091}
+      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_WORKER}
+      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_WORKER}
+      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_WORKER}
+      JMS_CONCURRENCY: ${JMS_CONCURRENCY}
+      OUTBOX_SWEEP_INTERVAL: ${OUTBOX_SWEEP_INTERVAL}
+      OUTBOX_CLAIM_TIMEOUT: ${OUTBOX_CLAIM_TIMEOUT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: payments
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MQ_HOST: ${MQ_HOST}
+      MQ_PORT: ${MQ_PORT}
+      MQ_QMGR: ${MQ_QMGR}
+      MQ_CHANNEL: ${MQ_CHANNEL}
+      MQ_USER: ${MQ_USER}
+      MQ_PASS: ${MQ_PASS}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      JAVA_OPTS: ${JAVA_OPTS}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 10000
+        hard: 10000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9091/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
     networks:
       - messaging-network
 

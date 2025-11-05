@@ -1,0 +1,20 @@
+{
+  "customerId": "550e8400-e29b-41d4-a716-446655440000",
+  "debitAccountId": "650e8400-e29b-41d4-a716-446655440100",
+  "debitAmount": {
+    "amount": 1500.00,
+    "currencyCode": "USD"
+  },
+  "creditAmount": {
+    "amount": 1500.00,
+    "currencyCode": "USD"
+  },
+  "valueDate": "2025-11-05",
+  "beneficiary": {
+    "name": "John Smith",
+    "accountNumber": "9876543210",
+    "transitNumber": "54321",
+    "bankName": "ABC Bank"
+  },
+  "description": "Rent payment for November"
+}

@@ -1,0 +1,20 @@
+{
+  "customerId": "550e8400-e29b-41d4-a716-446655440000",
+  "debitAccountId": "650e8400-e29b-41d4-a716-446655440100",
+  "debitAmount": {
+    "amount": 10.00,
+    "currencyCode": "USD"
+  },
+  "creditAmount": {
+    "amount": 10.00,
+    "currencyCode": "USD"
+  },
+  "valueDate": "2025-11-05",
+  "beneficiary": {
+    "name": "Coffee Shop",
+    "accountNumber": "5555666677",
+    "transitNumber": "11111",
+    "bankName": "Local Credit Union"
+  },
+  "description": "Coffee and snacks"
+}

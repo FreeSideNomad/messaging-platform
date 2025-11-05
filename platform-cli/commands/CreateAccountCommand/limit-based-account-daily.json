@@ -1,0 +1,13 @@
+{
+  "customerId": "550e8400-e29b-41d4-a716-446655440002",
+  "currencyCode": "USD",
+  "transitNumber": "12345",
+  "accountType": "CHECKING",
+  "limitBased": true,
+  "limits": {
+    "DAY": {
+      "amount": 5000.00,
+      "currencyCode": "USD"
+    }
+  }
+}

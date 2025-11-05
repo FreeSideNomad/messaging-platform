@@ -1,6 +1,8 @@
 package com.acme.payments.domain.service;
 
+import com.acme.payments.application.command.BookLimitsCommand;
 import com.acme.payments.application.command.CreateLimitsCommand;
+import com.acme.payments.application.command.ReverseLimitsCommand;
 import com.acme.payments.domain.model.AccountLimit;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
@@ -282,5 +284,142 @@ class LimitServiceTest {
 
         assertThat(limitIds).hasSize(2);
         assertThat(limitIds).allMatch(id -> UUID.fromString(id) != null);
+    }
+
+    @Test
+    @DisplayName("bookLimits - should book amount against all active limits")
+    void testBookLimits_Success() {
+        // Given: Active limits for an account
+        AccountLimit hourLimit = createLimit(PeriodType.HOUR, Money.of(1000, "USD"));
+        AccountLimit dayLimit = createLimit(PeriodType.DAY, Money.of(5000, "USD"));
+        when(limitRepository.findActiveByAccountId(accountId))
+            .thenReturn(List.of(hourLimit, dayLimit));
+
+        BookLimitsCommand cmd = new BookLimitsCommand(accountId, Money.of(100, "USD"));
+
+        // When
+        limitService.bookLimits(cmd);
+
+        // Then: Both limits should be updated
+        assertThat(hourLimit.getUtilized()).isEqualTo(Money.of(100, "USD"));
+        assertThat(dayLimit.getUtilized()).isEqualTo(Money.of(100, "USD"));
+        verify(limitRepository, times(2)).save(any(AccountLimit.class));
+    }
+
+    @Test
+    @DisplayName("bookLimits - should handle no active limits gracefully")
+    void testBookLimits_NoLimits() {
+        // Given: No active limits
+        when(limitRepository.findActiveByAccountId(accountId))
+            .thenReturn(List.of());
+
+        BookLimitsCommand cmd = new BookLimitsCommand(accountId, Money.of(100, "USD"));
+
+        // When
+        limitService.bookLimits(cmd);
+
+        // Then: No errors and no saves
+        verify(limitRepository, never()).save(any(AccountLimit.class));
+    }
+
+    @Test
+    @DisplayName("bookLimits - should skip expired limits")
+    void testBookLimits_SkipExpired() {
+        // Given: One active and one expired limit
+        Instant pastTime = Instant.now().minus(2, ChronoUnit.HOURS);
+        AccountLimit expiredLimit = new AccountLimit(
+            UUID.randomUUID(),
+            accountId,
+            PeriodType.HOUR,
+            pastTime,
+            Money.of(1000, "USD")
+        );
+        AccountLimit activeLimit = createLimit(PeriodType.DAY, Money.of(5000, "USD"));
+
+        when(limitRepository.findActiveByAccountId(accountId))
+            .thenReturn(List.of(expiredLimit, activeLimit));
+
+        BookLimitsCommand cmd = new BookLimitsCommand(accountId, Money.of(100, "USD"));
+
+        // When
+        limitService.bookLimits(cmd);
+
+        // Then: Only active limit should be updated
+        assertThat(expiredLimit.getUtilized()).isEqualTo(Money.zero("USD")); // Not booked
+        assertThat(activeLimit.getUtilized()).isEqualTo(Money.of(100, "USD")); // Booked
+        verify(limitRepository, times(1)).save(activeLimit);
+    }
+
+    @Test
+    @DisplayName("reverseLimits - should reverse amount from all active limits")
+    void testReverseLimits_Success() {
+        // Given: Active limits with utilized amounts
+        AccountLimit hourLimit = createLimit(PeriodType.HOUR, Money.of(1000, "USD"));
+        hourLimit.book(Money.of(300, "USD"));
+
+        AccountLimit dayLimit = createLimit(PeriodType.DAY, Money.of(5000, "USD"));
+        dayLimit.book(Money.of(300, "USD"));
+
+        when(limitRepository.findActiveByAccountId(accountId))
+            .thenReturn(List.of(hourLimit, dayLimit));
+
+        // When
+        limitService.reverseLimits(accountId, Money.of(100, "USD"));
+
+        // Then: Utilized should be reduced
+        assertThat(hourLimit.getUtilized()).isEqualTo(Money.of(200, "USD"));
+        assertThat(dayLimit.getUtilized()).isEqualTo(Money.of(200, "USD"));
+        verify(limitRepository, times(2)).save(any(AccountLimit.class));
+    }
+
+    @Test
+    @DisplayName("reverseLimits - should handle full reversal")
+    void testReverseLimits_FullReversal() {
+        // Given: Active limit with booked amount
+        AccountLimit limit = createLimit(PeriodType.DAY, Money.of(5000, "USD"));
+        limit.book(Money.of(500, "USD"));
+
+        when(limitRepository.findActiveByAccountId(accountId))
+            .thenReturn(List.of(limit));
+
+        // When: Reverse the full amount
+        limitService.reverseLimits(accountId, Money.of(500, "USD"));
+
+        // Then: Utilized should be zero
+        assertThat(limit.getUtilized()).isEqualTo(Money.zero("USD"));
+        assertThat(limit.getAvailable()).isEqualTo(Money.of(5000, "USD"));
+        verify(limitRepository).save(limit);
+    }
+
+    @Test
+    @DisplayName("handleReverseLimits - should delegate to reverseLimits")
+    void testHandleReverseLimits() {
+        // Given: Active limit
+        AccountLimit limit = createLimit(PeriodType.DAY, Money.of(5000, "USD"));
+        limit.book(Money.of(300, "USD"));
+
+        when(limitRepository.findActiveByAccountId(accountId))
+            .thenReturn(List.of(limit));
+
+        ReverseLimitsCommand cmd = new ReverseLimitsCommand(accountId, Money.of(100, "USD"));
+
+        // When
+        limitService.handleReverseLimits(cmd);
+
+        // Then
+        assertThat(limit.getUtilized()).isEqualTo(Money.of(200, "USD"));
+        verify(limitRepository).save(limit);
+    }
+
+    // Helper method to create test limits
+    private AccountLimit createLimit(PeriodType periodType, Money limitAmount) {
+        Instant startTime = periodType.alignToBucketStart(Instant.now());
+        return new AccountLimit(
+            UUID.randomUUID(),
+            accountId,
+            periodType,
+            startTime,
+            limitAmount
+        );
     }
 }

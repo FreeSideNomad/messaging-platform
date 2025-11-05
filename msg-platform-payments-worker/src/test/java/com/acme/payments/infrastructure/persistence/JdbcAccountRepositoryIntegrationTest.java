@@ -5,6 +5,8 @@ import com.acme.payments.domain.repository.AccountRepository;
 import com.acme.reliable.processor.command.AutoCommandHandlerRegistry;
 import com.acme.reliable.processor.process.ProcessManager;
 import com.acme.reliable.repository.ProcessRepository;
+import com.acme.reliable.spi.CommandQueue;
+import com.acme.reliable.spi.EventPublisher;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.test.support.TestPropertyProvider;
@@ -61,6 +63,16 @@ class JdbcAccountRepositoryIntegrationTest implements TestPropertyProvider {
         return mock(ProcessManager.class);
     }
 
+    @MockBean(CommandQueue.class)
+    CommandQueue commandQueue() {
+        return mock(CommandQueue.class);
+    }
+
+    @MockBean(EventPublisher.class)
+    EventPublisher eventPublisher() {
+        return mock(EventPublisher.class);
+    }
+
     @Override
     public Map<String, String> getProperties() {
         postgres.start();
@@ -71,9 +83,10 @@ class JdbcAccountRepositoryIntegrationTest implements TestPropertyProvider {
         props.put("datasources.default.password", postgres.getPassword());
         props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
         props.put("datasources.default.auto-commit", "false");
+        props.put("datasources.default.maximum-pool-size", "10");
+        props.put("datasources.default.minimum-idle", "2");
         props.put("flyway.datasources.default.enabled", "true");
-        // Use filesystem: prefix to only use migrations from the payments-worker module
-        props.put("flyway.datasources.default.locations", "filesystem:src/main/resources/db/migration");
+        props.put("flyway.datasources.default.locations", "classpath:db/migration");
         props.put("jms.consumers.enabled", "false");
         return props;
     }

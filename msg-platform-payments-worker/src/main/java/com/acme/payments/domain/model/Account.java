@@ -102,6 +102,20 @@ public class Account {
     }
 
     /**
+     * Restores a transaction from persistence.
+     * This should only be called by the repository when loading from the database.
+     * Does NOT update the balance - assumes balance is already correct from DB.
+     *
+     * @param transaction The transaction to restore
+     */
+    public void restoreTransaction(Transaction transaction) {
+        if (!transaction.accountId().equals(this.accountId)) {
+            throw new IllegalArgumentException("Transaction does not belong to this account");
+        }
+        this.transactions.add(transaction);
+    }
+
+    /**
      * Exception thrown when insufficient funds
      */
     @Getter

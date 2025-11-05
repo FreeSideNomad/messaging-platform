@@ -3,6 +3,7 @@ package com.acme.reliable.processor.config;
 import com.acme.reliable.config.TimeoutConfig;
 import com.acme.reliable.config.MessagingConfig;
 import io.micronaut.context.annotation.Property;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import jakarta.inject.Singleton;
@@ -11,8 +12,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Logs effective configuration on application startup for visibility and troubleshooting.
+ * Disabled in test environment to avoid configuration errors.
  */
 @Singleton
+@Requires(notEnv = "test")
 public class ConfigurationLogger implements ApplicationEventListener<ServerStartupEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationLogger.class);

@@ -39,7 +39,8 @@ public class JdbcFxContractRepository implements FxContractRepository {
                 insertFxContract(conn, fxContract);
             }
 
-            conn.commit();
+            // Don't commit here - let the ambient transaction (if any) handle it
+            // This allows repositories to work both in tests (@Transactional) and production
         } catch (SQLException e) {
             log.error("Error saving FX contract: {}", fxContract.getFxContractId(), e);
             throw new RuntimeException("Failed to save FX contract", e);
@@ -132,11 +133,11 @@ public class JdbcFxContractRepository implements FxContractRepository {
         UUID customerId = (UUID) rs.getObject("customer_id");
         UUID debitAccountId = (UUID) rs.getObject("debit_account_id");
         Money debitAmount = new Money(
-            rs.getBigDecimal("debit_amount"),
+            rs.getBigDecimal("debit_amount").setScale(2, java.math.RoundingMode.HALF_UP),
             rs.getString("debit_currency_code")
         );
         Money creditAmount = new Money(
-            rs.getBigDecimal("credit_amount"),
+            rs.getBigDecimal("credit_amount").setScale(2, java.math.RoundingMode.HALF_UP),
             rs.getString("credit_currency_code")
         );
 

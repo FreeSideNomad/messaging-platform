@@ -25,20 +25,9 @@ public class PaymentCommandConsumer extends BaseCommandConsumer {
         super(registry, commandQueue, REPLY_QUEUE);
     }
 
-    @Queue("APP.CMD.PAYMENT.Q")
-    public void onPaymentCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
-        String commandType = m.getStringProperty("commandType");
-        processCommand(commandType != null ? commandType : "Payment", body, m);
-    }
-
-    @Queue("APP.CMD.CREATEACCOUNT.Q")
-    public void onCreateAccountCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
-        processCommand("CreateAccount", body, m);
-    }
-
-    @Queue("APP.CMD.CREATETRANSACTION.Q")
-    public void onCreateTransactionCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
-        processCommand("CreateTransaction", body, m);
+    @Queue("APP.CMD.BOOKFX.Q")
+    public void onBookFxCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("BookFx", body, m);
     }
 
     @Queue("APP.CMD.BOOKLIMITS.Q")
@@ -46,13 +35,48 @@ public class PaymentCommandConsumer extends BaseCommandConsumer {
         processCommand("BookLimits", body, m);
     }
 
-    @Queue("APP.CMD.BOOKFX.Q")
-    public void onBookFxCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
-        processCommand("BookFx", body, m);
+    @Queue("APP.CMD.COMPLETEACCOUNTCREATION.Q")
+    public void onCompleteAccountCreationCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("CompleteAccountCreation", body, m);
+    }
+
+    @Queue("APP.CMD.CREATEACCOUNT.Q")
+    public void onCreateAccountCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("CreateAccount", body, m);
+    }
+
+    @Queue("APP.CMD.CREATELIMITS.Q")
+    public void onCreateLimitsCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("CreateLimits", body, m);
     }
 
     @Queue("APP.CMD.CREATEPAYMENT.Q")
     public void onCreatePaymentCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
         processCommand("CreatePayment", body, m);
+    }
+
+    @Queue("APP.CMD.CREATETRANSACTION.Q")
+    public void onCreateTransactionCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("CreateTransaction", body, m);
+    }
+
+    @Queue("APP.CMD.INITIATESIMPLEPAYMENT.Q")
+    public void onInitiateSimplePaymentCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("InitiateSimplePayment", body, m);
+    }
+
+    @Queue("APP.CMD.REVERSELIMITS.Q")
+    public void onReverseLimitsCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("ReverseLimits", body, m);
+    }
+
+    @Queue("APP.CMD.REVERSETRANSACTION.Q")
+    public void onReverseTransactionCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("ReverseTransaction", body, m);
+    }
+
+    @Queue("APP.CMD.UNWINDFX.Q")
+    public void onUnwindFxCommand(@MessageBody String body, @Message jakarta.jms.Message m) throws JMSException {
+        processCommand("UnwindFx", body, m);
     }
 }

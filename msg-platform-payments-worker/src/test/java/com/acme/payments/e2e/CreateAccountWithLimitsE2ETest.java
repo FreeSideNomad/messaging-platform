@@ -1,6 +1,7 @@
 package com.acme.payments.e2e;
 
 import com.acme.payments.application.command.CreateAccountCommand;
+import com.acme.payments.application.command.InitiateCreateAccountProcess;
 import com.acme.payments.domain.model.Account;
 import com.acme.payments.domain.model.AccountLimit;
 import com.acme.payments.domain.model.AccountType;
@@ -105,8 +106,7 @@ class CreateAccountWithLimitsE2ETest implements TestPropertyProvider {
             "USD",
             "001",
             AccountType.CHECKING,
-            false,
-            null
+            false
         );
 
         // When: Creating account through service
@@ -144,8 +144,7 @@ class CreateAccountWithLimitsE2ETest implements TestPropertyProvider {
             "USD",
             "002",
             AccountType.CHECKING,
-            true,
-            limits
+            true
         );
 
         // When: Creating account
@@ -193,8 +192,7 @@ class CreateAccountWithLimitsE2ETest implements TestPropertyProvider {
             "EUR",
             "003",
             AccountType.SAVINGS,
-            true,
-            limits
+            true
         );
 
         // When: Creating account and limits
@@ -263,8 +261,7 @@ class CreateAccountWithLimitsE2ETest implements TestPropertyProvider {
             "USD",
             "004",
             AccountType.CHECKING,
-            true,
-            limits
+            true
         );
 
         // When: Creating account and limits
@@ -313,8 +310,7 @@ class CreateAccountWithLimitsE2ETest implements TestPropertyProvider {
             "USD",
             "005",
             AccountType.CHECKING,
-            false,
-            null
+            false
         );
 
         // When: Creating account twice
@@ -348,8 +344,7 @@ class CreateAccountWithLimitsE2ETest implements TestPropertyProvider {
             "GBP",
             "006",
             AccountType.CHECKING,
-            true,
-            limits
+            true
         );
 
         // When: Creating account and limits
@@ -383,13 +378,13 @@ class CreateAccountWithLimitsE2ETest implements TestPropertyProvider {
     @Transactional
     @DisplayName("E2E: Command serialization should preserve limit data")
     void testCommandSerialization_E2E() {
-        // Given: Create account command with limits
+        // Given: InitiateCreateAccountProcess command with limits
         UUID customerId = UUID.randomUUID();
         Map<PeriodType, Money> limits = Map.of(
             PeriodType.DAY, Money.of(5000, "USD")
         );
 
-        CreateAccountCommand cmd = new CreateAccountCommand(
+        InitiateCreateAccountProcess cmd = new InitiateCreateAccountProcess(
             customerId,
             "USD",
             "007",

@@ -1,0 +1,50 @@
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"b8762151-8809-4dc6-b780-39a2f7350833","currencyCode":"JPY","transitNumber":"003","accountType":"CHECKING","limitBased":false,"limits":null}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"0b15953e-e503-4784-944c-dec31721fb36","currencyCode":"JPY","transitNumber":"004","accountType":"SAVINGS","limitBased":true,"limits":{"HOUR":{"amount":10000,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"MINUTE":{"amount":2000,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"DAY":{"amount":100000,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"MONTH":{"amount":5000000,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"WEEK":{"amount":1000000,"currencyCode":"JPY","zero":false,"negative":false,"positive":true}}}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"3633830a-6205-4d61-9513-0a709b8b6748","currencyCode":"USD","transitNumber":"001","accountType":"CHECKING","limitBased":true,"limits":{"HOUR":{"amount":10000,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"MINUTE":{"amount":2000,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"DAY":{"amount":100000,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"MONTH":{"amount":5000000,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"WEEK":{"amount":1000000,"currencyCode":"USD","zero":false,"negative":false,"positive":true}}}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"f067a53b-c3d0-4149-ac78-a1545d75ee58","currencyCode":"USD","transitNumber":"005","accountType":"CHECKING","limitBased":false,"limits":null}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"ceeb7c2b-c67f-462d-ae99-7f77c02afc19","currencyCode":"GBP","transitNumber":"001","accountType":"CHECKING","limitBased":false,"limits":null}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"fb7da5b9-aca0-4d38-806a-5197a6fddb35","currencyCode":"GBP","transitNumber":"004","accountType":"SAVINGS","limitBased":true,"limits":{"HOUR":{"amount":10000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"MINUTE":{"amount":2000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"DAY":{"amount":100000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"MONTH":{"amount":5000000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"WEEK":{"amount":1000000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true}}}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"0308ac98-6c48-4567-98d4-f3f5cc85c4cf","currencyCode":"EUR","transitNumber":"003","accountType":"CHECKING","limitBased":false,"limits":null}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"1af07375-0fad-408e-ab31-5a69a00899b2","currencyCode":"GBP","transitNumber":"004","accountType":"CHECKING","limitBased":true,"limits":{"HOUR":{"amount":10000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"MINUTE":{"amount":2000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"DAY":{"amount":100000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"MONTH":{"amount":5000000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"WEEK":{"amount":1000000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true}}}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"69578ad1-4d21-4ff0-92ca-17394e073ca0","currencyCode":"EUR","transitNumber":"002","accountType":"CHECKING","limitBased":true,"limits":{"HOUR":{"amount":10000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"MINUTE":{"amount":2000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"DAY":{"amount":100000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"MONTH":{"amount":5000000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"WEEK":{"amount":1000000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true}}}
+
+POST http://localhost:8080/api/accounts
+Content-Type: application/json
+
+{"customerId":"02d7b93e-a51e-4f9d-b062-843b1a793ce1","currencyCode":"EUR","transitNumber":"004","accountType":"CHECKING","limitBased":true,"limits":{"HOUR":{"amount":10000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"MINUTE":{"amount":2000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"DAY":{"amount":100000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"MONTH":{"amount":5000000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"WEEK":{"amount":1000000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true}}}
+

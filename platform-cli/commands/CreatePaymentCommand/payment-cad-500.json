@@ -1,0 +1,18 @@
+{
+  "debitAccountId": "650e8400-e29b-41d4-a716-446655440102",
+  "debitAmount": {
+    "amount": 500.00,
+    "currencyCode": "CAD"
+  },
+  "creditAmount": {
+    "amount": 500.00,
+    "currencyCode": "CAD"
+  },
+  "valueDate": "2025-11-06",
+  "beneficiary": {
+    "name": "Landlord Services",
+    "accountNumber": "4444555566",
+    "transitNumber": "33333",
+    "bankName": "Property Management Bank"
+  }
+}

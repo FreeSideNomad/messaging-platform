@@ -1,0 +1,7 @@
+{
+  "accountNumber": "ACC123456",
+  "accountType": "CHECKING",
+  "currency": "USD",
+  "initialBalance": 5000.00,
+  "customerId": "CUST001"
+}

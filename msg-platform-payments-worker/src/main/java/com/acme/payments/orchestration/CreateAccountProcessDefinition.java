@@ -3,6 +3,7 @@ package com.acme.payments.orchestration;
 import com.acme.payments.application.command.CompleteAccountCreationCommand;
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateLimitsCommand;
+import com.acme.payments.application.command.InitiateCreateAccountProcess;
 import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.ProcessConfiguration;
 import com.acme.reliable.process.ProcessGraph;
@@ -17,13 +18,13 @@ import static com.acme.reliable.process.ProcessGraphBuilder.process;
  * Account creation process definition with optional limit creation.
  *
  * Process flow:
- * 1. CreateAccount (creates the account aggregate)
- * 2. CreateLimits (conditionally creates limits if limitBased=true)
+ * 1. InitiateCreateAccountProcess (starts the process)
+ * 2. CreateAccount (creates the account aggregate)
+ * 3. CreateLimits (conditionally creates limits if limitBased=true)
+ * 4. CompleteAccountCreation (marks process as complete)
  *
- * Both steps are idempotent and can be safely retried.
+ * All steps are idempotent and can be safely retried.
  * No compensation needed since these are creation operations.
- *
- * Also acts as a handler for CreateAccountCommand to start the process.
  */
 @Singleton
 @Slf4j
@@ -31,18 +32,18 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
 
     @Override
     public String getProcessType() {
-        return "CreateAccount";
+        return "InitiateCreateAccountProcess";
     }
 
     /**
-     * Command handler for CreateAccountCommand.
-     * This method will be auto-discovered by AutoCommandHandlerRegistry
-     * and builds the initial process state from the command.
+     * Initializes process state from InitiateCreateAccountProcess command.
+     * This method builds the initial process state from the command when the process starts.
+     * Note: This is NOT a command handler - it's called by the process manager.
      *
-     * @param cmd the account creation command
+     * @param cmd the process initiation command
      * @return initial process state as a map
      */
-    public Map<String, Object> handleCreateAccount(CreateAccountCommand cmd) {
+    public Map<String, Object> initializeProcessState(InitiateCreateAccountProcess cmd) {
         log.info("Initializing CreateAccount process for customer {} with currency {} limitBased={}",
             cmd.customerId(), cmd.currencyCode(), cmd.limitBased());
 
@@ -57,10 +58,11 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
 
     @Override
     public ProcessGraph defineProcess() {
-        // Conditional flow: CreateAccount -> (if limitBased) CreateLimits -> Complete
+        // Conditional flow: InitiateCreateAccountProcess -> CreateAccount -> (if limitBased) CreateLimits -> Complete
         // If limitBased=false, skip CreateLimits and go directly to Complete
         return process()
-            .startWith(CreateAccountCommand.class)
+            .startWith(InitiateCreateAccountProcess.class)
+            .then(CreateAccountCommand.class)
             .thenIf(data -> {
                 // Check if limitBased is true and limits exist
                 Object limitBased = data.get("limitBased");

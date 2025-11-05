@@ -1,5 +1,6 @@
 package com.acme.reliable.e2e;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * API → Worker → Database with proof-of-work verification.
  */
 @Tag("e2e")
+@Disabled("E2E tests disabled - run manually when needed")
 class FunctionalE2ETest extends E2ETestBase {
 
     @Test

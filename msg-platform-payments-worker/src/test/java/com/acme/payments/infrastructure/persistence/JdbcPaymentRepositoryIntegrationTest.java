@@ -6,6 +6,9 @@ import com.acme.payments.domain.repository.PaymentRepository;
 import com.acme.reliable.processor.command.AutoCommandHandlerRegistry;
 import com.acme.reliable.processor.process.ProcessManager;
 import com.acme.reliable.repository.ProcessRepository;
+import com.acme.reliable.spi.CommandQueue;
+import com.acme.reliable.spi.EventPublisher;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.test.support.TestPropertyProvider;
@@ -50,14 +53,12 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
     @Inject
     AccountRepository accountRepository;
 
+    @Inject
+    com.acme.payments.domain.repository.FxContractRepository fxContractRepository;
+
     private UUID paymentId;
     private UUID debitAccountId;
     private Beneficiary beneficiary;
-
-    @MockBean(AutoCommandHandlerRegistry.class)
-    AutoCommandHandlerRegistry autoCommandHandlerRegistry() {
-        return mock(AutoCommandHandlerRegistry.class);
-    }
 
     @MockBean(ProcessRepository.class)
     ProcessRepository processRepository() {
@@ -69,6 +70,16 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
         return mock(ProcessManager.class);
     }
 
+    @MockBean(CommandQueue.class)
+    CommandQueue commandQueue() {
+        return mock(CommandQueue.class);
+    }
+
+    @MockBean(EventPublisher.class)
+    EventPublisher eventPublisher() {
+        return mock(EventPublisher.class);
+    }
+
     @Override
     public Map<String, String> getProperties() {
         postgres.start();
@@ -78,8 +89,10 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
         props.put("datasources.default.password", postgres.getPassword());
         props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
         props.put("datasources.default.auto-commit", "false");
+        props.put("datasources.default.maximum-pool-size", "10");
+        props.put("datasources.default.minimum-idle", "2");
         props.put("flyway.datasources.default.enabled", "true");
-        props.put("flyway.datasources.default.locations", "filesystem:src/main/resources/db/migration");
+        props.put("flyway.datasources.default.locations", "classpath:db/migration");
         props.put("jms.consumers.enabled", "false");
         return props;
     }
@@ -97,7 +110,7 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
     }
 
     private void createTestAccount() {
-        // Create account to satisfy foreign key constraint
+        // Create limit-based account to allow negative balance in tests
         Account account = new Account(
             debitAccountId,
             UUID.randomUUID(), // customerId
@@ -105,7 +118,7 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
             "USD",
             AccountType.CHECKING,
             "001",
-            false,
+            true, // limit-based = true (allows negative balance)
             Money.zero("USD")
         );
         accountRepository.save(account);
@@ -179,7 +192,6 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
 
     @Test
     @Transactional
-    @Disabled("TODO: Repositories manually commit, conflicting with test transactions")
     @DisplayName("save - should update existing payment")
     void testUpdateExistingPayment() {
         // Given - initial payment
@@ -194,9 +206,16 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
         );
         paymentRepository.save(payment);
 
-        // When - update payment with transaction IDs and status
-        UUID transactionId = UUID.randomUUID();
-        payment.recordDebitTransaction(transactionId);
+        // When - create a transaction on the account first, then link it to payment
+        Account account = accountRepository.findById(debitAccountId).orElseThrow();
+        Transaction transaction = account.createTransaction(
+            TransactionType.DEBIT,
+            Money.of(200.00, "USD"),
+            "Payment debit"
+        );
+        accountRepository.save(account);
+
+        payment.recordDebitTransaction(transaction.transactionId());
         payment.markAsProcessing();
         paymentRepository.save(payment);
 
@@ -205,13 +224,12 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
         assertThat(retrieved).isPresent();
 
         Payment updatedPayment = retrieved.get();
-        assertThat(updatedPayment.getDebitTransactionId()).isEqualTo(transactionId);
+        assertThat(updatedPayment.getDebitTransactionId()).isEqualTo(transaction.transactionId());
         assertThat(updatedPayment.getStatus()).isEqualTo(PaymentStatus.PROCESSING);
     }
 
     @Test
     @Transactional
-    @Disabled("TODO: Repositories manually commit, conflicting with test transactions")
     @DisplayName("save - should persist payment with FX contract")
     void testSavePaymentWithFxContract() {
         // Given
@@ -225,8 +243,19 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
             beneficiary
         );
 
-        UUID fxContractId = UUID.randomUUID();
-        payment.recordFxContract(fxContractId);
+        // Create FX contract first (required for FK constraint)
+        FxContract fxContract = new FxContract(
+            UUID.randomUUID(),
+            UUID.randomUUID(), // customerId
+            debitAccountId,
+            Money.of(1000.00, "USD"),
+            Money.of(750.00, "GBP"),
+            new java.math.BigDecimal("0.75"),
+            LocalDate.now().plusDays(3)
+        );
+        fxContractRepository.save(fxContract);
+
+        payment.recordFxContract(fxContract.getFxContractId());
         payment.markAsProcessing();
 
         // When
@@ -237,17 +266,27 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
         assertThat(retrieved).isPresent();
 
         Payment savedPayment = retrieved.get();
-        assertThat(savedPayment.getFxContractId()).isEqualTo(fxContractId);
+        assertThat(savedPayment.getFxContractId()).isEqualTo(fxContract.getFxContractId());
         assertThat(savedPayment.getStatus()).isEqualTo(PaymentStatus.PROCESSING);
     }
 
     @Test
     @Transactional
-    @Disabled("TODO: Repositories manually commit, conflicting with test transactions")
     @DisplayName("save - should persist completed payment")
     void testSaveCompletedPayment() {
-        // Given
-        createTestAccount();
+        // Given - create CAD account for CAD payment
+        Account cadAccount = new Account(
+            debitAccountId,
+            UUID.randomUUID(),
+            "ACC" + UUID.randomUUID().toString().substring(0, 10),
+            "CAD",
+            AccountType.CHECKING,
+            "001",
+            true, // limit-based
+            Money.zero("CAD")
+        );
+        accountRepository.save(cadAccount);
+
         Payment payment = new Payment(
             paymentId,
             debitAccountId,
@@ -257,7 +296,16 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
             beneficiary
         );
 
-        payment.recordDebitTransaction(UUID.randomUUID());
+        // Create transaction first
+        Account account = accountRepository.findById(debitAccountId).orElseThrow();
+        Transaction transaction = account.createTransaction(
+            TransactionType.DEBIT,
+            Money.of(500.00, "CAD"),
+            "Payment debit"
+        );
+        accountRepository.save(account);
+
+        payment.recordDebitTransaction(transaction.transactionId());
         payment.markAsProcessing();
         payment.markAsCompleted();
 
@@ -299,7 +347,6 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
 
     @Test
     @Transactional
-    @Disabled("TODO: Repositories manually commit, conflicting with test transactions")
     @DisplayName("save - should persist reversed payment")
     void testSaveReversedPayment() {
         // Given
@@ -313,7 +360,16 @@ class JdbcPaymentRepositoryIntegrationTest implements TestPropertyProvider {
             beneficiary
         );
 
-        payment.recordDebitTransaction(UUID.randomUUID());
+        // Create transaction first
+        Account account = accountRepository.findById(debitAccountId).orElseThrow();
+        Transaction transaction = account.createTransaction(
+            TransactionType.DEBIT,
+            Money.of(150.00, "USD"),
+            "Payment debit"
+        );
+        accountRepository.save(account);
+
+        payment.recordDebitTransaction(transaction.transactionId());
         payment.markAsProcessing();
         payment.markAsCompleted();
         payment.reverse("Customer request");

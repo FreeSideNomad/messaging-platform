@@ -5,6 +5,7 @@ import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateTransactionCommand;
 import com.acme.payments.application.command.ReverseTransactionCommand;
 import com.acme.payments.domain.model.Account;
+import com.acme.payments.domain.model.AccountType;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.Transaction;
 import com.acme.payments.domain.model.TransactionType;
@@ -26,20 +27,37 @@ import java.util.UUID;
 public class AccountService {
     private final AccountRepository accountRepository;
 
+    /**
+     * Command handler for CreateAccountCommand.
+     * Auto-discovered by AutoCommandHandlerRegistry.
+     * This is executed as a step within the CreateAccount process.
+     */
     @Transactional
     public Map<String, Object> handleCreateAccount(CreateAccountCommand cmd) {
-        log.info("Creating account for customer {} with currency {}",
+        log.info("Handling CreateAccountCommand for customer {} with currency {}",
             cmd.customerId(), cmd.currencyCode());
+
+        return createAccount(cmd.customerId(), cmd.currencyCode(), cmd.accountType(),
+                           cmd.transitNumber(), cmd.limitBased());
+    }
+
+    /**
+     * Creates an account. Called internally by command handler.
+     */
+    @Transactional
+    public Map<String, Object> createAccount(UUID customerId, String currencyCode, AccountType accountType,
+                                            String transitNumber, boolean limitBased) {
+        log.info("Creating account for customer {} with currency {}", customerId, currencyCode);
 
         Account account = new Account(
             UUID.randomUUID(),
-            cmd.customerId(),
+            customerId,
             generateAccountNumber(),
-            cmd.currencyCode(),
-            cmd.accountType(),
-            cmd.transitNumber(),
-            cmd.limitBased(),
-            Money.zero(cmd.currencyCode())
+            currencyCode,
+            accountType,
+            transitNumber,
+            limitBased,
+            Money.zero(currencyCode)
         );
 
         accountRepository.save(account);

@@ -3,7 +3,7 @@ package com.acme.reliable.processor.process;
 import com.acme.reliable.repository.ProcessRepository;
 import com.acme.reliable.process.*;
 import com.acme.reliable.command.DomainCommand;
-import com.acme.reliable.processor.CommandBus;
+import com.acme.reliable.command.CommandBus;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.test.support.TestPropertyProvider;
 import jakarta.inject.Inject;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 /**
  * Integration tests for ProcessManager with real database (Testcontainers)
  */
-@MicronautTest(transactional = false)
+@MicronautTest(transactional = false, environments = "test")
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProcessManagerIntegrationTest implements TestPropertyProvider {
@@ -42,14 +42,16 @@ class ProcessManagerIntegrationTest implements TestPropertyProvider {
     @Override
     public Map<String, String> getProperties() {
         postgres.start();
-        return Map.of(
-            "datasources.default.url", postgres.getJdbcUrl(),
-            "datasources.default.username", postgres.getUsername(),
-            "datasources.default.password", postgres.getPassword(),
-            "datasources.default.driver-class-name", "org.postgresql.Driver",
-            "flyway.datasources.default.enabled", "true",
-            "flyway.datasources.default.locations", "classpath:db/migration"
-        );
+        Map<String, String> props = new HashMap<>();
+        props.put("datasources.default.url", postgres.getJdbcUrl());
+        props.put("datasources.default.username", postgres.getUsername());
+        props.put("datasources.default.password", postgres.getPassword());
+        props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
+        props.put("datasources.default.maximum-pool-size", "10");
+        props.put("datasources.default.minimum-idle", "2");
+        props.put("flyway.datasources.default.enabled", "true");
+        props.put("flyway.datasources.default.locations", "classpath:db/migration");
+        return props;
     }
 
     @BeforeAll
@@ -99,7 +101,7 @@ class ProcessManagerIntegrationTest implements TestPropertyProvider {
         ProcessInstance instance = saved.get();
         assertEquals("IntegrationTestProcess", instance.processType());
         assertEquals("test-key-1", instance.businessKey());
-        assertEquals("Step1", instance.currentStep());
+        assertEquals("IntegrationStep1", instance.currentStep());
         assertEquals(ProcessStatus.RUNNING, instance.status());
         assertEquals(100.50, instance.data().get("amount"));
         assertEquals("cust-123", instance.data().get("customerId"));
@@ -186,11 +188,11 @@ class ProcessManagerIntegrationTest implements TestPropertyProvider {
 
         ProcessInstance instance = retried.get();
         assertEquals(1, instance.retries());
-        assertEquals("Step1", instance.currentStep()); // Still on Step1
+        assertEquals("IntegrationStep1", instance.currentStep()); // Still on IntegrationStep1
 
         // Verify command was sent twice (initial + retry)
         verify(mockCommandBus, times(2)).accept(
-            eq("Step1"),
+            eq("IntegrationStep1"),
             any(),
             any(),
             any(),

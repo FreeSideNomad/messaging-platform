@@ -1,6 +1,7 @@
 package com.acme.payments.orchestration;
 
 import com.acme.payments.application.command.CreateAccountCommand;
+import com.acme.payments.application.command.InitiateCreateAccountProcess;
 import com.acme.payments.domain.model.AccountType;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
@@ -12,6 +13,8 @@ import com.acme.reliable.core.Jsons;
 import com.acme.reliable.processor.command.AutoCommandHandlerRegistry;
 import com.acme.reliable.processor.process.ProcessManager;
 import com.acme.reliable.repository.ProcessRepository;
+import com.acme.reliable.spi.CommandQueue;
+import com.acme.reliable.spi.EventPublisher;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.test.support.TestPropertyProvider;
@@ -58,8 +61,10 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
         props.put("datasources.default.password", postgres.getPassword());
         props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
         props.put("datasources.default.auto-commit", "false");
+        props.put("datasources.default.maximum-pool-size", "10");
+        props.put("datasources.default.minimum-idle", "2");
         props.put("flyway.datasources.default.enabled", "true");
-        props.put("flyway.datasources.default.locations", "filesystem:src/main/resources/db/migration");
+        props.put("flyway.datasources.default.locations", "classpath:db/migration");
         props.put("jms.consumers.enabled", "false");
         return props;
     }
@@ -77,6 +82,16 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
     @MockBean(ProcessManager.class)
     ProcessManager processManager() {
         return mock(ProcessManager.class);
+    }
+
+    @MockBean(CommandQueue.class)
+    CommandQueue commandQueue() {
+        return mock(CommandQueue.class);
+    }
+
+    @MockBean(EventPublisher.class)
+    EventPublisher eventPublisher() {
+        return mock(EventPublisher.class);
     }
 
     @Inject
@@ -102,15 +117,15 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
     @Test
     @DisplayName("Process definition should have correct type")
     void testProcessType() {
-        assertThat(processDefinition.getProcessType()).isEqualTo("CreateAccount");
+        assertThat(processDefinition.getProcessType()).isEqualTo("InitiateCreateAccountProcess");
     }
 
     @Test
-    @DisplayName("Should initialize process state from CreateAccountCommand without limits")
+    @DisplayName("Should initialize process state from InitiateCreateAccountProcess without limits")
     void testProcessInitialization_NoLimits() {
-        // Given: Create account command without limits
+        // Given: Initiate create account process command without limits
         UUID customerId = UUID.randomUUID();
-        CreateAccountCommand cmd = new CreateAccountCommand(
+        InitiateCreateAccountProcess cmd = new InitiateCreateAccountProcess(
             customerId,
             "USD",
             "001",
@@ -120,7 +135,7 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
         );
 
         // When: Initializing process
-        Map<String, Object> processState = processDefinition.handleCreateAccount(cmd);
+        Map<String, Object> processState = processDefinition.initializeProcessState(cmd);
 
         // Then: Process state should contain all command data
         assertThat(processState).isNotNull();
@@ -133,16 +148,16 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
     }
 
     @Test
-    @DisplayName("Should initialize process state from CreateAccountCommand with limits")
+    @DisplayName("Should initialize process state from InitiateCreateAccountProcess with limits")
     void testProcessInitialization_WithLimits() {
-        // Given: Create account command with limits
+        // Given: Initiate create account process command with limits
         UUID customerId = UUID.randomUUID();
         Map<PeriodType, Money> limits = Map.of(
             PeriodType.HOUR, Money.of(1000, "USD"),
             PeriodType.DAY, Money.of(5000, "USD")
         );
 
-        CreateAccountCommand cmd = new CreateAccountCommand(
+        InitiateCreateAccountProcess cmd = new InitiateCreateAccountProcess(
             customerId,
             "USD",
             "001",
@@ -152,7 +167,7 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
         );
 
         // When: Initializing process
-        Map<String, Object> processState = processDefinition.handleCreateAccount(cmd);
+        Map<String, Object> processState = processDefinition.initializeProcessState(cmd);
 
         // Then: Process state should contain limits
         assertThat(processState).isNotNull();
@@ -177,8 +192,7 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
             "USD",
             "001",
             AccountType.CHECKING,
-            false,
-            null
+            false
         );
 
         // When: Creating account
@@ -205,8 +219,7 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
             "USD",
             "001",
             AccountType.CHECKING,
-            true,
-            Map.of(PeriodType.DAY, Money.of(5000, "USD"))
+            true
         );
 
         Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
@@ -241,8 +254,13 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
         // Given: Process graph
         var graph = processDefinition.defineProcess();
 
-        // Then: Should have CreateAccount as initial step
-        assertThat(graph.getInitialStep()).isEqualTo("CreateAccount");
+        // Then: Should have InitiateCreateAccountProcess as initial step
+        assertThat(graph.getInitialStep()).isEqualTo("InitiateCreateAccountProcess");
+
+        // Next step after initiation should be CreateAccount
+        var nextStep = graph.getNextStep("InitiateCreateAccountProcess", Map.of());
+        assertThat(nextStep).isPresent();
+        assertThat(nextStep.get()).isEqualTo("CreateAccount");
 
         // When: limitBased=true
         Map<String, Object> dataWithLimits = Map.of(
@@ -301,8 +319,7 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
             "USD",
             "001",
             AccountType.CHECKING,
-            true,
-            Map.of(PeriodType.DAY, Money.of(5000, "USD"))
+            true
         );
 
         Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);

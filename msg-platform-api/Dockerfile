@@ -11,6 +11,7 @@ COPY msg-platform-events-kafka/pom.xml msg-platform-events-kafka/
 COPY msg-platform-processor/pom.xml msg-platform-processor/
 COPY msg-platform-api/pom.xml msg-platform-api/
 COPY msg-platform-worker/pom.xml msg-platform-worker/
+COPY msg-platform-payments-worker/pom.xml msg-platform-payments-worker/
 
 # Copy source code and resources for dependencies
 COPY msg-platform-core/src msg-platform-core/src

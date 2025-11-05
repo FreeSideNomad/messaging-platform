@@ -1,0 +1,6 @@
+{
+  "accountId": "ACC001",
+  "amount": 1000.00,
+  "currency": "USD",
+  "description": "Sample payment"
+}

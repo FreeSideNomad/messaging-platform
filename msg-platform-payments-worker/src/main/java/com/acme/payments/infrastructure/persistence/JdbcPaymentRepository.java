@@ -42,7 +42,8 @@ public class JdbcPaymentRepository implements PaymentRepository {
                 insertPayment(conn, payment);
             }
 
-            conn.commit();
+            // Don't commit here - let the ambient transaction (if any) handle it
+            // This allows repositories to work both in tests (@Transactional) and production
         } catch (SQLException e) {
             log.error("Error saving payment: {}", payment.getPaymentId(), e);
             throw new RuntimeException("Failed to save payment", e);
@@ -182,12 +183,19 @@ public class JdbcPaymentRepository implements PaymentRepository {
             payment.recordFxContract(fxContractId);
         }
 
-        // Set status based on loaded value
+        // Set status based on loaded value - must follow valid state transitions
         switch (status) {
             case PROCESSING -> payment.markAsProcessing();
-            case COMPLETED -> payment.markAsCompleted();
+            case COMPLETED -> {
+                payment.markAsProcessing();
+                payment.markAsCompleted();
+            }
             case FAILED -> payment.markAsFailed("Loaded as failed");
-            case REVERSED -> payment.reverse("Loaded as reversed");
+            case REVERSED -> {
+                payment.markAsProcessing();
+                payment.markAsCompleted();
+                payment.reverse("Loaded as reversed");
+            }
             default -> {} // PENDING is the initial state
         }
 

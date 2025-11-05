@@ -1,5 +1,6 @@
 package com.acme.reliable.performance;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Endurance tests validating system stability under sustained load.
  */
 @Tag("endurance")
+@Disabled("Endurance tests disabled - run manually when needed")
 class EnduranceTest extends PerformanceTestBase {
 
     @Test

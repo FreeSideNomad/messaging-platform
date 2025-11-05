@@ -1,0 +1,50 @@
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"e360d12b-404b-48b5-8017-11c3fbfa2fb1","transactionType":"CREDIT","amount":{"amount":50000,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"da11f6c1-9c8b-41b2-86f8-c6ad8cfeb283","transactionType":"CREDIT","amount":{"amount":100000.00,"currencyCode":"JPY","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"2c2a3e2f-6068-43d8-ac65-0063c2d0793d","transactionType":"CREDIT","amount":{"amount":100000.00,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"79ea5b18-ba4b-424b-a1c7-89e304a1223c","transactionType":"CREDIT","amount":{"amount":50000,"currencyCode":"USD","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"dcfe75e1-1910-41ef-86e3-fbb34ef14d6c","transactionType":"CREDIT","amount":{"amount":50000,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"d0e4ab24-1156-4ff2-a484-1ca2105b0a1d","transactionType":"CREDIT","amount":{"amount":100000.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"6629b07b-68c5-45c1-b0c8-c3803425dfbe","transactionType":"CREDIT","amount":{"amount":50000,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"a5d62218-9bb0-4a27-b5f4-664cb88183db","transactionType":"CREDIT","amount":{"amount":100000.00,"currencyCode":"GBP","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"0270276c-d0be-4878-9785-8fc24d676b12","transactionType":"CREDIT","amount":{"amount":100000.00,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+
+POST http://localhost:8080/api/transactions
+Content-Type: application/json
+
+{"accountId":"ca743cb4-4d55-4f81-9649-5722c447dd0a","transactionType":"CREDIT","amount":{"amount":100000.00,"currencyCode":"EUR","zero":false,"negative":false,"positive":true},"description":"Opening credit - initial account funding"}
+

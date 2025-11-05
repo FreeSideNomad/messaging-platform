@@ -1,0 +1,20 @@
+{
+  "customerId": "550e8400-e29b-41d4-a716-446655440000",
+  "debitAccountId": "650e8400-e29b-41d4-a716-446655440101",
+  "debitAmount": {
+    "amount": 1000.00,
+    "currencyCode": "USD"
+  },
+  "creditAmount": {
+    "amount": 1350.00,
+    "currencyCode": "CAD"
+  },
+  "valueDate": "2025-11-05",
+  "beneficiary": {
+    "name": "Jane Doe",
+    "accountNumber": "1122334455",
+    "transitNumber": "99999",
+    "bankName": "Canadian Bank Corp"
+  },
+  "description": "International transfer with FX conversion"
+}

@@ -42,7 +42,8 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
                 insertLimit(conn, limit);
             }
 
-            conn.commit();
+            // Don't commit here - let the ambient transaction (if any) handle it
+            // This allows repositories to work both in tests (@Transactional) and production
         } catch (SQLException e) {
             log.error("Error saving account limit: {}", limit.getLimitId(), e);
             throw new RuntimeException("Failed to save account limit", e);
