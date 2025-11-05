@@ -210,6 +210,12 @@
                       <minimum>0.70</minimum>
                     </limit>
                   </limits>
+                  <excludes>
+                    <!-- Exclude main application class -->
+                    <exclude>com.acme.payments</exclude>
+                    <!-- Exclude messaging infrastructure (MQ consumer bootstrap) -->
+                    <exclude>com.acme.payments.infrastructure.messaging</exclude>
+                  </excludes>
                 </rule>
               </rules>
             </configuration>

@@ -30,9 +30,11 @@ Thumbs.db
 .env.*
 !.env.example
 
-# Test results
-*.xml
-*.html
+# Test results (exclude test/surefire reports but keep pom.xml)
+**/target/**/*.xml
+**/target/**/*.html
+**/surefire-reports/*.xml
+**/surefire-reports/*.html
 
 # Docker
 *.pid
