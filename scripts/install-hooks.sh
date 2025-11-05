@@ -69,13 +69,13 @@ echo ""
 
 # Step 2: Run PMD static analysis
 echo "🔬 Step 2/3: Running PMD static code analysis..."
-mvn pmd:check -q
+mvn pmd:check -q > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ PMD checks passed${NC}"
 else
-    echo -e "${RED}❌ PMD found issues${NC}"
-    echo -e "${YELLOW}Run 'mvn pmd:pmd' to see detailed report at target/site/pmd.html${NC}"
+    echo -e "${RED}❌ PMD found violations${NC}"
+    echo -e "${RED}Run 'mvn pmd:check' to see detailed violations${NC}"
     exit 1
 fi
 
