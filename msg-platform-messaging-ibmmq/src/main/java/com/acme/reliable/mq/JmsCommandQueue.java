@@ -58,9 +58,9 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
         for (var e : headers.entrySet()) {
           String key = e.getKey();
           // Skip special JMS headers and IBM MQ internal properties
-          if (key.equals("correlationId")
-              || key.equals("replyTo")
-              || key.equals("mode")
+          if ("correlationId".equals(key)
+              || "replyTo".equals(key)
+              || "mode".equals(key)
               || key.startsWith("JMS_IBM_")
               || key.startsWith("JMSX")) {
             continue;

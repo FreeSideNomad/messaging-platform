@@ -59,7 +59,7 @@ public class MessagingConfig {
      * (IBM MQ uses uppercase)
      */
     public String buildCommandQueue(String commandName) {
-      return commandPrefix + commandName.toUpperCase() + queueSuffix;
+      return commandPrefix + commandName.toUpperCase(java.util.Locale.ROOT) + queueSuffix;
     }
   }
 

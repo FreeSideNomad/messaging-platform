@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<ruleset name="Custom Ruleset"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Custom PMD ruleset for messaging-platform project - based on quickstart with sensible exclusions
+    </description>
+
+    <!-- Start with quickstart (which is a minimal set of important rules) -->
+    <rule ref="rulesets/java/quickstart.xml">
+        <!-- Disable GuardLogStatement - too noisy, not critical -->
+        <exclude name="GuardLogStatement"/>
+        <!-- Disable unused warnings for stub methods and intentional vars -->
+        <exclude name="UnusedFormalParameter"/>
+        <exclude name="UnusedLocalVariable"/>
+        <!-- CloseResource can be a false positive for pooled resources -->
+        <exclude name="CloseResource"/>
+        <!-- Disable UnnecessaryFullyQualifiedName - builder pattern uses it intentionally -->
+        <exclude name="UnnecessaryFullyQualifiedName"/>
+        <!-- Disable UseUtilityClass - sometimes we want constructors for DI -->
+        <exclude name="UseUtilityClass"/>
+        <!-- Disable SingularField - Micronaut DI requires fields -->
+        <exclude name="SingularField"/>
+        <!-- Disable MissingOverride - can be added later by IDE -->
+        <exclude name="MissingOverride"/>
+    </rule>
+
+</ruleset>

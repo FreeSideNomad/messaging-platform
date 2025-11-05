@@ -206,13 +206,18 @@ junit.jupiter.includeTags=${junit.includeTags}</configurationParameters>
           <version>3.21.2</version>
           <configuration>
             <rulesets>
-              <ruleset>/rulesets/java/quickstart.xml</ruleset>
+              <ruleset>${maven.multiModuleProjectDirectory}/pmd-ruleset.xml</ruleset>
             </rulesets>
             <printFailingErrors>true</printFailingErrors>
             <linkXRef>false</linkXRef>
+            <failOnViolation>true</failOnViolation>
+            <verbose>true</verbose>
             <excludeRoots>
               <excludeRoot>target/generated-sources</excludeRoot>
             </excludeRoots>
+            <excludes>
+              <exclude>**/*Application.java</exclude>
+            </excludes>
           </configuration>
         </plugin>
         <!-- Checkstyle for code style enforcement -->

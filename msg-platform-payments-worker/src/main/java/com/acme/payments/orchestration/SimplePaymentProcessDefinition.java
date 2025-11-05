@@ -72,7 +72,7 @@ public class SimplePaymentProcessDefinition implements ProcessConfiguration {
     if (error == null) {
       return false;
     }
-    String lowerError = error.toLowerCase();
+    String lowerError = error.toLowerCase(java.util.Locale.ROOT);
     return lowerError.contains("timeout")
         || lowerError.contains("connection")
         || lowerError.contains("temporary");

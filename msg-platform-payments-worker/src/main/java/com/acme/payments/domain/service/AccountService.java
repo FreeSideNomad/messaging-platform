@@ -156,7 +156,7 @@ public class AccountService {
 
   private String generateAccountNumber() {
     // Simple implementation - in reality would use a proper account number generator
-    return "ACC" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+    return "ACC" + UUID.randomUUID().toString().substring(0, 10).toUpperCase(java.util.Locale.ROOT);
   }
 
   public static class AccountNotFoundException extends RuntimeException {

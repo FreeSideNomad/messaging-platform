@@ -39,7 +39,7 @@ public class CommandController {
       @Header(value = "Reply-To", defaultValue = "") String replyTo) {
 
     String effectiveReplyQueue =
-        (replyTo != null && !replyTo.isBlank()) ? replyTo : defaultReplyQueue;
+        replyTo != null && !replyTo.isBlank() ? replyTo : defaultReplyQueue;
 
     var cmdId =
         bus.accept(
