@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>messaging-platform</artifactId>
+    <version>2.0.0</version>
+  </parent>
+
+  <artifactId>msg-platform-messaging-ibmmq</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Messaging Platform Messaging - IBM MQ</name>
+  <description>IBM MQ command messaging adapter (JMS producer/consumer)</description>
+
+  <dependencies>
+    <!-- Core module (domain + SPI) -->
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>msg-platform-core</artifactId>
+    </dependency>
+
+    <!-- Micronaut JMS -->
+    <dependency>
+      <groupId>io.micronaut.jms</groupId>
+      <artifactId>micronaut-jms-core</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+    <!-- Jakarta JMS API -->
+    <dependency>
+      <groupId>jakarta.jms</groupId>
+      <artifactId>jakarta.jms-api</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+
+    <!-- IBM MQ Client -->
+    <dependency>
+      <groupId>com.ibm.mq</groupId>
+      <artifactId>com.ibm.mq.jakarta.client</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-Amicronaut.processing.group=com.acme</arg>
+            <arg>-Amicronaut.processing.module=msg-platform-messaging-ibmmq</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

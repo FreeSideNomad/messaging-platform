@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.acme</groupId>
+    <artifactId>messaging-platform</artifactId>
+    <version>2.0.0</version>
+  </parent>
+
+  <artifactId>msg-platform-worker</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Messaging Platform Worker</name>
+  <description>Worker for processing commands from MQ and publishing replies/events</description>
+
+  <properties>
+    <exec.mainClass>com.acme.reliable.WorkerApplication</exec.mainClass>
+    <micronaut.aot.packageName>com.acme.reliable.worker.aot.generated</micronaut.aot.packageName>
+  </properties>
+
+  <dependencies>
+    <!-- Core module (domain + business logic) -->
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>msg-platform-core</artifactId>
+    </dependency>
+
+    <!-- Persistence (database access) -->
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>msg-platform-persistence-jdbc</artifactId>
+    </dependency>
+
+    <!-- Processor (workflow orchestration - includes messaging and events) -->
+    <dependency>
+      <groupId>com.acme</groupId>
+      <artifactId>msg-platform-processor</artifactId>
+    </dependency>
+
+    <!-- Minimal HTTP server (for health checks only) -->
+    <dependency>
+      <groupId>io.micronaut</groupId>
+      <artifactId>micronaut-http-server-netty</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- YAML Configuration -->
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- PostgreSQL Driver (required at runtime) -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>kafka</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Test Resources -->
+    <dependency>
+      <groupId>io.micronaut.testresources</groupId>
+      <artifactId>micronaut-test-resources-client</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.micronaut.maven</groupId>
+        <artifactId>micronaut-maven-plugin</artifactId>
+        <configuration>
+          <configFile>aot-${packaging}.properties</configFile>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-Amicronaut.processing.group=com.acme</arg>
+            <arg>-Amicronaut.processing.module=msg-platform-worker</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
