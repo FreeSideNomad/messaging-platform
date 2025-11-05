@@ -48,4 +48,5 @@ jobs:
             -Pcoverage \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=FreeSideNomad_messaging-platform \
-            -Dsonar.organization=freesidenomad
+            -Dsonar.organization=freesidenomad \
+            -Dsonar.qualitygate.wait=true
