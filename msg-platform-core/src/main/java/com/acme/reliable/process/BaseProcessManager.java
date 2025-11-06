@@ -530,6 +530,11 @@ public abstract class BaseProcessManager {
       try {
         Thread.sleep(delayMs); // Simple delay - could use scheduler for production
         executeStep(updated, definition);
+      } catch (InterruptedException e) {
+        // Thread was interrupted - restore interrupted status and handle as permanent failure
+        Thread.currentThread().interrupt();
+        LOG.error("Retry interrupted for process: {}", instance.processId(), e);
+        handlePermanentFailure(updated, definition, event, "Retry interrupted");
       } catch (Exception e) {
         LOG.error("Failed to retry step for process: {}", instance.processId(), e);
         handlePermanentFailure(updated, definition, event, "Retry failed: " + e.getMessage());

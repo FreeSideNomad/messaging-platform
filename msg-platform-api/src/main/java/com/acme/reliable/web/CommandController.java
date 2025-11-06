@@ -74,6 +74,12 @@ public class CommandController {
           .header(HEADER_COMMAND_ID, cmdId.toString())
           .header(HEADER_CORRELATION_ID, cmdId.toString())
           .body("{\"message\":\"Command accepted, processing asynchronously\"}");
+    } catch (InterruptedException e) {
+      // Thread was interrupted - restore interrupted status and return error
+      Thread.currentThread().interrupt();
+      return HttpResponse.serverError()
+          .header(HEADER_COMMAND_ID, cmdId.toString())
+          .body("{\"error\":\"Request interrupted\"}");
     } catch (Exception e) {
       // Error during processing
       return HttpResponse.serverError()
