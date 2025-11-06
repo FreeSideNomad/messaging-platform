@@ -41,11 +41,11 @@ public abstract class BaseCommandConsumer {
     String commandIdStr = m.getStringProperty("commandId");
     String correlationIdStr = m.getStringProperty("correlationId");
 
-    UUID commandId = commandIdStr != null ? UUID.fromString(commandIdStr) : UUID.randomUUID();
-    UUID correlationId =
-        correlationIdStr != null ? UUID.fromString(correlationIdStr) : UUID.randomUUID();
-
     try {
+      UUID commandId = commandIdStr != null ? UUID.fromString(commandIdStr) : UUID.randomUUID();
+      UUID correlationId =
+          correlationIdStr != null ? UUID.fromString(correlationIdStr) : UUID.randomUUID();
+
       // Create command
       CommandMessage command = new CommandMessage(commandId, correlationId, commandType, body);
 
@@ -63,7 +63,14 @@ public abstract class BaseCommandConsumer {
     } catch (Exception e) {
       log.error("Error processing {} command", commandType, e);
 
-      // Send error reply
+      // Send error reply - use correlation ID from string if available, else generate one
+      UUID correlationId;
+      try {
+        correlationId =
+            correlationIdStr != null ? UUID.fromString(correlationIdStr) : UUID.randomUUID();
+      } catch (IllegalArgumentException ex) {
+        correlationId = UUID.randomUUID();
+      }
       CommandReply errorReply =
           CommandReply.failed(UUID.randomUUID(), correlationId, e.getMessage());
       sendReply(correlationId, errorReply);
