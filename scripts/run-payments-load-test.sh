@@ -72,11 +72,12 @@ echo ""
 # Step 3: Generate test data
 echo -e "${YELLOW}📊 Step 3: Generating test data...${NC}"
 echo -e "Running: E2ETestRunner generate $SCENARIO $OUTPUT_DIR"
-mvn exec:java \
-  -Dexec.mainClass="com.acme.payments.e2e.E2ETestRunner" \
-  -Dexec.classpathScope=test \
-  -Dexec.args="generate $SCENARIO $OUTPUT_DIR" \
-  -q
+
+# Build classpath and run with java directly
+mvn -q dependency:build-classpath -Dmdep.outputFile=/tmp/payments-cp.txt
+CLASSPATH=$(cat /tmp/payments-cp.txt):target/test-classes
+java -cp "$CLASSPATH" com.acme.payments.e2e.E2ETestRunner generate "$SCENARIO" "$OUTPUT_DIR"
+rm -f /tmp/payments-cp.txt
 
 echo -e "${GREEN}✅ Test data generated${NC}"
 echo ""
