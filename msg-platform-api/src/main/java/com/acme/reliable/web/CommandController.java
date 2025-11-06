@@ -15,6 +15,9 @@ import java.util.concurrent.TimeoutException;
 
 @Controller("/commands")
 public class CommandController {
+  private static final String HEADER_COMMAND_ID = "X-Command-Id";
+  private static final String HEADER_CORRELATION_ID = "X-Correlation-Id";
+
   private final CommandBus bus;
   private final ResponseRegistry responses;
   private final String defaultReplyQueue;
@@ -32,7 +35,7 @@ public class CommandController {
   }
 
   @Post("/{name}")
-  public HttpResponse<?> submit(
+  public HttpResponse<String> submit(
       @PathVariable String name,
       @Header("Idempotency-Key") String idem,
       @Body String payload,
@@ -52,8 +55,8 @@ public class CommandController {
     // If configured for full async (syncWait = 0), return immediately
     if (timeoutConfig.isAsync()) {
       return HttpResponse.accepted()
-          .header("X-Command-Id", cmdId.toString())
-          .header("X-Correlation-Id", cmdId.toString())
+          .header(HEADER_COMMAND_ID, cmdId.toString())
+          .header(HEADER_CORRELATION_ID, cmdId.toString())
           .body("{\"message\":\"Command accepted, processing asynchronously\"}");
     }
 
@@ -63,18 +66,18 @@ public class CommandController {
     try {
       String response = future.get(timeoutConfig.getSyncWaitMillis(), TimeUnit.MILLISECONDS);
       return HttpResponse.ok(response)
-          .header("X-Command-Id", cmdId.toString())
-          .header("X-Correlation-Id", cmdId.toString());
+          .header(HEADER_COMMAND_ID, cmdId.toString())
+          .header(HEADER_CORRELATION_ID, cmdId.toString());
     } catch (TimeoutException e) {
       // Timeout - return accepted status
       return HttpResponse.accepted()
-          .header("X-Command-Id", cmdId.toString())
-          .header("X-Correlation-Id", cmdId.toString())
+          .header(HEADER_COMMAND_ID, cmdId.toString())
+          .header(HEADER_CORRELATION_ID, cmdId.toString())
           .body("{\"message\":\"Command accepted, processing asynchronously\"}");
     } catch (Exception e) {
       // Error during processing
       return HttpResponse.serverError()
-          .header("X-Command-Id", cmdId.toString())
+          .header(HEADER_COMMAND_ID, cmdId.toString())
           .body("{\"error\":\"" + e.getMessage() + "\"}");
     }
   }

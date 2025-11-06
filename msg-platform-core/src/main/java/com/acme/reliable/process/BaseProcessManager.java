@@ -21,6 +21,11 @@ public abstract class BaseProcessManager {
   private static final Logger LOG = LoggerFactory.getLogger(BaseProcessManager.class);
 
   private static final String PARALLEL_STATE_KEY = "_parallel_";
+  private static final String HEADER_CORRELATION_ID = "correlationId";
+  private static final String HEADER_IDEMPOTENCY_KEY = "idempotencyKey";
+  private static final String HEADER_BUSINESS_KEY = "businessKey";
+  private static final String HEADER_PARALLEL_BRANCH = "parallelBranch";
+  private static final String STATUS_COMPLETED = "COMPLETED";
 
   private final Map<String, ProcessConfiguration> configurations = new ConcurrentHashMap<>();
   private final Map<String, ProcessGraph> graphs = new ConcurrentHashMap<>();
@@ -157,11 +162,15 @@ public abstract class BaseProcessManager {
 
     // Prepare command payload
     Map<String, String> headers =
-        Map.of("correlationId", instance.processId().toString(), "idempotencyKey", idempotencyKey);
+        Map.of(
+            HEADER_CORRELATION_ID,
+            instance.processId().toString(),
+            HEADER_IDEMPOTENCY_KEY,
+            idempotencyKey);
 
     // Build command payload from process data
     Map<String, Object> commandData = new HashMap<>(instance.data());
-    commandData.put("businessKey", instance.businessKey());
+    commandData.put(HEADER_BUSINESS_KEY, instance.businessKey());
     commandData.put("step", step);
 
     String payload = Jsons.toJson(commandData);
@@ -219,13 +228,17 @@ public abstract class BaseProcessManager {
 
       Map<String, String> headers =
           Map.of(
-              "correlationId", instance.processId().toString(),
-              "idempotencyKey", idempotencyKey,
-              "parallelBranch", branch,
-              "parentStep", step);
+              HEADER_CORRELATION_ID,
+              instance.processId().toString(),
+              HEADER_IDEMPOTENCY_KEY,
+              idempotencyKey,
+              HEADER_PARALLEL_BRANCH,
+              branch,
+              "parentStep",
+              step);
 
       Map<String, Object> commandData = new HashMap<>(instance.data());
-      commandData.put("businessKey", instance.businessKey());
+      commandData.put(HEADER_BUSINESS_KEY, instance.businessKey());
       commandData.put("step", branch);
       commandData.put("parallelBranch", branch);
 
@@ -299,15 +312,14 @@ public abstract class BaseProcessManager {
     Map<String, String> parallelState = (Map<String, String>) parallelStateObj;
 
     // Update branch state to COMPLETED
-    parallelState.put(completedBranch, "COMPLETED");
+    parallelState.put(completedBranch, STATUS_COMPLETED);
     newData.put(parallelStateKey, parallelState);
 
     ProcessEvent event =
         new ProcessEvent.StepCompleted(completedBranch, commandId.toString(), reply.data());
 
     // Check if all branches are complete
-    boolean allComplete =
-        parallelState.values().stream().allMatch(status -> "COMPLETED".equals(status));
+    boolean allComplete = parallelState.values().stream().allMatch(STATUS_COMPLETED::equals);
 
     if (!allComplete) {
       // Wait for other branches - just update state
@@ -316,7 +328,7 @@ public abstract class BaseProcessManager {
       getProcessRepository().update(updated, event);
 
       long completedCount =
-          parallelState.values().stream().filter(status -> "COMPLETED".equals(status)).count();
+          parallelState.values().stream().filter(STATUS_COMPLETED::equals).count();
 
       LOG.info(
           "Parallel branch completed, waiting for others: process={} branch={} completed={}/{}",
