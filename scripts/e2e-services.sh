@@ -9,6 +9,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="$PROJECT_DIR/docker-compose.e2e.yml"
 
+# Detect docker compose command (V1 vs V2)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "Error: Neither 'docker-compose' nor 'docker compose' found"
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -35,7 +45,7 @@ print_usage() {
 start_services() {
     echo -e "${BLUE}🚀 Starting E2E services...${NC}"
 
-    docker-compose -f "$COMPOSE_FILE" up -d
+    $DOCKER_COMPOSE -f "$COMPOSE_FILE" up -d
 
     echo ""
     echo -e "${YELLOW}⏳ Waiting for services to be healthy...${NC}"
@@ -45,19 +55,20 @@ start_services() {
     local attempt=0
 
     while [ $attempt -lt $max_attempts ]; do
-        local healthy_count=$(docker-compose -f "$COMPOSE_FILE" ps --format json | \
+        local healthy_count=$($DOCKER_COMPOSE -f "$COMPOSE_FILE" ps --format json 2>/dev/null | \
             jq -r 'select(.Health == "healthy") | .Name' 2>/dev/null | wc -l | tr -d ' ')
 
-        if [ "$healthy_count" = "3" ]; then
+        if [ "$healthy_count" = "4" ]; then
             echo ""
             echo -e "${GREEN}✅ All E2E services are healthy!${NC}"
             echo ""
-            docker-compose -f "$COMPOSE_FILE" ps
+            $DOCKER_COMPOSE -f "$COMPOSE_FILE" ps
             echo ""
             echo -e "${GREEN}Services ready for E2E testing:${NC}"
             echo "  📊 PostgreSQL: localhost:5432"
             echo "  📨 IBM MQ:     localhost:1414 (Web: https://localhost:9443)"
             echo "  📡 Kafka:      localhost:9092"
+            echo "  🌐 API:        http://localhost:8080"
             return 0
         fi
 
@@ -74,7 +85,7 @@ start_services() {
 
 stop_services() {
     echo -e "${BLUE}🛑 Stopping E2E services...${NC}"
-    docker-compose -f "$COMPOSE_FILE" down -v
+    $DOCKER_COMPOSE -f "$COMPOSE_FILE" down -v
     echo -e "${GREEN}✅ E2E services stopped and cleaned up${NC}"
 }
 
@@ -87,15 +98,15 @@ restart_services() {
 show_status() {
     echo -e "${BLUE}📊 E2E Services Status:${NC}"
     echo ""
-    docker-compose -f "$COMPOSE_FILE" ps
+    $DOCKER_COMPOSE -f "$COMPOSE_FILE" ps
 }
 
 show_logs() {
     local service=$1
     if [ -z "$service" ]; then
-        docker-compose -f "$COMPOSE_FILE" logs -f
+        $DOCKER_COMPOSE -f "$COMPOSE_FILE" logs -f
     else
-        docker-compose -f "$COMPOSE_FILE" logs -f "$service"
+        $DOCKER_COMPOSE -f "$COMPOSE_FILE" logs -f "$service"
     fi
 }
 
