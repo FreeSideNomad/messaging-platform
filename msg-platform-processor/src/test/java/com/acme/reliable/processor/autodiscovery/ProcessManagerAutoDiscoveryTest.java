@@ -117,9 +117,8 @@ class ProcessManagerAutoDiscoveryTest {
     // When: Auto-discovery runs on startup
     processManager.onApplicationEvent(mock(ServerStartupEvent.class));
 
-    // Then: Definition should be registered (no exception thrown)
-    // Verify by trying to start a process of that type - should not throw "Unknown process type"
-    // Note: We can't easily test this without mocking more, but no exception = success
+    // Then: Definition should be registered (verified by verifying bean lookup)
+    verify(mockBeanContext, times(1)).getBeansOfType(ProcessConfiguration.class);
   }
 
   @Test
@@ -134,7 +133,8 @@ class ProcessManagerAutoDiscoveryTest {
     // When: Auto-discovery runs
     processManager.onApplicationEvent(mock(ServerStartupEvent.class));
 
-    // Then: All definitions should be registered (no exception)
+    // Then: All definitions should be registered (verified by verifying bean lookup)
+    verify(mockBeanContext, times(1)).getBeansOfType(ProcessConfiguration.class);
   }
 
   @Test
@@ -175,15 +175,13 @@ class ProcessManagerAutoDiscoveryTest {
 
   @Test
   void testRegisterDefinition_UniqueTypes() {
-    // Given: Definitions with unique types
+    // Given/When: Registering definitions with unique types
     TestProcessConfiguration def1 = new TestProcessConfiguration();
     AnotherProcessConfiguration def2 = new AnotherProcessConfiguration();
 
-    // When: Registering both
-    processManager.register(def1);
-    processManager.register(def2);
-
-    // Then: Should succeed (no exception)
+    // Then: Should succeed without throwing exception
+    assertDoesNotThrow(() -> processManager.register(def1));
+    assertDoesNotThrow(() -> processManager.register(def2));
   }
 
   // Dummy command classes for testing
