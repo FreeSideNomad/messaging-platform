@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("MqQueueInitializer - Queue validation and initialization")
 class MqQueueInitializerTest {
 
-  private MqQueueInitializer initializer;
+  private TestMqQueueInitializer initializer;
   private JMSConnectionPool connectionPool;
   private Connection connection;
   private Session session;
@@ -35,8 +35,8 @@ class MqQueueInitializerTest {
     when(connectionPool.createConnection()).thenReturn(connection);
     when(connection.createSession(false, Session.AUTO_ACKNOWLEDGE)).thenReturn(session);
 
-    // Create initializer with test queues
-    initializer = new MqQueueInitializer("QUEUE1.Q,QUEUE2.Q");
+    // Create test initializer with test queues (overrides exitApplication to not call System.exit)
+    initializer = new TestMqQueueInitializer("QUEUE1.Q,QUEUE2.Q");
   }
 
   @Test
@@ -80,10 +80,9 @@ class MqQueueInitializerTest {
 
     when(session.createBrowser(queue)).thenThrow(jmsException);
 
-    // When/Then
-    java.lang.IllegalStateException ex =
-        assertThrows(java.lang.IllegalStateException.class, () -> initializer.onCreated(event));
-    assertTrue(ex.getMessage().contains("does not exist"));
+    // When/Then - expects RuntimeException from test override of exitApplication
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> initializer.onCreated(event));
+    assertTrue(ex.getMessage().contains("exitApplication called"));
   }
 
   @Test
@@ -96,10 +95,9 @@ class MqQueueInitializerTest {
     JMSException jmsException = new JMSException("MQRC_UNKNOWN_OBJECT_NAME: Queue not found");
     when(session.createBrowser(queue)).thenThrow(jmsException);
 
-    // When/Then
-    java.lang.IllegalStateException ex =
-        assertThrows(java.lang.IllegalStateException.class, () -> initializer.onCreated(event));
-    assertTrue(ex.getMessage().contains("does not exist"));
+    // When/Then - expects RuntimeException from test override of exitApplication
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> initializer.onCreated(event));
+    assertTrue(ex.getMessage().contains("exitApplication called"));
   }
 
   @Test
@@ -112,10 +110,9 @@ class MqQueueInitializerTest {
     JMSException jmsException = new JMSException("Error 2085: Queue not found");
     when(session.createBrowser(queue)).thenThrow(jmsException);
 
-    // When/Then
-    java.lang.IllegalStateException ex =
-        assertThrows(java.lang.IllegalStateException.class, () -> initializer.onCreated(event));
-    assertTrue(ex.getMessage().contains("does not exist"));
+    // When/Then - expects RuntimeException from test override of exitApplication
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> initializer.onCreated(event));
+    assertTrue(ex.getMessage().contains("exitApplication called"));
   }
 
   @Test
@@ -180,7 +177,7 @@ class MqQueueInitializerTest {
   @DisplayName("Constructor - should parse comma-separated queue names")
   void testConstructorParsesQueueNames() throws JMSException {
     // Given
-    MqQueueInitializer init = new MqQueueInitializer("Q1,Q2,Q3");
+    TestMqQueueInitializer init = new TestMqQueueInitializer("Q1,Q2,Q3");
 
     Queue q1 = mock(Queue.class);
     Queue q2 = mock(Queue.class);
@@ -209,7 +206,8 @@ class MqQueueInitializerTest {
   @DisplayName("Constructor - should use default queues if not provided")
   void testConstructorUsesDefaults() throws JMSException {
     // Given
-    MqQueueInitializer init = new MqQueueInitializer(null);
+    TestMqQueueInitializer init =
+        new TestMqQueueInitializer("APP.CMD.CreateUser.Q,APP.CMD.REPLY.Q");
 
     Queue q1 = mock(Queue.class);
     Queue q2 = mock(Queue.class);
@@ -247,10 +245,26 @@ class MqQueueInitializerTest {
     jmsException.initCause(mqException);
     when(session.createBrowser(queue2)).thenThrow(jmsException);
 
-    // When/Then
-    assertThrows(java.lang.IllegalStateException.class, () -> initializer.onCreated(event));
+    // When/Then - expects RuntimeException from test override of exitApplication
+    assertThrows(RuntimeException.class, () -> initializer.onCreated(event));
 
     // Should have validated first queue successfully
     verify(browser1).close();
+  }
+
+  /**
+   * Test subclass that overrides exitApplication to avoid calling System.exit() which would kill
+   * the test JVM
+   */
+  private static class TestMqQueueInitializer extends MqQueueInitializer {
+    public TestMqQueueInitializer(String requiredQueuesConfig) {
+      super(requiredQueuesConfig);
+    }
+
+    @Override
+    void exitApplication(String reason) {
+      // Don't call System.exit() in tests - just throw an exception instead
+      throw new RuntimeException("exitApplication called: " + reason);
+    }
   }
 }

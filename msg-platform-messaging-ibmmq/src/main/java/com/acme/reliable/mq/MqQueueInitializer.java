@@ -103,7 +103,8 @@ public class MqQueueInitializer implements BeanCreatedEventListener<JMSConnectio
         "Queue " + queueName + " does not exist. Manual creation required.");
   }
 
-  private void exitApplication(String reason) {
+  // Package-private for testing - allows tests to override without calling System.exit
+  void exitApplication(String reason) {
     LOG.error("CRITICAL ERROR: {}", reason);
     LOG.error("Application cannot start. Exiting...");
     System.exit(1);
