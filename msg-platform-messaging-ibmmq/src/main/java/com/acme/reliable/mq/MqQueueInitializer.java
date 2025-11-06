@@ -1,7 +1,8 @@
 package com.acme.reliable.mq;
 
+import static com.ibm.mq.constants.CMQC.MQRC_UNKNOWN_OBJECT_NAME;
+
 import com.ibm.mq.MQException;
-import com.ibm.mq.constants.MQConstants;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.BeanCreatedEvent;
 import io.micronaut.context.event.BeanCreatedEventListener;
@@ -84,7 +85,7 @@ public class MqQueueInitializer implements BeanCreatedEventListener<JMSConnectio
     Throwable cause = e.getCause();
     if (cause instanceof MQException) {
       MQException mqe = (MQException) cause;
-      return mqe.getReason() == MQConstants.MQRC_UNKNOWN_OBJECT_NAME;
+      return mqe.getReason() == MQRC_UNKNOWN_OBJECT_NAME;
     }
     return e.getMessage() != null
         && (e.getMessage().contains("MQRC_UNKNOWN_OBJECT_NAME")

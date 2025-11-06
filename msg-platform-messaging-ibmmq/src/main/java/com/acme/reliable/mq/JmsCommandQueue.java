@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 @Requires(beans = IbmMqFactoryProvider.class)
 public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
   private static final Logger LOG = LoggerFactory.getLogger(JmsCommandQueue.class);
+  private static final String HEADER_CORRELATION_ID = "correlationId";
+  private static final String HEADER_REPLY_TO = "replyTo";
 
   private final jakarta.jms.Connection connection;
   private final ThreadLocal<SessionHolder> sessionPool;
@@ -49,17 +51,17 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
       var msg = session.createTextMessage(body);
 
       if (headers != null) {
-        if (headers.containsKey("correlationId")) {
-          msg.setJMSCorrelationID(headers.get("correlationId"));
+        if (headers.containsKey(HEADER_CORRELATION_ID)) {
+          msg.setJMSCorrelationID(headers.get(HEADER_CORRELATION_ID));
         }
-        if (headers.containsKey("replyTo")) {
-          msg.setJMSReplyTo(session.createQueue(headers.get("replyTo")));
+        if (headers.containsKey(HEADER_REPLY_TO)) {
+          msg.setJMSReplyTo(session.createQueue(headers.get(HEADER_REPLY_TO)));
         }
         for (var e : headers.entrySet()) {
           String key = e.getKey();
           // Skip special JMS headers and IBM MQ internal properties
-          if ("correlationId".equals(key)
-              || "replyTo".equals(key)
+          if (HEADER_CORRELATION_ID.equals(key)
+              || HEADER_REPLY_TO.equals(key)
               || "mode".equals(key)
               || key.startsWith("JMS_IBM_")
               || key.startsWith("JMSX")) {

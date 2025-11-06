@@ -1,10 +1,11 @@
 package com.acme.payments.domain.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Currency;
 
 /** Value object representing money with currency */
-public record Money(BigDecimal amount, String currencyCode) {
+public record Money(BigDecimal amount, String currencyCode) implements Serializable {
   public Money {
     if (amount == null) {
       throw new IllegalArgumentException("Amount cannot be null");

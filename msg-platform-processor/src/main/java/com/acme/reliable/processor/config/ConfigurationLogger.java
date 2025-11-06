@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 public class ConfigurationLogger implements ApplicationEventListener<ServerStartupEvent> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ConfigurationLogger.class);
+  private static final String SEPARATOR_LINE =
+      "═══════════════════════════════════════════════════════════════════════════════";
 
   private final TimeoutConfig timeoutConfig;
   private final MessagingConfig messagingConfig;
@@ -57,9 +59,9 @@ public class ConfigurationLogger implements ApplicationEventListener<ServerStart
 
   @Override
   public void onApplicationEvent(ServerStartupEvent event) {
-    LOG.info("═══════════════════════════════════════════════════════════════════════════════");
+    LOG.info(SEPARATOR_LINE);
     LOG.info("                         EFFECTIVE CONFIGURATION                                ");
-    LOG.info("═══════════════════════════════════════════════════════════════════════════════");
+    LOG.info(SEPARATOR_LINE);
     LOG.info("");
 
     // Server Configuration
@@ -130,9 +132,9 @@ public class ConfigurationLogger implements ApplicationEventListener<ServerStart
     LOG.info("  Expected TPS:       {}", estimateTPS());
     LOG.info("");
 
-    LOG.info("═══════════════════════════════════════════════════════════════════════════════");
+    LOG.info(SEPARATOR_LINE);
     LOG.info("                      APPLICATION READY FOR TRAFFIC                             ");
-    LOG.info("═══════════════════════════════════════════════════════════════════════════════");
+    LOG.info(SEPARATOR_LINE);
     LOG.info("");
   }
 

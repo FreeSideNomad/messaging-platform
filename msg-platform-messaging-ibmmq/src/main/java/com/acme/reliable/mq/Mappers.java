@@ -14,6 +14,7 @@ import java.util.UUID;
 /** Helper class to map JMS messages to Envelope */
 public final class Mappers {
   private static final ObjectMapper mapper = new ObjectMapper();
+  private static final String HEADER_COMMAND_NAME = "commandName";
 
   public static Envelope toEnvelope(String text, Message m) throws JMSException {
     try {
@@ -52,10 +53,10 @@ public final class Mappers {
       }
 
       // Extract command name from payload or headers
-      String commandName = headers.get("commandName");
+      String commandName = headers.get(HEADER_COMMAND_NAME);
       if (commandName == null || commandName.isBlank()) {
-        if (node.has("commandName")) {
-          commandName = node.get("commandName").asText();
+        if (node.has(HEADER_COMMAND_NAME)) {
+          commandName = node.get(HEADER_COMMAND_NAME).asText();
         } else if (m.getJMSDestination() != null) {
           commandName = deriveNameFromDestination(m.getJMSDestination().toString());
         } else {
