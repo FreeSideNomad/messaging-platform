@@ -39,14 +39,38 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build and analyze
+      - name: Build application
+        run: |
+          mvn -B clean package -DskipTests
+
+      - name: Start E2E services
+        run: |
+          docker-compose -f docker-compose.e2e.yml up -d
+          echo "Waiting for services to be healthy..."
+          timeout 300 bash -c 'until docker-compose -f docker-compose.e2e.yml ps | grep -q "healthy"; do sleep 5; done'
+          docker-compose -f docker-compose.e2e.yml ps
+
+      - name: Run unit tests with coverage
+        run: |
+          mvn -B test -Pcoverage
+
+      - name: Run E2E tests
+        run: |
+          mvn -B test -Pe2e
+
+      - name: SonarCloud analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn -B clean verify \
-            -Pcoverage,e2e \
+          mvn -B verify \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=FreeSideNomad_messaging-platform \
             -Dsonar.organization=freesidenomad \
             -Dsonar.qualitygate.wait=true
+
+      - name: Stop E2E services
+        if: always()
+        run: |
+          docker-compose -f docker-compose.e2e.yml logs
+          docker-compose -f docker-compose.e2e.yml down -v
