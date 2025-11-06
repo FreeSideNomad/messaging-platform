@@ -36,13 +36,13 @@ public abstract class E2ETestBase {
 
   @BeforeAll
   void setUp() throws Exception {
+    // Setup HTTP client first (needed for waitForService)
+    httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+
     // Wait for services
     System.out.println("Waiting for API service to be ready...");
     waitForService(API_BASE_URL + "/health", Duration.ofMinutes(3));
     System.out.println("API service is ready!");
-
-    // Setup HTTP client
-    httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
     // Setup DB connection
     System.out.println("Connecting to database...");
