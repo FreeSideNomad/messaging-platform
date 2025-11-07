@@ -1,9 +1,13 @@
 
-CREATE TYPE outbox_status AS ENUM ('NEW','SENDING','PUBLISHED','FAILED');
+DO $$ BEGIN
+  CREATE TYPE outbox_status AS ENUM ('NEW','SENDING','PUBLISHED','FAILED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
-ALTER TABLE outbox RENAME TO outbox_old;
+ALTER TABLE IF EXISTS outbox RENAME TO outbox_old;
 
-CREATE TABLE outbox (
+CREATE TABLE IF NOT EXISTS outbox (
   id           BIGSERIAL PRIMARY KEY,
   category     TEXT NOT NULL,
   topic        TEXT,
@@ -18,10 +22,10 @@ CREATE TABLE outbox (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX outbox_dispatch_idx
+CREATE INDEX IF NOT EXISTS outbox_dispatch_idx
   ON outbox (status, COALESCE(next_at, 'epoch'::TIMESTAMPTZ), created_at);
 
-CREATE INDEX outbox_claimed_idx
+CREATE INDEX IF NOT EXISTS outbox_claimed_idx
   ON outbox (status, claimed_at) WHERE status='SENDING';
 
 INSERT INTO outbox (category, topic, key, type, payload, headers, status, attempts, next_at, created_at)

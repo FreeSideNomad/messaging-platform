@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,7 @@ public class NotifyPublisher implements AutoCloseable {
   private final KafkaPublisher kafka;
   private final ScheduledExecutorService resub = Executors.newSingleThreadScheduledExecutor();
   private final Semaphore permits;
-  @SuppressWarnings("PMD.AvoidUsingVolatile")
-  private volatile boolean running = true;
+  private final AtomicBoolean running = new AtomicBoolean(true);
 
   public NotifyPublisher(
       RedissonClient redisson, OutboxDao outbox, MqPublisher mq, KafkaPublisher kafka) {
@@ -41,7 +41,7 @@ public class NotifyPublisher implements AutoCloseable {
   }
 
   private void subscribe() {
-    if (!running) {
+    if (!running.get()) {
       return;
     }
     var q = redisson.getBlockingDeque(NOTIFY_QUEUE);
@@ -97,7 +97,7 @@ public class NotifyPublisher implements AutoCloseable {
   @PreDestroy
   public void close() {
     LOG.info("Shutting down NotifyPublisher");
-    running = false;
+    running.set(false);
     resub.shutdownNow();
   }
 }
