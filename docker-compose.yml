@@ -35,8 +35,9 @@ services:
 
   # IBM MQ
   ibmmq:
-    image: ibm-mqadvanced-server-dev:9.4.4.0-arm64
+    image: ${IBM_MQ_IMAGE:-icr.io/ibm-messaging/mq:9.4.4.0-r1}
     container_name: messaging-ibmmq
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     environment:
       LICENSE: accept
       MQ_QMGR_NAME: QM1

@@ -25,7 +25,8 @@ services:
 
   # IBM MQ - using smaller resource limits for CI/CD
   ibmmq:
-    image: icr.io/ibm-messaging/mq:latest
+    image: ${IBM_MQ_IMAGE:-icr.io/ibm-messaging/mq:9.4.4.0-r1}
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     container_name: e2e-ibmmq
     environment:
       LICENSE: accept

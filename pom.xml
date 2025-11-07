@@ -40,6 +40,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <ibmmq.version>9.4.3.1</ibmmq.version>
     <flyway.version>11.1.0</flyway.version>
+    <snakeyaml.version>2.5</snakeyaml.version>
     <junit.excludeTags>e2e</junit.excludeTags>
     <junit.includeTags/>
 
@@ -95,6 +96,14 @@
         <groupId>org.flywaydb</groupId>
         <artifactId>flyway-database-postgresql</artifactId>
         <version>${flyway.version}</version>
+      </dependency>
+
+      <!-- SnakeYAML for YAML configuration -->
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>${snakeyaml.version}</version>
+        <scope>runtime</scope>
       </dependency>
 
       <!-- Testcontainers -->

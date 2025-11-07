@@ -1,0 +1,20 @@
+# Docker Compose Override Example
+# Copy this file to docker-compose.override.yml and modify as needed for your platform
+
+version: '3.8'
+
+# Example configuration for ARM64 (Apple Silicon) users
+# Uncomment and modify the sections below if you're running on ARM64
+
+services:
+  # For ARM64 (Apple Silicon) users with locally built IBM MQ image
+  # ibmmq:
+  #   image: ibm-mqadvanced-server-dev:9.4.4.0-arm64
+  #   platform: linux/arm64
+
+# Example configuration for AMD64 (Intel/AMD) users
+# This is already the default in docker-compose.yml, but you can override here if needed
+# services:
+#   ibmmq:
+#     image: icr.io/ibm-messaging/mq:9.4.4.0-r1
+#     platform: linux/amd64
