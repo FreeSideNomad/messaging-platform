@@ -44,7 +44,7 @@ public class NotifyPublisher implements AutoCloseable {
     if (!running.get()) {
       return;
     }
-    var q = redisson.getBlockingDeque(NOTIFY_QUEUE);
+    var q = redisson.getBlockingQueue(NOTIFY_QUEUE);
     q.takeAsync()
         .thenAcceptAsync(this::handleId)
         .whenComplete((ok, err) -> resub.execute(this::subscribe));
@@ -52,7 +52,7 @@ public class NotifyPublisher implements AutoCloseable {
 
   private void handleId(Object idObj) {
     if (!permits.tryAcquire()) {
-      redisson.getDeque(NOTIFY_QUEUE).addLastAsync(idObj);
+      redisson.getBlockingQueue(NOTIFY_QUEUE).addAsync(idObj);
       return;
     }
     try {

@@ -50,6 +50,9 @@ public class OutboxEntity {
   @Nullable @MappedProperty(value = "claimed_by", type = DataType.STRING)
   private String claimedBy;
 
+  @Nullable @MappedProperty(value = "claimed_at", type = DataType.TIMESTAMP)
+  private Instant claimedAt;
+
   @DateCreated
   @MappedProperty(value = "created_at", type = DataType.TIMESTAMP)
   private Instant createdAt;

@@ -22,27 +22,36 @@ public interface JdbcOutboxDao extends OutboxDao, GenericRepository<OutboxEntity
         UPDATE outbox
         SET status='SENDING', claimed_at=NOW(), attempts=attempts+1
         WHERE id = :id AND status='NEW'
-        RETURNING id, category, topic, key, type, payload::text,
-                  COALESCE((SELECT jsonb_object_agg(key, value) FROM jsonb_each_text(headers)), '{}'::jsonb)::text as headers_map,
-                  attempts
         """,
       nativeQuery = true)
-  Optional<OutboxRowDto> claimIfNewDto(long id);
+  int claimIfNewUpdate(long id);
+
+  @Query(
+      value =
+          """
+        SELECT * FROM outbox WHERE id = :id AND status='SENDING'
+        """,
+      nativeQuery = true)
+  Optional<OutboxEntity> selectClaimedRow(long id);
 
   @Override
   default Optional<OutboxRow> claimIfNew(long id) {
-    return claimIfNewDto(id)
+    int updated = claimIfNewUpdate(id);
+    if (updated == 0) {
+      return Optional.empty();
+    }
+    return selectClaimedRow(id)
         .map(
-            dto ->
+            entity ->
                 new OutboxRow(
-                    dto.id(),
-                    dto.category(),
-                    dto.topic(),
-                    dto.key(),
-                    dto.type(),
-                    dto.payload(),
-                    parseHeaders(dto.headersMap()),
-                    dto.attempts()));
+                    entity.getId(),
+                    entity.getCategory(),
+                    entity.getTopic(),
+                    entity.getKey(),
+                    entity.getType(),
+                    entity.getPayload(),
+                    entity.getHeaders(),
+                    entity.getAttempts()));
   }
 
   @Query(
@@ -61,27 +70,37 @@ public interface JdbcOutboxDao extends OutboxDao, GenericRepository<OutboxEntity
         SET status='SENDING', claimed_at=NOW(), attempts=o.attempts+1
         FROM c
         WHERE o.id = c.id
-        RETURNING o.id, o.category, o.topic, o.key, o.type, o.payload::text,
-                  COALESCE((SELECT jsonb_object_agg(key, value) FROM jsonb_each_text(o.headers)), '{}'::jsonb)::text as headers_map,
-                  o.attempts
         """,
       nativeQuery = true)
-  List<OutboxRowDto> sweepBatchDto(int max);
+  int sweepBatchUpdate(int max);
+
+  @Query(
+      value =
+          """
+        SELECT * FROM outbox WHERE status='SENDING' AND claimed_at >= NOW() - INTERVAL '1 second'
+        ORDER BY id LIMIT :max
+        """,
+      nativeQuery = true)
+  List<OutboxEntity> selectRecentlyClaimed(int max);
 
   @Override
   default List<OutboxRow> sweepBatch(int max) {
-    return sweepBatchDto(max).stream()
+    int updated = sweepBatchUpdate(max);
+    if (updated == 0) {
+      return List.of();
+    }
+    return selectRecentlyClaimed(max).stream()
         .map(
-            dto ->
+            entity ->
                 new OutboxRow(
-                    dto.id(),
-                    dto.category(),
-                    dto.topic(),
-                    dto.key(),
-                    dto.type(),
-                    dto.payload(),
-                    parseHeaders(dto.headersMap()),
-                    dto.attempts()))
+                    entity.getId(),
+                    entity.getCategory(),
+                    entity.getTopic(),
+                    entity.getKey(),
+                    entity.getType(),
+                    entity.getPayload(),
+                    entity.getHeaders(),
+                    entity.getAttempts()))
         .toList();
   }
 
@@ -141,28 +160,4 @@ public interface JdbcOutboxDao extends OutboxDao, GenericRepository<OutboxEntity
       return "{}";
     }
   }
-
-  private static Map<String, String> parseHeaders(String headersJson) {
-    if (headersJson == null || headersJson.isEmpty() || headersJson.equals("{}")) {
-      return Map.of();
-    }
-    try {
-      return new com.fasterxml.jackson.databind.ObjectMapper()
-          .readValue(
-              headersJson,
-              new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {});
-    } catch (Exception e) {
-      return Map.of();
-    }
-  }
-
-  record OutboxRowDto(
-      long id,
-      String category,
-      String topic,
-      String key,
-      String type,
-      String payload,
-      String headersMap,
-      int attempts) {}
 }

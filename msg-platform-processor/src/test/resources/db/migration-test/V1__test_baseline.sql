@@ -1,6 +1,6 @@
--- Baseline schema for reliable commands & events framework
 
 create type command_status as enum ('PENDING','RUNNING','SUCCEEDED','FAILED','TIMED_OUT');
+create type outbox_status as enum ('NEW','SENDING','PUBLISHED','FAILED');
 
 create table command (
   id uuid primary key,
@@ -27,23 +27,25 @@ create table inbox (
 );
 
 create table outbox (
-  id uuid primary key,
-  category text not null,
-  topic text not null,
-  key text not null,
-  type text not null,
-  payload jsonb not null,
-  headers jsonb not null default '{}'::jsonb,
-  status text not null default 'NEW',
-  attempts int not null default 0,
-  next_at timestamptz,
-  claimed_by text,
-  created_at timestamptz not null default now(),
-  published_at timestamptz,
-  last_error text
+  id           BIGSERIAL PRIMARY KEY,
+  category     TEXT NOT NULL,
+  topic        TEXT,
+  key          TEXT,
+  type         TEXT NOT NULL,
+  payload      JSONB NOT NULL,
+  headers      JSONB NOT NULL DEFAULT '{}'::JSONB,
+  status       outbox_status NOT NULL DEFAULT 'NEW',
+  attempts     INT NOT NULL DEFAULT 0,
+  next_at      TIMESTAMPTZ,
+  claimed_by   TEXT,
+  claimed_at   TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  published_at TIMESTAMPTZ,
+  last_error   TEXT
 );
 
 create index outbox_dispatch_idx on outbox (status, coalesce(next_at, 'epoch'::timestamptz), created_at);
+create index outbox_claimed_idx on outbox (status, claimed_at) where status='SENDING';
 
 create table command_dlq (
   id uuid primary key default gen_random_uuid(),
@@ -57,4 +59,25 @@ create table command_dlq (
   attempts int not null default 0,
   parked_by text not null,
   parked_at timestamptz not null default now()
+);
+
+create table process_instance (
+  id uuid primary key,
+  definition_key text not null,
+  business_key text not null,
+  status text not null,
+  state jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (definition_key, business_key)
+);
+
+create table payment (
+  id uuid primary key,
+  order_id text not null unique,
+  amount numeric(10,2) not null,
+  currency text not null,
+  status text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );

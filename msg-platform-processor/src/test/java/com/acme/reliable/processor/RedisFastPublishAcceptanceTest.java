@@ -54,10 +54,13 @@ class RedisFastPublishAcceptanceTest {
     properties.put("datasources.default.username", postgres.getUsername());
     properties.put("datasources.default.password", postgres.getPassword());
     properties.put("datasources.default.driver-class-name", "org.postgresql.Driver");
+    properties.put("datasources.default.schema-generate", "NONE");
     properties.put("flyway.datasources.default.enabled", true);
+    properties.put("flyway.datasources.default.locations", "classpath:db/migration-test");
     properties.put("redisson.enabled", true);
     properties.put(
         "redisson.address", "redis://" + redis.getHost() + ":" + redis.getFirstMappedPort());
+    properties.put("micronaut.task.enabled", false); // Disable scheduled tasks in tests
 
     context = ApplicationContext.run(properties);
 
@@ -115,7 +118,7 @@ class RedisFastPublishAcceptanceTest {
                   Map.of(),
                   0));
       ids.add(id);
-      redisson.getList("outbox:notify").add(String.valueOf(id));
+      redisson.getBlockingQueue("outbox:notify").add(String.valueOf(id));
     }
     long insertDuration = System.currentTimeMillis() - startInsert;
     LOG.info("Inserted {} rows in {}ms", count, insertDuration);
@@ -192,7 +195,7 @@ class RedisFastPublishAcceptanceTest {
       ids.add(id);
 
       for (int j = 0; j < 5; j++) {
-        redisson.getList("outbox:notify").add(String.valueOf(id));
+        redisson.getBlockingQueue("outbox:notify").add(String.valueOf(id));
       }
     }
 
@@ -290,7 +293,7 @@ class RedisFastPublishAcceptanceTest {
                           "{\"data\":\"test" + index + "\"}",
                           Map.of(),
                           0));
-              redisson.getList("outbox:notify").add(String.valueOf(id));
+              redisson.getBlockingQueue("outbox:notify").add(String.valueOf(id));
               latch.countDown();
             } catch (Exception e) {
               LOG.error("Error inserting message", e);

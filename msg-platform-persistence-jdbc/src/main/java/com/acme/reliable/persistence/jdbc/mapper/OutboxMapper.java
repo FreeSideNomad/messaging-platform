@@ -10,41 +10,44 @@ public class OutboxMapper {
     if (domain == null) {
       return null;
     }
-    return new OutboxEntity(
-        domain.getId(),
-        domain.getCategory(),
-        domain.getTopic(),
-        domain.getKey(),
-        domain.getType(),
-        domain.getPayload(),
-        domain.getHeaders(),
-        domain.getStatus(),
-        domain.getAttempts(),
-        domain.getNextAt(),
-        domain.getClaimedBy(),
-        domain.getCreatedAt(),
-        domain.getPublishedAt(),
-        domain.getLastError());
+    OutboxEntity entity = new OutboxEntity();
+    entity.setId(domain.getId());
+    entity.setCategory(domain.getCategory());
+    entity.setTopic(domain.getTopic());
+    entity.setKey(domain.getKey());
+    entity.setType(domain.getType());
+    entity.setPayload(domain.getPayload());
+    entity.setHeaders(domain.getHeaders());
+    entity.setStatus(domain.getStatus());
+    entity.setAttempts(domain.getAttempts());
+    entity.setNextAt(domain.getNextAt());
+    entity.setClaimedBy(domain.getClaimedBy());
+    entity.setClaimedAt(null); // Domain doesn't have claimedAt yet
+    entity.setCreatedAt(domain.getCreatedAt());
+    entity.setPublishedAt(domain.getPublishedAt());
+    entity.setLastError(domain.getLastError());
+    return entity;
   }
 
   public static Outbox toDomain(OutboxEntity entity) {
     if (entity == null) {
       return null;
     }
-    return new Outbox(
-        entity.getId(),
-        entity.getCategory(),
-        entity.getTopic(),
-        entity.getKey(),
-        entity.getType(),
-        entity.getPayload(),
-        entity.getHeaders(),
-        entity.getStatus(),
-        entity.getAttempts(),
-        entity.getNextAt(),
-        entity.getClaimedBy(),
-        entity.getCreatedAt(),
-        entity.getPublishedAt(),
-        entity.getLastError());
+    Outbox domain = new Outbox();
+    domain.setId(entity.getId());
+    domain.setCategory(entity.getCategory());
+    domain.setTopic(entity.getTopic());
+    domain.setKey(entity.getKey());
+    domain.setType(entity.getType());
+    domain.setPayload(entity.getPayload());
+    domain.setHeaders(entity.getHeaders());
+    domain.setStatus(entity.getStatus());
+    domain.setAttempts(entity.getAttempts());
+    domain.setNextAt(entity.getNextAt());
+    domain.setClaimedBy(entity.getClaimedBy());
+    domain.setCreatedAt(entity.getCreatedAt());
+    domain.setPublishedAt(entity.getPublishedAt());
+    domain.setLastError(entity.getLastError());
+    return domain;
   }
 }
