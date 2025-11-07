@@ -19,7 +19,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class OutboxEntity {
 
-  @Id @AutoPopulated private UUID id;
+  @Id @GeneratedValue(GeneratedValue.Type.IDENTITY) private Long id;
 
   @MappedProperty(type = DataType.STRING)
   private String category;
@@ -62,7 +62,7 @@ public class OutboxEntity {
 
   // Constructor for common use case
   public OutboxEntity(
-      UUID id,
+      Long id,
       String category,
       String topic,
       String key,

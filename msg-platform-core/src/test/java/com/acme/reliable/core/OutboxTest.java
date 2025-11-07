@@ -235,12 +235,13 @@ class OutboxTest {
   class IntegrationTests {
 
     @Test
-    @DisplayName("should generate unique IDs for each row")
-    void testUniqueIds() {
+    @DisplayName("should use placeholder ID (0L) for database auto-generation")
+    void testPlaceholderIds() {
       OutboxRow row1 = outbox.rowKafkaEvent("topic", "key", "type", "{}");
       OutboxRow row2 = outbox.rowKafkaEvent("topic", "key", "type", "{}");
 
-      assertThat(row1.id()).isNotEqualTo(row2.id());
+      assertThat(row1.id()).isEqualTo(0L);
+      assertThat(row2.id()).isEqualTo(0L);
     }
 
     @Test

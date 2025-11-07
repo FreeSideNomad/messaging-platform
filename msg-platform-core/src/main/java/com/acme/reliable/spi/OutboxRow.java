@@ -1,10 +1,9 @@
 package com.acme.reliable.spi;
 
 import java.util.Map;
-import java.util.UUID;
 
 public record OutboxRow(
-    UUID id,
+    long id,
     String category,
     String topic,
     String key,

@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @JdbcRepository(dialect = Dialect.POSTGRES)
 public interface JdbcOutboxRepository
-    extends OutboxRepository, GenericRepository<OutboxEntity, UUID> {
+    extends OutboxRepository, GenericRepository<OutboxEntity, Long> {
 
   @Query(
       value =
@@ -22,7 +22,7 @@ public interface JdbcOutboxRepository
         """,
       nativeQuery = true)
   void insert(
-      UUID id,
+      long id,
       String category,
       String topic,
       String key,
@@ -42,7 +42,7 @@ public interface JdbcOutboxRepository
                   next_at, claimed_by, created_at, published_at, last_error
         """,
       nativeQuery = true)
-  Optional<OutboxEntity> claimOne(UUID id, String claimer);
+  Optional<OutboxEntity> claimOne(long id, String claimer);
 
   @Query(
       value =
@@ -70,7 +70,7 @@ public interface JdbcOutboxRepository
   @Query(
       value = "UPDATE outbox SET status = 'PUBLISHED', published_at = now() WHERE id = :id",
       nativeQuery = true)
-  void markPublished(UUID id);
+  void markPublished(long id);
 
   @Query(
       value =
@@ -83,5 +83,5 @@ public interface JdbcOutboxRepository
         WHERE id = :id
         """,
       nativeQuery = true)
-  void reschedule(UUID id, long backoffMs, String error);
+  void reschedule(long id, long backoffMs, String error);
 }

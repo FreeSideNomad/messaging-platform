@@ -4,7 +4,6 @@ import io.micronaut.transaction.TransactionOperations;
 import io.micronaut.transaction.support.TransactionSynchronization;
 import jakarta.inject.Singleton;
 import java.sql.Connection;
-import java.util.UUID;
 
 @Singleton
 public class FastPathPublisher {
@@ -16,7 +15,7 @@ public class FastPathPublisher {
     this.relay = relay;
   }
 
-  public void registerAfterCommit(UUID outboxId) {
+  public void registerAfterCommit(long outboxId) {
     transactionOps
         .findTransactionStatus()
         .ifPresent(

@@ -17,7 +17,7 @@ public final class Outbox {
   public OutboxRow rowCommandRequested(
       String name, UUID id, String key, String payload, Map<String, String> reply) {
     return new OutboxRow(
-        UUID.randomUUID(),
+        0L,
         "command",
         config.getQueueNaming().buildCommandQueue(name),
         key,
@@ -33,13 +33,13 @@ public final class Outbox {
   }
 
   public OutboxRow rowKafkaEvent(String topic, String key, String type, String payload) {
-    return new OutboxRow(UUID.randomUUID(), "event", topic, key, type, payload, Map.of(), 0);
+    return new OutboxRow(0L, "event", topic, key, type, payload, Map.of(), 0);
   }
 
   public OutboxRow rowMqReply(Envelope env, String type, String payload) {
     String replyTo = env.headers().getOrDefault("replyTo", config.getQueueNaming().getReplyQueue());
     return new OutboxRow(
-        UUID.randomUUID(),
+        0L,
         "reply",
         replyTo,
         env.key(),

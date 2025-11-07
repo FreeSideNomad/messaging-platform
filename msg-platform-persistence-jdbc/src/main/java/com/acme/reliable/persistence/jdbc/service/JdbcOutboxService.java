@@ -38,8 +38,8 @@ public class JdbcOutboxService implements OutboxService {
   }
 
   @Transactional
-  public UUID addReturningId(OutboxRow r) {
-    var id = r.id() != null ? r.id() : UUID.randomUUID();
+  public long addReturningId(OutboxRow r) {
+    var id = r.id() != 0L ? r.id() : 0L;
     var headersJson =
         r.headers() != null && !r.headers().isEmpty() ? Jsons.toJson(r.headers()) : "{}";
     repository.insert(
@@ -48,7 +48,7 @@ public class JdbcOutboxService implements OutboxService {
   }
 
   @Transactional
-  public Optional<OutboxRow> claimOne(UUID id) {
+  public Optional<OutboxRow> claimOne(long id) {
     return transactionOps
         .findTransactionStatus()
         .map(
@@ -60,7 +60,7 @@ public class JdbcOutboxService implements OutboxService {
                         "UPDATE outbox SET status='CLAIMED', claimed_by=? WHERE id=? AND status='NEW' "
                             + "RETURNING id, category, topic, key, type, payload, headers, attempts")) {
                   ps.setString(1, getHostName());
-                  ps.setObject(2, id);
+                  ps.setLong(2, id);
                   try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                       return Optional.of(mapRow(rs));
@@ -113,19 +113,19 @@ public class JdbcOutboxService implements OutboxService {
   }
 
   @Transactional
-  public void markPublished(UUID id) {
+  public void markPublished(long id) {
     repository.markPublished(id);
   }
 
   @Transactional
-  public void reschedule(UUID id, long backoffMs, String err) {
+  public void reschedule(long id, long backoffMs, String err) {
     repository.reschedule(id, backoffMs, err);
   }
 
   @SuppressWarnings("unchecked")
   private OutboxRow mapRow(ResultSet rs) throws SQLException {
     return new OutboxRow(
-        (UUID) rs.getObject("id"),
+        rs.getLong("id"),
         rs.getString("category"),
         rs.getString("topic"),
         rs.getString("key"),
