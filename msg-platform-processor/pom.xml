@@ -39,6 +39,13 @@
       <artifactId>msg-platform-events-kafka</artifactId>
     </dependency>
 
+    <!-- Redis/Redisson for fast-publish notify queue -->
+    <dependency>
+      <groupId>org.redisson</groupId>
+      <artifactId>redisson</artifactId>
+      <version>3.23.5</version>
+    </dependency>
+
     <!-- Micronaut JMS (for CommandConsumers) -->
     <dependency>
       <groupId>io.micronaut.jms</groupId>
@@ -127,6 +134,13 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.redis</groupId>
+      <artifactId>testcontainers-redis</artifactId>
+      <version>2.2.2</version>
       <scope>test</scope>
     </dependency>
 

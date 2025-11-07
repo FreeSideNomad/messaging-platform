@@ -1,13 +1,11 @@
 package com.acme.reliable.repository;
 
-import java.util.UUID;
-
 /** Repository for Outbox pattern - transactional outbox for reliable message publishing */
 public interface OutboxRepository {
 
   /** Insert a new outbox entry */
   void insert(
-      UUID id,
+      long id,
       String category,
       String topic,
       String key,
@@ -18,8 +16,8 @@ public interface OutboxRepository {
       int attempts);
 
   /** Mark an outbox entry as published */
-  void markPublished(UUID id);
+  void markPublished(long id);
 
   /** Reschedule an outbox entry with backoff after failure */
-  void reschedule(UUID id, long backoffMs, String error);
+  void reschedule(long id, long backoffMs, String error);
 }

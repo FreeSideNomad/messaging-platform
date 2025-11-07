@@ -32,7 +32,7 @@ public class TransactionalCommandBus implements CommandBus {
       throw new IllegalStateException("Duplicate idempotency key");
     }
     UUID id = commands.savePending(name, idem, bizKey, payload, Jsons.toJson(reply));
-    UUID outboxId =
+    long outboxId =
         outboxStore.addReturningId(outbox.rowCommandRequested(name, id, bizKey, payload, reply));
     // fastPath.registerAfterCommit(outboxId); // DISABLED: causing transaction leak
     return id;

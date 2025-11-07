@@ -2,7 +2,6 @@ package com.acme.reliable.domain;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +14,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Outbox {
 
-  private UUID id;
+  private Long id;
   private String category;
   private String topic;
   private String key;
@@ -32,7 +31,7 @@ public class Outbox {
 
   // Constructor for common use case
   public Outbox(
-      UUID id,
+      Long id,
       String category,
       String topic,
       String key,

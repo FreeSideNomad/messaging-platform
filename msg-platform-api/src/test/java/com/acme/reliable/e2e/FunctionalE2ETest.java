@@ -60,7 +60,6 @@ class FunctionalE2ETest extends E2ETestBase {
   @Test
   @Order(6)
   @DisplayName("E2E: Submit command → Worker processes → Database updated")
-  @Disabled("Temporarily disabled - worker not processing commands, command not reaching SUCCEEDED status")
   void testFullFlow_ApiToWorkerToDatabase() throws Exception {
     // Given
     String idempotencyKey = "e2e-test-" + UUID.randomUUID();

@@ -1,6 +1,8 @@
 package com.acme.reliable.processor;
 
 import com.acme.reliable.command.CommandExecutor;
+import com.acme.reliable.command.CommandHandlerRegistry;
+import com.acme.reliable.command.CommandMessage;
 import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.config.TimeoutConfig;
 import com.acme.reliable.core.Aggregates;
@@ -10,11 +12,11 @@ import com.acme.reliable.core.Outbox;
 import com.acme.reliable.core.PermanentException;
 import com.acme.reliable.core.RetryableBusinessException;
 import com.acme.reliable.core.TransientException;
+import com.acme.reliable.process.CommandReply;
 import com.acme.reliable.service.CommandService;
 import com.acme.reliable.service.DlqService;
 import com.acme.reliable.service.InboxService;
 import com.acme.reliable.service.OutboxService;
-import com.acme.reliable.spi.HandlerRegistry;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
 import java.time.Instant;
@@ -26,7 +28,7 @@ public class TransactionalExecutor implements CommandExecutor {
   private final OutboxService outboxStore;
   private final Outbox outbox;
   private final DlqService dlq;
-  private final HandlerRegistry registry;
+  private final CommandHandlerRegistry registry;
   private final FastPathPublisher fastPath;
   private final MessagingConfig messagingConfig;
   private final long leaseSeconds;
@@ -37,7 +39,7 @@ public class TransactionalExecutor implements CommandExecutor {
       OutboxService os,
       Outbox o,
       DlqService d,
-      HandlerRegistry r,
+      CommandHandlerRegistry r,
       FastPathPublisher f,
       TimeoutConfig timeoutConfig,
       MessagingConfig messagingConfig) {
@@ -59,7 +61,25 @@ public class TransactionalExecutor implements CommandExecutor {
     }
     commands.markRunning(env.commandId(), Instant.now().plusSeconds(leaseSeconds));
     try {
-      String resultJson = registry.invoke(env.name(), env.payload());
+      // Create command message for new registry interface
+      CommandMessage command = new CommandMessage(
+          env.commandId(),
+          env.correlationId(),
+          env.name(),
+          env.payload()
+      );
+
+      // Handle command and get reply
+      CommandReply reply = registry.handle(command);
+
+      // Convert reply data to JSON string
+      String resultJson;
+      if (reply.data() != null && !reply.data().isEmpty()) {
+        resultJson = Jsons.toJson(reply.data());
+      } else {
+        resultJson = "{}";
+      }
+
       commands.markSucceeded(env.commandId());
       var replyId =
           outboxStore.addReturningId(outbox.rowMqReply(env, "CommandCompleted", resultJson));

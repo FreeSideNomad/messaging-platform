@@ -10,7 +10,6 @@ import io.micronaut.transaction.TransactionOperations;
 import jakarta.inject.Singleton;
 import java.sql.Connection;
 import java.util.List;
-import java.util.UUID;
 
 @Singleton
 public class OutboxRelay {
@@ -35,7 +34,7 @@ public class OutboxRelay {
     this.transactionOps = transactionOps;
   }
 
-  public void publishNow(UUID id) {
+  public void publishNow(long id) {
     transactionOps.executeWrite(
         status -> {
           store.claimOne(id).ifPresent(this::sendAndMark);
