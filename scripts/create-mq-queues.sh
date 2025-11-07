@@ -28,14 +28,24 @@ fi
 echo -e "${YELLOW}Waiting for Queue Manager to be ready...${NC}"
 sleep 5
 
+BACKOUT_QUEUE_NAME="APP.CMD.BACKOUT.Q"
+BACKOUT_THRESHOLD=1
+
 # Function to create a queue
 create_queue() {
     local queue_name=$1
+    local enable_backout=${2:-true}
     echo -e "${YELLOW}Creating queue: ${queue_name}${NC}"
 
-    docker exec -i ${CONTAINER_NAME} /opt/mqm/bin/runmqsc ${QUEUE_MANAGER} <<EOF
+    if [ "${enable_backout}" = true ]; then
+docker exec -i ${CONTAINER_NAME} /opt/mqm/bin/runmqsc ${QUEUE_MANAGER} <<EOF
+DEFINE QLOCAL('${queue_name}') DEFPSIST(YES) MAXDEPTH(50000) BOTHRESH(${BACKOUT_THRESHOLD}) BOQNAME('${BACKOUT_QUEUE_NAME}') REPLACE
+EOF
+    else
+docker exec -i ${CONTAINER_NAME} /opt/mqm/bin/runmqsc ${QUEUE_MANAGER} <<EOF
 DEFINE QLOCAL('${queue_name}') DEFPSIST(YES) MAXDEPTH(50000) REPLACE
 EOF
+    fi
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Queue '${queue_name}' created successfully${NC}"
@@ -50,6 +60,13 @@ echo ""
 echo -e "${YELLOW}Creating command queues for Payment Commands...${NC}"
 echo ""
 
+echo -e "${YELLOW}Creating shared backout queue: ${BACKOUT_QUEUE_NAME}${NC}"
+docker exec -i ${CONTAINER_NAME} /opt/mqm/bin/runmqsc ${QUEUE_MANAGER} <<EOF
+DEFINE QLOCAL('${BACKOUT_QUEUE_NAME}') DEFPSIST(YES) MAXDEPTH(50000) REPLACE
+ALTER QMGR DEADQ('${BACKOUT_QUEUE_NAME}')
+EOF
+echo -e "${GREEN}✓ Backout queue '${BACKOUT_QUEUE_NAME}' ready and set as DEADQ${NC}"
+
 # Payments Worker Command Queues (auto-discovered from Command classes)
 # Queue naming convention: CommandName -> APP.CMD.COMMANDNAME.Q
 create_queue "APP.CMD.BOOKFX.Q"
@@ -59,6 +76,7 @@ create_queue "APP.CMD.CREATEACCOUNT.Q"
 create_queue "APP.CMD.CREATELIMITS.Q"
 create_queue "APP.CMD.CREATEPAYMENT.Q"
 create_queue "APP.CMD.CREATETRANSACTION.Q"
+create_queue "APP.CMD.INITIATECREATEACCOUNTPROCESS.Q"
 create_queue "APP.CMD.INITIATESIMPLEPAYMENT.Q"
 create_queue "APP.CMD.REVERSELIMITS.Q"
 create_queue "APP.CMD.REVERSETRANSACTION.Q"
@@ -69,7 +87,7 @@ echo -e "${YELLOW}Creating shared queues...${NC}"
 echo ""
 
 # Shared queues
-create_queue "APP.CMD.REPLY.Q"
+create_queue "APP.CMD.REPLY.Q" false
 
 # Legacy/Example queue (if needed for testing)
 create_queue "APP.CMD.CREATEUSER.Q"

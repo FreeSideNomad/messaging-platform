@@ -480,6 +480,16 @@ class BaseProcessManagerTest {
             public ProcessGraph defineProcess() {
               return null;
             }
+
+            @Override
+            public Class<? extends DomainCommand> getInitiationCommandType() {
+              return null;
+            }
+
+            @Override
+            public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+              return Map.of();
+            }
           };
 
       manager.register(config);
@@ -546,6 +556,16 @@ class BaseProcessManagerTest {
             public int getMaxRetries(String step) {
               return 0;
             }
+
+            @Override
+            public Class<? extends DomainCommand> getInitiationCommandType() {
+              return Step1Command.class;
+            }
+
+            @Override
+            public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+              return Map.of();
+            }
           };
 
       manager.register(config);
@@ -601,6 +621,16 @@ class BaseProcessManagerTest {
     }
 
     @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return Step1Command.class;
+    }
+
+    @Override
+    public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return Map.of();
+    }
+
+    @Override
     public ProcessGraph defineProcess() {
       return process()
           .startWith(Step1Command.class)
@@ -615,6 +645,16 @@ class BaseProcessManagerTest {
     @Override
     public String getProcessType() {
       return "TestProcess";
+    }
+
+    @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return Step1Command.class;
+    }
+
+    @Override
+    public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return Map.of();
     }
 
     @Override
@@ -645,6 +685,16 @@ class BaseProcessManagerTest {
     }
 
     @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return Step1Command.class;
+    }
+
+    @Override
+    public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return Map.of();
+    }
+
+    @Override
     public ProcessGraph defineProcess() {
       return process().startWith(Step1Command.class).then(Step2Command.class).end();
     }
@@ -660,6 +710,16 @@ class BaseProcessManagerTest {
     @Override
     public String getProcessType() {
       return "TestProcess";
+    }
+
+    @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return Step1Command.class;
+    }
+
+    @Override
+    public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return Map.of();
     }
 
     @Override
@@ -953,6 +1013,16 @@ class BaseProcessManagerTest {
               return new TestProcessGraph(
                   "ParallelStep", steps, false, true, List.of(), "JoinStep");
             }
+
+            @Override
+            public Class<? extends DomainCommand> getInitiationCommandType() {
+              return ParallelExecutionTests.ParallelStepCommand.class;
+            }
+
+            @Override
+            public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+              return Map.of();
+            }
           };
 
       manager.register(config);
@@ -987,6 +1057,16 @@ class BaseProcessManagerTest {
               // Create graph with branches but no join step
               return new TestProcessGraph(
                   "ParallelStep", steps, false, true, List.of("Branch1", "Branch2"), null);
+            }
+
+            @Override
+            public Class<? extends DomainCommand> getInitiationCommandType() {
+              return ParallelExecutionTests.ParallelStepCommand.class;
+            }
+
+            @Override
+            public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+              return Map.of();
             }
           };
 
@@ -1127,6 +1207,16 @@ class BaseProcessManagerTest {
     }
 
     @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return ParallelExecutionTests.ParallelStepCommand.class;
+    }
+
+    @Override
+    public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return Map.of();
+    }
+
+    @Override
     public ProcessGraph defineProcess() {
       return ProcessGraphBuilder.process()
           .startWith(ParallelExecutionTests.ParallelStepCommand.class)
@@ -1148,6 +1238,16 @@ class BaseProcessManagerTest {
     @Override
     public String getProcessType() {
       return "ParallelProcess";
+    }
+
+    @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return ParallelExecutionTests.ParallelStepCommand.class;
+    }
+
+    @Override
+    public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return Map.of();
     }
 
     @Override

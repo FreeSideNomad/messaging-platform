@@ -33,6 +33,16 @@ class ProcessManagerAutoDiscoveryTest {
     }
 
     @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return TestStep1Command.class;
+    }
+
+    @Override
+    public java.util.Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return java.util.Map.of();
+    }
+
+    @Override
     public ProcessGraph defineProcess() {
       return ProcessGraphBuilder.process()
           .startWith(TestStep1Command.class)
@@ -61,6 +71,16 @@ class ProcessManagerAutoDiscoveryTest {
     }
 
     @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return AnotherStartCommand.class;
+    }
+
+    @Override
+    public java.util.Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return java.util.Map.of();
+    }
+
+    @Override
     public ProcessGraph defineProcess() {
       return ProcessGraphBuilder.process().startWith(AnotherStartCommand.class).end();
     }
@@ -81,6 +101,16 @@ class ProcessManagerAutoDiscoveryTest {
     @Override
     public String getProcessType() {
       return "TestProcess"; // DUPLICATE!
+    }
+
+    @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return DuplicateOtherStepCommand.class;
+    }
+
+    @Override
+    public java.util.Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return java.util.Map.of();
     }
 
     @Override

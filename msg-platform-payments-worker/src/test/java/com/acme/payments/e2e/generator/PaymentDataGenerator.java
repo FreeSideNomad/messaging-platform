@@ -143,24 +143,42 @@ public class PaymentDataGenerator extends BaseDataGenerator {
 
     if (roll < 50) {
       // 50%: Small payment (< 10% of hourly limit)
-      BigDecimal max = limitAmount.multiply(BigDecimal.valueOf(0.10));
+      BigDecimal max =
+          limitAmount
+              .multiply(BigDecimal.valueOf(0.10))
+              .setScale(2, java.math.RoundingMode.HALF_UP);
       amount = generateUniformAmount(BigDecimal.valueOf(10), max);
     } else if (roll < 80) {
       // 30%: Medium payment (10-50% of hourly limit)
-      BigDecimal min = limitAmount.multiply(BigDecimal.valueOf(0.10));
-      BigDecimal max = limitAmount.multiply(BigDecimal.valueOf(0.50));
+      BigDecimal min =
+          limitAmount
+              .multiply(BigDecimal.valueOf(0.10))
+              .setScale(2, java.math.RoundingMode.HALF_UP);
+      BigDecimal max =
+          limitAmount
+              .multiply(BigDecimal.valueOf(0.50))
+              .setScale(2, java.math.RoundingMode.HALF_UP);
       amount = generateUniformAmount(min, max);
     } else if (roll < 95) {
       // 15%: Large payment (50-100% of hourly limit)
-      BigDecimal min = limitAmount.multiply(BigDecimal.valueOf(0.50));
+      BigDecimal min =
+          limitAmount
+              .multiply(BigDecimal.valueOf(0.50))
+              .setScale(2, java.math.RoundingMode.HALF_UP);
       amount = generateUniformAmount(min, limitAmount);
     } else if (enableLimitViolations) {
       // 5%: Over-limit payment (100-150% of hourly limit) - for testing violations
-      BigDecimal max = limitAmount.multiply(BigDecimal.valueOf(1.50));
+      BigDecimal max =
+          limitAmount
+              .multiply(BigDecimal.valueOf(1.50))
+              .setScale(2, java.math.RoundingMode.HALF_UP);
       amount = generateUniformAmount(limitAmount, max);
     } else {
       // If violations disabled, make it just under the limit
-      amount = limitAmount.multiply(BigDecimal.valueOf(0.95));
+      amount =
+          limitAmount
+              .multiply(BigDecimal.valueOf(0.95))
+              .setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     return new Money(amount, currencyCode);

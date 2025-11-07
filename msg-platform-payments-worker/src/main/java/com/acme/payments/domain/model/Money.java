@@ -1,10 +1,13 @@
 package com.acme.payments.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Currency;
 
 /** Value object representing money with currency */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record Money(BigDecimal amount, String currencyCode) implements Serializable {
   public Money {
     if (amount == null) {
@@ -70,18 +73,22 @@ public record Money(BigDecimal amount, String currencyCode) implements Serializa
         this.currencyCode);
   }
 
+  @JsonIgnore
   public boolean isPositive() {
     return amount.compareTo(BigDecimal.ZERO) > 0;
   }
 
+  @JsonIgnore
   public boolean isNegative() {
     return amount.compareTo(BigDecimal.ZERO) < 0;
   }
 
+  @JsonIgnore
   public boolean isZero() {
     return amount.compareTo(BigDecimal.ZERO) == 0;
   }
 
+  @JsonIgnore
   public boolean greaterThan(Money other) {
     if (!this.currencyCode.equals(other.currencyCode)) {
       throw new IllegalArgumentException("Cannot compare money with different currencies");
@@ -89,6 +96,7 @@ public record Money(BigDecimal amount, String currencyCode) implements Serializa
     return this.amount.compareTo(other.amount) > 0;
   }
 
+  @JsonIgnore
   public boolean lessThan(Money other) {
     if (!this.currencyCode.equals(other.currencyCode)) {
       throw new IllegalArgumentException("Cannot compare money with different currencies");

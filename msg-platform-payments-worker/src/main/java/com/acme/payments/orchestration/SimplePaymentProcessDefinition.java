@@ -3,6 +3,7 @@ package com.acme.payments.orchestration;
 import static com.acme.reliable.process.ProcessGraphBuilder.process;
 
 import com.acme.payments.application.command.*;
+import com.acme.reliable.command.DomainCommand;
 import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.ProcessConfiguration;
 import com.acme.reliable.process.ProcessGraph;
@@ -28,14 +29,23 @@ public class SimplePaymentProcessDefinition implements ProcessConfiguration {
     return "SimplePayment";
   }
 
+  @Override
+  public Class<? extends DomainCommand> getInitiationCommandType() {
+    return InitiateSimplePaymentCommand.class;
+  }
+
   /**
-   * Command handler for InitiateSimplePaymentCommand. This method will be auto-discovered by
-   * AutoCommandHandlerRegistry and builds the initial process state from the command.
+   * Build initial state from InitiateSimplePaymentCommand. Called before the process starts.
    *
    * @param cmd the initiation command
    * @return initial process state as a map
    */
-  public Map<String, Object> handleInitiateSimplePayment(InitiateSimplePaymentCommand cmd) {
+  @Override
+  public Map<String, Object> initializeProcessState(DomainCommand command) {
+    return initializeProcessState((InitiateSimplePaymentCommand) command);
+  }
+
+  public Map<String, Object> initializeProcessState(InitiateSimplePaymentCommand cmd) {
     log.info(
         "Initializing SimplePayment process for customer {} with debit amount {}",
         cmd.customerId(),

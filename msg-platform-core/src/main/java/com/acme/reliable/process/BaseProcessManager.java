@@ -648,11 +648,13 @@ public abstract class BaseProcessManager {
 
   /** Get process definition by type */
   protected ProcessConfiguration getConfiguration(String processType) {
-    ProcessConfiguration config = configurations.get(processType);
-    if (config == null) {
-      throw new IllegalArgumentException("Unknown process type: " + processType);
-    }
-    return config;
+    return findConfigurationOptional(processType)
+        .orElseThrow(() -> new IllegalArgumentException("Unknown process type: " + processType));
+  }
+
+  /** Optional access to process configuration (used for process initiation lookup). */
+  protected Optional<ProcessConfiguration> findConfigurationOptional(String processType) {
+    return Optional.ofNullable(configurations.get(processType));
   }
 
   protected ProcessGraph getGraph(String processType) {

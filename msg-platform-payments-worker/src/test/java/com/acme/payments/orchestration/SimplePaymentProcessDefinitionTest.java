@@ -38,7 +38,7 @@ class SimplePaymentProcessDefinitionTest {
   }
 
   @Test
-  @DisplayName("handleInitiateSimplePayment - should initialize process state without FX")
+  @DisplayName("initializeProcessState - should initialize process state without FX")
   void testHandleInitiateSimplePayment_NoFx() {
     // Given
     InitiateSimplePaymentCommand cmd =
@@ -52,7 +52,7 @@ class SimplePaymentProcessDefinitionTest {
             "Test payment");
 
     // When
-    Map<String, Object> state = processDefinition.handleInitiateSimplePayment(cmd);
+    Map<String, Object> state = processDefinition.initializeProcessState(cmd);
 
     // Then
     assertThat(state).isNotNull();
@@ -65,7 +65,7 @@ class SimplePaymentProcessDefinitionTest {
   }
 
   @Test
-  @DisplayName("handleInitiateSimplePayment - should initialize process state with FX")
+  @DisplayName("initializeProcessState - should initialize process state with FX")
   void testHandleInitiateSimplePayment_WithFx() {
     // Given
     InitiateSimplePaymentCommand cmd =
@@ -79,7 +79,7 @@ class SimplePaymentProcessDefinitionTest {
             "FX payment");
 
     // When
-    Map<String, Object> state = processDefinition.handleInitiateSimplePayment(cmd);
+    Map<String, Object> state = processDefinition.initializeProcessState(cmd);
 
     // Then
     assertThat(state).containsKey("requiresFx");

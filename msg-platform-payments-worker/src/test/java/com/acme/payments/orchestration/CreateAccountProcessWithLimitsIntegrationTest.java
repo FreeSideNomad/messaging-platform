@@ -221,21 +221,18 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
     // Given: Process graph
     var graph = processDefinition.defineProcess();
 
-    // Then: Should have InitiateCreateAccountProcess as initial step
-    assertThat(graph.getInitialStep()).isEqualTo("InitiateCreateAccountProcess");
-
-    // Next step after initiation should be CreateAccount
-    var nextStep = graph.getNextStep("InitiateCreateAccountProcess", Map.of());
-    assertThat(nextStep).isPresent();
-    assertThat(nextStep.get()).isEqualTo("CreateAccount");
+    // Then: Should start with CreateAccount command
+    assertThat(graph.getInitialStep()).isEqualTo("CreateAccount");
 
     // When: limitBased=true
     Map<String, Object> dataWithLimits =
         Map.of("limitBased", true, "limits", Map.of(PeriodType.DAY, Money.of(1000, "USD")));
 
     var nextStepWithLimits = graph.getNextStep("CreateAccount", dataWithLimits);
-    assertThat(nextStepWithLimits).isPresent();
-    assertThat(nextStepWithLimits.get()).isEqualTo("CreateLimits");
+    assertThat(nextStepWithLimits).contains("CreateLimits");
+
+    var nextAfterLimits = graph.getNextStep("CreateLimits", dataWithLimits);
+    assertThat(nextAfterLimits).contains("CompleteAccountCreation");
 
     // When: limitBased=false
     Map<String, Object> dataWithoutLimits = new HashMap<>();
@@ -243,8 +240,7 @@ class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvi
     dataWithoutLimits.put("limits", null);
 
     var nextStepWithoutLimits = graph.getNextStep("CreateAccount", dataWithoutLimits);
-    assertThat(nextStepWithoutLimits).isPresent();
-    assertThat(nextStepWithoutLimits.get()).isEqualTo("CompleteAccountCreation");
+    assertThat(nextStepWithoutLimits).contains("CompleteAccountCreation");
   }
 
   @Test

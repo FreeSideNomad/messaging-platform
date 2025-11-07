@@ -14,6 +14,8 @@ import com.acme.payments.e2e.output.VegetaOutputAdapter;
 import com.acme.payments.e2e.scenario.E2ETestScenario;
 import com.acme.payments.e2e.scenario.E2ETestScenarioBuilder;
 import com.acme.payments.e2e.scenario.TestScenarioConfig;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -164,7 +166,15 @@ class E2EFrameworkTest {
     // Verify content format
     List<String> lines = Files.readAllLines(vegetaDir.resolve("01-accounts.txt"));
     assertThat(lines).isNotEmpty();
-    assertThat(lines.get(0)).startsWith("POST http://localhost:8080/api/accounts");
+
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode firstTarget = mapper.readTree(lines.get(0));
+
+    assertThat(firstTarget.get("method").asText()).isEqualTo("POST");
+    assertThat(firstTarget.get("url").asText())
+        .isEqualTo("http://localhost:8080/commands/InitiateCreateAccountProcess");
+    assertThat(firstTarget.get("body").asText()).isNotBlank();
+    assertThat(firstTarget.path("header").path("Idempotency-Key").isArray()).isTrue();
   }
 
   @Test

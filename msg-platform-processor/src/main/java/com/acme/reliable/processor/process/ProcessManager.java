@@ -9,6 +9,7 @@ import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,11 @@ public class ProcessManager extends BaseProcessManager
   @Transactional
   protected void executeInTransaction(Runnable action) {
     action.run();
+  }
+
+  /** Optional lookup for infrastructure components (e.g., transactional executor). */
+  public Optional<ProcessConfiguration> findConfiguration(String processType) {
+    return findConfigurationOptional(processType);
   }
 
   /** Auto-discover and register all ProcessConfiguration beans on startup */

@@ -13,14 +13,13 @@ COPY msg-platform-api/pom.xml msg-platform-api/
 COPY msg-platform-worker/pom.xml msg-platform-worker/
 COPY msg-platform-payments-worker/pom.xml msg-platform-payments-worker/
 
-# Copy source code and resources for dependencies
-COPY msg-platform-core/src msg-platform-core/src
-COPY msg-platform-persistence-jdbc/src msg-platform-persistence-jdbc/src
-COPY msg-platform-persistence-jdbc/src/main/resources msg-platform-persistence-jdbc/src/main/resources
-COPY msg-platform-messaging-ibmmq/src msg-platform-messaging-ibmmq/src
-COPY msg-platform-events-kafka/src msg-platform-events-kafka/src
-COPY msg-platform-processor/src msg-platform-processor/src
-COPY msg-platform-api/src msg-platform-api/src
+# Copy production sources/resources only (tests stay out of the build context)
+COPY msg-platform-core/src/main msg-platform-core/src/main
+COPY msg-platform-persistence-jdbc/src/main msg-platform-persistence-jdbc/src/main
+COPY msg-platform-messaging-ibmmq/src/main msg-platform-messaging-ibmmq/src/main
+COPY msg-platform-events-kafka/src/main msg-platform-events-kafka/src/main
+COPY msg-platform-processor/src/main msg-platform-processor/src/main
+COPY msg-platform-api/src/main msg-platform-api/src/main
 
 # Build only API module (skip tests completely)
 RUN mvn clean package -DskipTests -Dmaven.test.skip=true -pl msg-platform-api -am

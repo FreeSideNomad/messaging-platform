@@ -270,9 +270,19 @@ class MappersTest {
 
     Message jmsMessage = mock(Message.class);
     when(jmsMessage.getPropertyNames()).thenReturn(emptyEnumeration());
+    Queue destination = mock(Queue.class);
+    when(destination.toString()).thenReturn("queue:///APP.CMD.SomeCommand.Q");
+    when(jmsMessage.getJMSDestination()).thenReturn(destination);
 
-    // When/Then
-    assertThrows(RuntimeException.class, () -> Mappers.toEnvelope(messageBody, jmsMessage));
+    // When
+    Envelope envelope = Mappers.toEnvelope(messageBody, jmsMessage);
+
+    // Then
+    assertNotNull(envelope);
+    assertEquals("SomeCommand", envelope.name());
+    assertEquals(messageBody, envelope.payload());
+    assertNotNull(envelope.messageId());
+    assertEquals(envelope.commandId().toString(), envelope.key());
   }
 
   @Test

@@ -6,6 +6,7 @@ import com.acme.payments.application.command.CompleteAccountCreationCommand;
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateLimitsCommand;
 import com.acme.payments.application.command.InitiateCreateAccountProcess;
+import com.acme.reliable.command.DomainCommand;
 import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.ProcessConfiguration;
 import com.acme.reliable.process.ProcessGraph;
@@ -32,6 +33,11 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
     return "InitiateCreateAccountProcess";
   }
 
+  @Override
+  public Class<? extends DomainCommand> getInitiationCommandType() {
+    return InitiateCreateAccountProcess.class;
+  }
+
   /**
    * Initializes process state from InitiateCreateAccountProcess command. This method builds the
    * initial process state from the command when the process starts. Note: This is NOT a command
@@ -40,6 +46,11 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
    * @param cmd the process initiation command
    * @return initial process state as a map
    */
+  @Override
+  public Map<String, Object> initializeProcessState(DomainCommand command) {
+    return initializeProcessState((InitiateCreateAccountProcess) command);
+  }
+
   public Map<String, Object> initializeProcessState(InitiateCreateAccountProcess cmd) {
     log.info(
         "Initializing CreateAccount process for customer {} with currency {} limitBased={}",
@@ -60,12 +71,11 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
 
   @Override
   public ProcessGraph defineProcess() {
-    // Conditional flow: InitiateCreateAccountProcess -> CreateAccount -> (if limitBased)
+    // Conditional flow: CreateAccount -> (if limitBased)
     // CreateLimits -> Complete
     // If limitBased=false, skip CreateLimits and go directly to Complete
     return process()
-        .startWith(InitiateCreateAccountProcess.class)
-        .then(CreateAccountCommand.class)
+        .startWith(CreateAccountCommand.class)
         .thenIf(
             data -> {
               // Check if limitBased is true and limits exist
@@ -74,7 +84,6 @@ public class CreateAccountProcessDefinition implements ProcessConfiguration {
               return Boolean.TRUE.equals(limitBased) && limits != null;
             })
         .whenTrue(CreateLimitsCommand.class)
-        .then(CompleteAccountCreationCommand.class)
         .then(CompleteAccountCreationCommand.class) // Continue after optional branch
         .end();
   }

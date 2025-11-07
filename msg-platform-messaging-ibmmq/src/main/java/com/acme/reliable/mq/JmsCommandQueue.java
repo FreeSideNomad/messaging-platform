@@ -75,17 +75,15 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
       holder.producer.send(dest, msg);
       session.commit();
 
-    } catch (Exception e) {
-      try {
-        holder.session.rollback();
-      } catch (jakarta.jms.JMSException rollbackEx) {
-        LOG.warn("Failed to rollback JMS session", rollbackEx);
+    } catch (jakarta.jms.JMSException jmsEx) {
+      handleSendFailure(queue, holder, jmsEx);
+      if (jmsEx.getLinkedException() != null) {
+        LOG.error(
+            "Linked JMS exception while sending to queue {}", queue, jmsEx.getLinkedException());
       }
-
-      // On error, invalidate the session and create a new one
-      holder.close();
-      sessionPool.remove();
-
+      throw new RuntimeException("Failed to send message to queue: " + queue, jmsEx);
+    } catch (Exception e) {
+      handleSendFailure(queue, holder, e);
       throw new RuntimeException("Failed to send message to queue: " + queue, e);
     }
   }
@@ -100,6 +98,19 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
     } catch (Exception e) {
       LOG.warn("Error during JMS shutdown", e);
     }
+  }
+
+  private void handleSendFailure(String queue, SessionHolder holder, Exception cause) {
+    try {
+      holder.session.rollback();
+    } catch (jakarta.jms.JMSException rollbackEx) {
+      LOG.warn("Failed to rollback JMS session", rollbackEx);
+    }
+
+    holder.close();
+    sessionPool.remove();
+
+    LOG.error("Failed to send message to queue {}", queue, cause);
   }
 
   /**

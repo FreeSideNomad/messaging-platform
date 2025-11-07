@@ -25,7 +25,8 @@
     <module>msg-platform-api</module>
     <module>msg-platform-worker</module>
     <module>msg-platform-payments-worker</module>
-    <module>coverage-aggregate</module>
+    <!-- Commented out for Docker builds - enable locally for coverage reports -->
+    <!-- <module>coverage-aggregate</module> -->
   </modules>
 
   <properties>
@@ -195,10 +196,8 @@
           <version>3.2.5</version>
           <configuration>
             <useSystemClassLoader>false</useSystemClassLoader>
-            <properties>
-              <configurationParameters>junit.jupiter.excludeTags=${junit.excludeTags}
-junit.jupiter.includeTags=${junit.includeTags}</configurationParameters>
-            </properties>
+            <groups>${junit.includeTags}</groups>
+            <excludedGroups>${junit.excludeTags}</excludedGroups>
           </configuration>
         </plugin>
         <!-- PMD for static code analysis -->
@@ -270,6 +269,12 @@ junit.jupiter.includeTags=${junit.includeTags}</configurationParameters>
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+    </plugins>
   </build>
 
   <profiles>

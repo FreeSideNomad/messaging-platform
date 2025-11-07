@@ -74,7 +74,7 @@ public class VegetaOutputAdapter {
       throws IOException {
     try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputFile))) {
       for (InitiateCreateAccountProcess command : commands) {
-        writeHttpTarget(writer, "POST", "/api/accounts", command);
+        writeHttpTarget(writer, "POST", "/commands/InitiateCreateAccountProcess", command);
       }
     }
   }
@@ -84,7 +84,7 @@ public class VegetaOutputAdapter {
       throws IOException {
     try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputFile))) {
       for (CreateTransactionCommand command : commands) {
-        writeHttpTarget(writer, "POST", "/api/transactions", command);
+        writeHttpTarget(writer, "POST", "/commands/CreateTransaction", command);
       }
     }
   }
@@ -94,23 +94,30 @@ public class VegetaOutputAdapter {
       throws IOException {
     try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputFile))) {
       for (InitiateSimplePaymentCommand command : commands) {
-        writeHttpTarget(writer, "POST", "/api/payments", command);
+        writeHttpTarget(writer, "POST", "/commands/InitiateSimplePayment", command);
       }
     }
   }
 
-  /** Write a single HTTP target with inline JSON */
+  /** Write a single HTTP target in JSON format with base64-encoded body */
   private void writeHttpTarget(PrintWriter writer, String method, String path, Object body)
       throws IOException {
     String url = BASE_URL + path;
     String json = commandToJson(body);
+    String base64Body = java.util.Base64.getEncoder().encodeToString(json.getBytes());
+    String idempotencyKey = java.util.UUID.randomUUID().toString();
 
-    // Vegeta format: METHOD URL\nHeader\n\nBody\n\n
-    writer.println(method + " " + url);
-    writer.println("Content-Type: application/json");
-    writer.println();
-    writer.println(json);
-    writer.println();
+    // Vegeta JSON format: one JSON object per line
+    // {"method":"POST","url":"http://...","body":"base64-encoded-body","header":{"Content-Type":["application/json"],"Idempotency-Key":["uuid"]}}
+    writer.print("{");
+    writer.print("\"method\":\"" + method + "\"");
+    writer.print(",\"url\":\"" + url + "\"");
+    writer.print(",\"body\":\"" + base64Body + "\"");
+    writer.print(",\"header\":{");
+    writer.print("\"Content-Type\":[\"application/json\"]");
+    writer.print(",\"Idempotency-Key\":[\"" + idempotencyKey + "\"]");
+    writer.print("}");
+    writer.println("}");
   }
 
   /** Serialize command to compact inline JSON (single line, no pretty print) */

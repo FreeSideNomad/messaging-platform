@@ -431,6 +431,16 @@ class ProcessManagerTest {
     }
 
     @Override
+    public Class<? extends DomainCommand> getInitiationCommandType() {
+      return Step1Command.class;
+    }
+
+    @Override
+    public Map<String, Object> initializeProcessState(DomainCommand initiationCommand) {
+      return Map.of();
+    }
+
+    @Override
     public ProcessGraph defineProcess() {
       return ProcessGraphBuilder.process()
           .startWith(Step1Command.class)

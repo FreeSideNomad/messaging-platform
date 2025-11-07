@@ -4,14 +4,17 @@ import com.acme.reliable.command.CommandHandlerRegistry;
 import com.acme.reliable.command.DomainCommand;
 import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.CommandReply;
+import com.acme.reliable.process.ProcessConfiguration;
 import io.micronaut.context.BeanContext;
 import io.micronaut.context.annotation.Context;
+import io.micronaut.context.annotation.Primary;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.inject.BeanDefinition;
 import jakarta.annotation.PostConstruct;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,11 +40,13 @@ import lombok.extern.slf4j.Slf4j;
  * </pre>
  */
 @Context
+@Primary
 @Requires(notEnv = "test")
 @RequiredArgsConstructor
 @Slf4j
 public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
   private final BeanContext beanContext;
+  private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
   /** Holds a candidate handler method with its bean and metadata */
   private static class HandlerCandidate {
@@ -70,6 +75,11 @@ public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
 
   @PostConstruct
   public void discoverAndRegisterHandlers() {
+    if (!INITIALIZED.compareAndSet(false, true)) {
+      log.debug(
+          "AutoCommandHandlerRegistry already initialized on this process, skipping duplicate discovery");
+      return;
+    }
     log.info("Auto-discovering command handlers...");
 
     // Phase 1: Collect all candidates (including duplicates from proxies)
@@ -88,8 +98,9 @@ public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
     for (BeanDefinition<?> beanDefinition : beanContext.getAllBeanDefinitions()) {
       Class<?> beanClass = beanDefinition.getBeanType();
 
-      // Skip our own registry classes
-      if (CommandHandlerRegistry.class.isAssignableFrom(beanClass)) {
+      // Skip our own registry classes and non-command beans such as process definitions
+      if (CommandHandlerRegistry.class.isAssignableFrom(beanClass)
+          || ProcessConfiguration.class.isAssignableFrom(beanClass)) {
         continue;
       }
 
@@ -247,6 +258,8 @@ public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
   /** Register a handler that invokes a service method via reflection */
   private void registerAutoHandler(
       String commandType, Object bean, Method method, Class<?> commandClass) {
+    method.setAccessible(true); // NOPMD - required to invoke intercepted Micronaut proxies
+
     registerHandler(
         commandType,
         command -> {
@@ -262,7 +275,11 @@ public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
             if (method.getReturnType() == void.class || method.getReturnType() == Void.class) {
               replyData = Map.of();
             } else if (result != null) {
-              replyData = Jsons.toMap(result);
+              if (result instanceof Map<?, ?> mapResult) {
+                replyData = sanitizeReplyData(mapResult);
+              } else {
+                replyData = sanitizeReplyData(Jsons.toMap(result));
+              }
             } else {
               replyData = Map.of();
             }
@@ -279,5 +296,30 @@ public class AutoCommandHandlerRegistry extends CommandHandlerRegistry {
                 UUID.randomUUID(), command.correlationId(), cause.getMessage());
           }
         });
+  }
+
+  /**
+   * Remove null keys/values from handler reply data to satisfy {@link Map#copyOf(Map)} in {@link
+   * CommandReply}.
+   */
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> sanitizeReplyData(Map<?, ?> rawReplyData) {
+    if (rawReplyData == null || rawReplyData.isEmpty()) {
+      return Map.of();
+    }
+
+    Map<String, Object> sanitized = new java.util.LinkedHashMap<>();
+
+    rawReplyData.forEach(
+        (key, value) -> {
+          if (key == null || value == null) {
+            return;
+          }
+
+          String keyString = key instanceof String ? (String) key : String.valueOf(key);
+          sanitized.put(keyString, value);
+        });
+
+    return sanitized.isEmpty() ? Map.of() : sanitized;
   }
 }

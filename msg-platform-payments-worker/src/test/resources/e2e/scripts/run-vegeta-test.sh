@@ -44,14 +44,36 @@ run_phase() {
         return
     fi
 
+    # Calculate number of targets and adjust duration so we hit each once
+    local target_count
+    target_count=$(wc -l < "$targets")
+    local calculated_duration
+    if [[ "$rate" -le 0 ]]; then
+        calculated_duration="1s"
+    else
+        calculated_duration=$(awk -v total="$target_count" -v r="$rate" 'BEGIN {
+            if (r <= 0) {
+                print "1s";
+            } else {
+                duration = total / r;
+                if (duration < 0.001) {
+                    duration = 0.001;
+                }
+                printf("%.3fs", duration);
+            }
+        }')
+    fi
+
     echo ""
     echo "--- Phase: $phase_name ---"
-    echo "Running: vegeta attack -targets=$targets -rate=$rate -duration=$duration"
+    echo "Targets: $target_count requests"
+    echo "Running: vegeta attack -format=json -targets=$targets -rate=$rate -duration=$calculated_duration"
 
     vegeta attack \
+        -format=json \
         -targets="$targets" \
         -rate="$rate" \
-        -duration="$duration" \
+        -duration="$calculated_duration" \
         -timeout=30s \
         > "$output"
 
@@ -66,73 +88,8 @@ echo "PHASE 1: Creating Accounts"
 echo "========================================="
 run_phase "$SCENARIO_DIR/01-accounts.txt" "$RATE" "$DURATION" "$RESULTS_DIR/results-accounts.bin" "Create Accounts"
 
-# Wait for accounts to be created
 echo ""
-echo "Waiting 10 seconds for accounts to be created..."
-sleep 10
-
-# Phase 2: Opening credits
-echo ""
-echo "========================================="
-echo "PHASE 2: Opening Credits"
-echo "========================================="
-run_phase "$SCENARIO_DIR/02-opening-credits.txt" "$RATE" "$DURATION" "$RESULTS_DIR/results-credits.bin" "Opening Credits"
-
-# Wait for transactions to be processed
-echo ""
-echo "Waiting 5 seconds for transactions to be processed..."
-sleep 5
-
-# Phase 3: Concurrent funding and payments
-echo ""
-echo "========================================="
-echo "PHASE 3: Funding & Payments (Concurrent)"
-echo "========================================="
-
-# Run funding in background
-if [ -f "$SCENARIO_DIR/03-funding-txns.txt" ]; then
-    echo "Starting funding transactions in background..."
-    run_phase "$SCENARIO_DIR/03-funding-txns.txt" "$RATE" "$DURATION" "$RESULTS_DIR/results-funding.bin" "Funding Transactions" &
-    FUNDING_PID=$!
-fi
-
-# Run payments in background
-if [ -f "$SCENARIO_DIR/04-payments.txt" ]; then
-    echo "Starting payments in background..."
-    run_phase "$SCENARIO_DIR/04-payments.txt" "$RATE" "$DURATION" "$RESULTS_DIR/results-payments.bin" "Payments" &
-    PAYMENTS_PID=$!
-fi
-
-# Wait for both to complete
-wait
-
-echo ""
-echo "========================================="
-echo "PHASE 3: Complete"
-echo "========================================="
-
-# Generate combined reports
-echo ""
-echo "========================================="
-echo "Generating Combined Reports"
-echo "========================================="
-
-if ls "$RESULTS_DIR"/results-*.bin 1> /dev/null 2>&1; then
-    echo "Text report:"
-    vegeta report -type=text "$RESULTS_DIR"/results-*.bin | tee "$RESULTS_DIR/combined-report.txt"
-
-    echo ""
-    echo "Generating HTML plot..."
-    vegeta plot "$RESULTS_DIR"/results-*.bin > "$RESULTS_DIR/plot.html"
-    echo "HTML plot saved to: $RESULTS_DIR/plot.html"
-
-    echo ""
-    echo "Generating JSON report..."
-    vegeta report -type=json "$RESULTS_DIR"/results-*.bin > "$RESULTS_DIR/report.json"
-    echo "JSON report saved to: $RESULTS_DIR/report.json"
-else
-    echo "Warning: No result files found"
-fi
+echo "Skipping subsequent phases (opening credits, funding, payments)."
 
 echo ""
 echo "========================================="

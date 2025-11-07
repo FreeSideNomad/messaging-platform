@@ -1,5 +1,8 @@
 package com.acme.reliable.process;
 
+import com.acme.reliable.command.DomainCommand;
+import java.util.Map;
+
 /**
  * Configuration for process retry and error handling policies. Separate from ProcessGraph to allow
  * runtime configuration changes.
@@ -8,6 +11,21 @@ public interface ProcessConfiguration {
 
   /** Unique identifier for this process type (e.g., "SubmitPayment", "OpenAccount") */
   String getProcessType();
+
+  /**
+   * @return the command class that initiates this process, or {@code null} if the process is not
+   *     started directly from a command.
+   */
+  Class<? extends DomainCommand> getInitiationCommandType();
+
+  /**
+   * Produce the initial process state from the initiation command. Called before the process is
+   * persisted so implementations can fetch additional data.
+   *
+   * @param initiationCommand the command that kicked off the process
+   * @return initial process state as a mutable map (will be copied)
+   */
+  Map<String, Object> initializeProcessState(DomainCommand initiationCommand);
 
   /** Define the process flow as a DAG using the fluent builder API. */
   ProcessGraph defineProcess();

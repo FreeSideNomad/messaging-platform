@@ -40,6 +40,11 @@ DURATION=${DURATION:-60s}
 OUTPUT_DIR=${OUTPUT_DIR:-./test-data}
 API_URL=${API_URL:-http://localhost:8080}
 
+# Convert OUTPUT_DIR to absolute path (to handle cd later)
+if [[ "$OUTPUT_DIR" != /* ]]; then
+    OUTPUT_DIR="$PWD/$OUTPUT_DIR"
+fi
+
 echo ""
 echo -e "${BLUE}=========================================${NC}"
 echo -e "${BLUE}  Payments Load Test Runner${NC}"
@@ -51,6 +56,34 @@ echo -e "Output:       ${GREEN}$OUTPUT_DIR${NC}"
 echo -e "API URL:      ${GREEN}$API_URL${NC}"
 echo -e "${BLUE}=========================================${NC}"
 echo ""
+
+# Step 0: Reset database state (skip with SKIP_DB_RESET=true)
+if [[ "${SKIP_DB_RESET:-false}" != "true" ]]; then
+    echo -e "${YELLOW}🧹 Step 0: Resetting database tables...${NC}"
+    if command -v docker &> /dev/null; then
+        DB_CONTAINER=${DB_CONTAINER:-messaging-postgres}
+        PAYMENTS_DB=${PAYMENTS_DB:-payments}
+
+        PAYMENTS_TRUNCATE='TRUNCATE TABLE account, "transaction", account_limit, fx_contract, payment RESTART IDENTITY CASCADE;'
+        INFRA_TRUNCATE='TRUNCATE TABLE command, command_dlq, process_instance, process_log, inbox, inbox_bc, outbox, outbox_bc RESTART IDENTITY CASCADE;'
+
+        if ! docker exec "$DB_CONTAINER" psql -U postgres -d "$PAYMENTS_DB" -c "$PAYMENTS_TRUNCATE" >/dev/null; then
+            echo -e "${RED}❌ Failed to truncate domain tables in $PAYMENTS_DB${NC}"
+            exit 1
+        fi
+
+        if ! docker exec "$DB_CONTAINER" psql -U postgres -d "$PAYMENTS_DB" -c "$INFRA_TRUNCATE" >/dev/null; then
+            echo -e "${RED}❌ Failed to truncate infrastructure tables in $PAYMENTS_DB${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN}✅ Database reset complete${NC}"
+        echo ""
+    else
+        echo -e "${RED}❌ docker command not found. Cannot reset database.${NC}"
+        echo -e "${YELLOW}Set SKIP_DB_RESET=true to bypass this step.${NC}"
+        exit 1
+    fi
+fi
 
 # Step 1: Check if services are running
 echo -e "${YELLOW}🔍 Step 1: Checking services...${NC}"
