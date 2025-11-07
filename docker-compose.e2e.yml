@@ -1,8 +1,8 @@
 version: '3.8'
 
-# Minimal Docker Compose setup for E2E testing
-# Only includes infrastructure services needed for tests
-# Applications (API, Worker) are started separately by the test framework
+# Docker Compose setup for E2E testing
+# Includes infrastructure services and applications needed for complete E2E tests
+# API and Platform Worker are included to test full command processing flow
 
 services:
   # PostgreSQL Database
@@ -104,6 +104,49 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - e2e-network
+
+  # Platform Worker Application
+  worker:
+    build:
+      context: .
+      dockerfile: msg-platform-worker/Dockerfile
+    container_name: e2e-worker
+    ports:
+      - "9090:9090"
+    environment:
+      WORKER_ID: e2e-worker-1
+      MICRONAUT_SERVER_PORT: 9090
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: reliable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      MQ_HOST: ibmmq
+      MQ_PORT: 1414
+      MQ_QMGR: QM1
+      MQ_CHANNEL: DEV.APP.SVRCONN
+      MQ_USER: app
+      MQ_PASS: passw0rd
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JMS_CONSUMERS_ENABLED: true
+      JMS_CONCURRENCY: 10
+      OUTBOX_SWEEP_INTERVAL: 1s
+      OUTBOX_CLAIM_TIMEOUT: 1s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
       interval: 10s
       timeout: 5s
       retries: 10
