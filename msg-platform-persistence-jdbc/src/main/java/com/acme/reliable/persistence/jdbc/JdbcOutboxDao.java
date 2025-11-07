@@ -1,5 +1,6 @@
 package com.acme.reliable.persistence.jdbc;
 
+import com.acme.reliable.persistence.jdbc.model.OutboxEntity;
 import com.acme.reliable.spi.OutboxDao;
 import com.acme.reliable.spi.OutboxRow;
 import io.micronaut.data.annotation.Query;
@@ -13,7 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @JdbcRepository(dialect = Dialect.POSTGRES)
-public interface JdbcOutboxDao extends OutboxDao, GenericRepository<Object, Long> {
+public interface JdbcOutboxDao extends OutboxDao, GenericRepository<OutboxEntity, Long> {
 
   @Query(
       value =
