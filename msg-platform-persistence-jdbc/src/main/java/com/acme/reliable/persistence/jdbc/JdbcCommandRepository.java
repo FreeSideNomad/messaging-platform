@@ -17,7 +17,7 @@ public interface JdbcCommandRepository
   @Query(
       value =
           """
-        INSERT INTO command (id, name, business_key, payload, idempotency_key, status, reply)
+        INSERT INTO platform.command (id, name, business_key, payload, idempotency_key, status, reply)
         VALUES (:id, :name, :businessKey, :payload::jsonb, :idempotencyKey, 'PENDING', :reply::jsonb)
         """,
       nativeQuery = true)
@@ -34,7 +34,7 @@ public interface JdbcCommandRepository
   @Query(
       value =
           """
-        UPDATE command
+        UPDATE platform.command
         SET status = 'RUNNING', processing_lease_until = :lease
         WHERE id = :id
         """,
@@ -44,7 +44,7 @@ public interface JdbcCommandRepository
   @Query(
       value =
           """
-        UPDATE command
+        UPDATE platform.command
         SET status = 'SUCCEEDED', updated_at = now()
         WHERE id = :id
         """,
@@ -54,7 +54,7 @@ public interface JdbcCommandRepository
   @Query(
       value =
           """
-        UPDATE command
+        UPDATE platform.command
         SET status = 'FAILED', last_error = :error, updated_at = now()
         WHERE id = :id
         """,
@@ -64,7 +64,7 @@ public interface JdbcCommandRepository
   @Query(
       value =
           """
-        UPDATE command
+        UPDATE platform.command
         SET retries = retries + 1, last_error = :error, updated_at = now()
         WHERE id = :id
         """,
@@ -74,7 +74,7 @@ public interface JdbcCommandRepository
   @Query(
       value =
           """
-        UPDATE command
+        UPDATE platform.command
         SET status = 'TIMED_OUT', last_error = :reason, updated_at = now()
         WHERE id = :id
         """,
@@ -82,7 +82,7 @@ public interface JdbcCommandRepository
   void updateToTimedOut(UUID id, String reason);
 
   @Query(
-      value = "SELECT EXISTS(SELECT 1 FROM command WHERE idempotency_key = :key)",
+      value = "SELECT EXISTS(SELECT 1 FROM platform.command WHERE idempotency_key = :key)",
       nativeQuery = true)
   boolean existsByIdempotencyKey(String key);
 }

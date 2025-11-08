@@ -31,7 +31,7 @@ public class JdbcProcessRepository implements ProcessRepository {
       // Insert process_instance
       String insertSql =
           """
-                INSERT INTO process_instance
+                INSERT INTO platform.process_instance
                 (process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
                 """;
@@ -70,7 +70,7 @@ public class JdbcProcessRepository implements ProcessRepository {
     String sql =
         """
             SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM process_instance
+            FROM platform.process_instance
             WHERE process_id = ?
             """;
 
@@ -99,7 +99,7 @@ public class JdbcProcessRepository implements ProcessRepository {
     String sql =
         """
             SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM process_instance
+            FROM platform.process_instance
             WHERE status = ?
             ORDER BY created_at DESC
             LIMIT ?
@@ -115,7 +115,7 @@ public class JdbcProcessRepository implements ProcessRepository {
     String sql =
         """
             SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM process_instance
+            FROM platform.process_instance
             WHERE process_type = ? AND status = ?
             ORDER BY created_at DESC
             LIMIT ?
@@ -150,7 +150,7 @@ public class JdbcProcessRepository implements ProcessRepository {
       // Update process_instance
       String updateSql =
           """
-                UPDATE process_instance
+                UPDATE platform.process_instance
                 SET status = ?,
                     current_step = ?,
                     data = ?::jsonb,
@@ -196,7 +196,7 @@ public class JdbcProcessRepository implements ProcessRepository {
     String sql =
         """
             SELECT process_id, seq, at, event
-            FROM process_log
+            FROM platform.process_log
             WHERE process_id = ?
             ORDER BY seq
             LIMIT ?
@@ -229,7 +229,7 @@ public class JdbcProcessRepository implements ProcessRepository {
     String sql =
         """
             SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM process_instance
+            FROM platform.process_instance
             WHERE process_type = ? AND business_key = ?
             ORDER BY created_at DESC
             LIMIT 1
@@ -283,7 +283,7 @@ public class JdbcProcessRepository implements ProcessRepository {
       throws SQLException {
     String sql =
         """
-            INSERT INTO process_log (process_id, event)
+            INSERT INTO platform.process_log (process_id, event)
             VALUES (?, ?::jsonb)
             """;
 

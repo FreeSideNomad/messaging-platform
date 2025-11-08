@@ -17,7 +17,7 @@ public interface JdbcOutboxRepository
   @Query(
       value =
           """
-        INSERT INTO outbox (id, category, topic, key, type, payload, headers, status, attempts)
+        INSERT INTO platform.outbox (id, category, topic, key, type, payload, headers, status, attempts)
         VALUES (:id, :category, :topic, :key, :type, :payload::jsonb, :headers::jsonb, :status, :attempts)
         """,
       nativeQuery = true)
@@ -35,7 +35,7 @@ public interface JdbcOutboxRepository
   @Query(
       value =
           """
-        UPDATE outbox
+        UPDATE platform.outbox
         SET status = 'CLAIMED', claimed_by = :claimer
         WHERE id = :id AND status = 'NEW'
         RETURNING id, category, topic, key, type, payload, headers, status, attempts,
@@ -49,14 +49,14 @@ public interface JdbcOutboxRepository
           """
         WITH c AS (
             SELECT id
-            FROM outbox
+            FROM platform.outbox
             WHERE status = 'NEW'
               AND (next_at IS NULL OR next_at <= now())
             ORDER BY created_at
             LIMIT :maxRecords
             FOR UPDATE SKIP LOCKED
         )
-        UPDATE outbox o
+        UPDATE platform.outbox o
         SET status = 'CLAIMED', claimed_by = :claimer, attempts = o.attempts
         FROM c
         WHERE o.id = c.id
@@ -68,14 +68,14 @@ public interface JdbcOutboxRepository
   List<OutboxEntity> claimBatch(int maxRecords, String claimer);
 
   @Query(
-      value = "UPDATE outbox SET status = 'PUBLISHED', published_at = now() WHERE id = :id",
+      value = "UPDATE platform.outbox SET status = 'PUBLISHED', published_at = now() WHERE id = :id",
       nativeQuery = true)
   void markPublished(long id);
 
   @Query(
       value =
           """
-        UPDATE outbox
+        UPDATE platform.outbox
         SET status = 'NEW',
             next_at = now() + (:backoffMs || ' milliseconds')::interval,
             attempts = attempts + 1,

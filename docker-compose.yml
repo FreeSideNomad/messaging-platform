@@ -25,6 +25,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -95,6 +96,23 @@ services:
     networks:
       - messaging-network
 
+  # Flyway Database Migration Service
+  flyway-init:
+    image: flyway/flyway:10.4.1
+    container_name: messaging-flyway-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations/reliable:/flyway/sql/reliable
+      - ./migrations/payments:/flyway/sql/payments
+      - ./scripts/flyway-config:/etc/flyway
+      - ./scripts/run-flyway-migrations.sh:/flyway/run-migrations.sh
+    entrypoint: "/bin/sh"
+    command: ["/flyway/run-migrations.sh"]
+    networks:
+      - messaging-network
+
   # API Instance
   api:
     build:
@@ -135,6 +153,8 @@ services:
         condition: service_healthy
       ibmmq:
         condition: service_healthy
+      flyway-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 30s
@@ -188,6 +208,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      flyway-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9091/health"]
       interval: 30s

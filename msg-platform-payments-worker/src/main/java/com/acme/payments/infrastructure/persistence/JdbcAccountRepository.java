@@ -58,7 +58,7 @@ public class JdbcAccountRepository implements AccountRepository {
           """
                 SELECT account_id, customer_id, account_number, currency_code,
                        account_type, transit_number, limit_based, available_balance, created_at
-                FROM account
+                FROM payments.account
                 WHERE account_id = ?
                 """;
 
@@ -90,7 +90,7 @@ public class JdbcAccountRepository implements AccountRepository {
           """
                 SELECT account_id, customer_id, account_number, currency_code,
                        account_type, transit_number, limit_based, available_balance, created_at
-                FROM account
+                FROM payments.account
                 WHERE account_number = ?
                 """;
 
@@ -114,7 +114,7 @@ public class JdbcAccountRepository implements AccountRepository {
   }
 
   private boolean accountExists(Connection conn, UUID accountId) throws SQLException {
-    String sql = "SELECT 1 FROM account WHERE account_id = ?";
+    String sql = "SELECT 1 FROM payments.account WHERE account_id = ?";
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       stmt.setObject(1, accountId);
       try (ResultSet rs = stmt.executeQuery()) {
@@ -126,7 +126,7 @@ public class JdbcAccountRepository implements AccountRepository {
   private void insertAccount(Connection conn, Account account) throws SQLException {
     String sql =
         """
-            INSERT INTO account (account_id, customer_id, account_number, currency_code,
+            INSERT INTO payments.account (account_id, customer_id, account_number, currency_code,
                                account_type, transit_number, limit_based, available_balance, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
@@ -149,7 +149,7 @@ public class JdbcAccountRepository implements AccountRepository {
   private void updateAccount(Connection conn, Account account) throws SQLException {
     String sql =
         """
-            UPDATE account
+            UPDATE payments.account
             SET available_balance = ?
             WHERE account_id = ?
             """;
@@ -164,7 +164,7 @@ public class JdbcAccountRepository implements AccountRepository {
 
   private void saveTransactions(Connection conn, Account account) throws SQLException {
     // Delete existing transactions and reinsert (simpler than tracking changes)
-    String deleteSql = "DELETE FROM transaction WHERE account_id = ?";
+    String deleteSql = "DELETE FROM payments.transaction WHERE account_id = ?";
     try (PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
       stmt.setObject(1, account.getAccountId());
       stmt.executeUpdate();
@@ -173,7 +173,7 @@ public class JdbcAccountRepository implements AccountRepository {
     // Insert all transactions
     String insertSql =
         """
-            INSERT INTO transaction (transaction_id, account_id, transaction_date,
+            INSERT INTO payments.transaction (transaction_id, account_id, transaction_date,
                                    transaction_type, amount, currency_code, description, balance)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
@@ -200,7 +200,7 @@ public class JdbcAccountRepository implements AccountRepository {
         """
             SELECT transaction_id, account_id, transaction_date, transaction_type,
                    amount, currency_code, description, balance
-            FROM transaction
+            FROM payments.transaction
             WHERE account_id = ?
             ORDER BY transaction_date ASC
             """;

@@ -14,7 +14,7 @@ public interface JdbcInboxRepository
   @Query(
       value =
           """
-        INSERT INTO inbox (message_id, handler)
+        INSERT INTO platform.inbox (message_id, handler)
         VALUES (:messageId, :handler)
         ON CONFLICT DO NOTHING
         """,

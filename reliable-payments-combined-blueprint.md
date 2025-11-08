@@ -103,9 +103,7 @@ A small service that remembers state and decides the next command in a business 
 - `batch_run`, `batch_item` — daily batch tracking.
 
 ### Each bounded context
-- Domain tables.  
-- `inbox_bc` — dedupe of inbound commands.  
-- `outbox_bc` — reliable replies/events from that context.  
+- Domain tables.
 - Idempotency ledgers (e.g., `payment_submission(idempotency_key UNIQUE)`).
 
 ---
@@ -303,9 +301,7 @@ Holds shared infra + orchestration:
 - `batch_run`, `batch_item`
 
 ### Each BC DB (owned by BC)
-- Domain tables  
-- `inbox_bc(message_id, handler, processed_at)`  
-- `outbox_bc(id, category='reply'|'event', topic, key, type, payload, headers, status, attempts, next_at, created_at)`  
+- Domain tables
 - Optional idempotency ledger (e.g., `payment_submission(idempotency_key unique)`).
 
 > If corporate runs a central Postgres: use **separate databases or schemas** with roles; enforce isolation via roles/RLS.
@@ -401,30 +397,6 @@ create table batch_item (
 
 ### BC DB (per bounded context)
 ```sql
--- Dedupe of inbound MQ deliveries
-create table inbox_bc (
-  message_id text not null,
-  handler text not null,
-  processed_at timestamptz not null default now(),
-  primary key(message_id, handler)
-);
-
--- Reliable replies/events from BC back to platform
-create table outbox_bc (
-  id bigserial primary key,
-  category text not null,         -- 'reply'|'event'
-  topic text,
-  key text,
-  type text not null,
-  payload jsonb not null,
-  headers jsonb not null default '{}',
-  status text not null default 'NEW',
-  attempts int not null default 0,
-  next_at timestamptz,
-  created_at timestamptz not null default now()
-);
-create index outbox_bc_dispatch_idx on outbox_bc(status, coalesce(next_at,'epoch'::timestamptz), created_at);
-
 -- Example: enforce idempotent side effect in Payments BC
 create table payment_submission (
   id uuid primary key,
@@ -490,12 +462,12 @@ create table payment_submission (
 |---|---|---|---|
 | **Orchestrator (platform)** | command/outbox/inbox, saga_*, batch_* | MQ **commands** | MQ **replies**, Kafka **events** |
 | **OutboxRelay (platform)** | (reads platform outbox) | MQ **commands/replies**, Kafka **events** | platform outbox |
-| **Accounts Worker** | domain + inbox_bc + outbox_bc | MQ **reply**, Kafka **event** | MQ **command** |
-| **Limits Worker** | domain + inbox_bc + outbox_bc | MQ **reply**, Kafka **event** | MQ **command** |
-| **FX Worker (ACL)** | domain(opt) + inbox_bc + outbox_bc | MQ **reply**, Kafka **event** | MQ **command** → **HTTPS** |
-| **Payments Worker** | domain + inbox_bc + outbox_bc | MQ **reply**, Kafka **event** | MQ **command** |
+| **Accounts Worker** | domain | MQ **reply**, Kafka **event** | MQ **command** |
+| **Limits Worker** | domain | MQ **reply**, Kafka **event** | MQ **command** |
+| **FX Worker (ACL)** | domain(opt) | MQ **reply**, Kafka **event** | MQ **command** → **HTTPS** |
+| **Payments Worker** | domain | MQ **reply**, Kafka **event** | MQ **command** |
 
-**Why BC‑local outbox/inbox?** Replies/events are **as reliable** as command intake because they’re persisted atomically with the BC’s state before relay publish.
+**Note:** All BCs use the shared `outbox` and `inbox` tables for reliable message publishing and idempotent processing.
 
 ---
 
