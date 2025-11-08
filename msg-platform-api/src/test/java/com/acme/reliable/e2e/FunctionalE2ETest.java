@@ -21,6 +21,16 @@ import org.junit.jupiter.api.Test;
 /**
  * Functional E2E tests that validate the complete flow: API → Worker → Database with proof-of-work
  * verification.
+ *
+ * NOTE: These tests require the full Docker Compose stack to be running:
+ *   docker-compose up -d
+ *
+ * These tests are tagged with "e2e" and are skipped by default in normal test runs.
+ * To run only E2E tests:
+ *   mvn clean test -Dgroups=e2e
+ *
+ * To skip E2E tests:
+ *   mvn clean test -DexcludedGroups=e2e
  */
 @Tag("e2e")
 class FunctionalE2ETest extends E2ETestBase {
