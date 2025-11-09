@@ -40,15 +40,15 @@ import org.junit.jupiter.api.Disabled;
  *
  * @Transactional is used to ensure each test method runs within a database transaction.
  *
- * NOTE: These JMS workflow tests are disabled because they require PaymentCommandConsumer
- * to be active and listening to JMS queues. However, PaymentCommandConsumer is disabled
- * in test mode (via @Requires(notEnv = "test")) because the Micronaut JMS infrastructure
- * expects jakarta.jms.ConnectionFactory while ActiveMQ provides javax.jms.ConnectionFactory
- * in version 5.18.3. Domain logic is tested by other unit/integration tests.
+ * NOTE: These JMS workflow tests are disabled because Micronaut's @JMSListener framework
+ * requires a JMSConnectionPool bean that's managed by the Micronaut JMS module. This requires
+ * proper framework initialization that can't be replicated in test mode with manual ApplicationContext
+ * setup. Additionally, PaymentCommandConsumer is disabled in test mode via @Requires(notEnv = "test")
+ * as an extra safeguard. Domain logic is tested by other unit/integration tests.
  */
 @DisplayName("Payment Workflow Integration Tests")
 @Transactional
-@Disabled("Requires JMS consumer to be active - skipped due to jakarta.jms/javax.jms incompatibility")
+@Disabled("Micronaut JMS @JMSListener infrastructure requires JMSConnectionPool bean (managed by Micronaut JMS module)")
 class PaymentWorkflowIntegrationTest extends PaymentsIntegrationTestBase {
 
   private static final String CREATE_ACCOUNT_QUEUE = "APP.CMD.CREATEACCOUNT.Q";
