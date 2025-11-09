@@ -262,6 +262,8 @@
                     <exclude>com.acme.payments</exclude>
                     <!-- Exclude messaging infrastructure (MQ consumer bootstrap) -->
                     <exclude>com.acme.payments.infrastructure.messaging</exclude>
+                    <!-- Exclude web controllers (health check endpoint) -->
+                    <exclude>com.acme.payments.web</exclude>
                   </excludes>
                 </rule>
               </rules>
