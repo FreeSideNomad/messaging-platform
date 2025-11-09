@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,20 +32,25 @@ import org.junit.jupiter.api.Test;
 @Transactional
 class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
 
-  @BeforeEach
-  void setUp() throws Exception {
-    // Setup Micronaut ApplicationContext with DI and AOP
-    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
-    // in PaymentsIntegrationTestBase
+  /**
+   * Initialize ApplicationContext once for the entire test class.
+   */
+  @BeforeAll
+  void setupOnce() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP - runs ONCE per test class
     super.setupContext();
   }
 
-  @org.junit.jupiter.api.AfterEach
-  void tearDown() throws Exception {
+  /**
+   * Clean up ApplicationContext after all test methods complete.
+   */
+  @org.junit.jupiter.api.AfterAll
+  void tearDownOnce() throws Exception {
     super.tearDownContext();
   }
 
   @Test
+  @Transactional
   @DisplayName("E2E: Create account flow")
   void testCreateAccountFlow() {
     // Given
@@ -56,7 +63,7 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
     UUID accountId = UUID.fromString((String) result.get("accountId"));
 
     // Then - Verify account was persisted
-    Optional<Account> retrieved = accountRepository.findById(accountId);
+    Optional<Account> retrieved = readInTransaction(() -> accountRepository.findById(accountId));
     assertThat(retrieved).isPresent();
     assertThat(retrieved.get().getCustomerId()).isEqualTo(customerId);
     assertThat(retrieved.get().getCurrencyCode()).isEqualTo("USD");
@@ -65,6 +72,7 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
   }
 
   @Test
+  @Transactional
   @DisplayName("E2E: Simple payment flow (no FX)")
   void testSimplePaymentFlow_NoFX() {
     // Given - Create debit account
@@ -73,12 +81,12 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
         new CreateAccountCommand(customerId, "USD", "001", AccountType.CHECKING, false);
     Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
     UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
-    Account debitAccount = accountRepository.findById(accountId).orElseThrow();
+    Account debitAccount = readInTransaction(() -> accountRepository.findById(accountId)).orElseThrow();
 
     // Add initial balance via transaction
     debitAccount.createTransaction(
         TransactionType.CREDIT, Money.of(1000.00, "USD"), "Initial deposit");
-    accountRepository.save(debitAccount);
+    writeInTransaction(() -> accountRepository.save(debitAccount));
 
     // When - Create payment
     Beneficiary beneficiary = new Beneficiary("John Doe", "ACC987654321", "002", "Test Bank");
@@ -101,12 +109,13 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
     assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
 
     // Verify payment was persisted
-    Optional<Payment> retrievedPayment = paymentRepository.findById(payment.getPaymentId());
+    Optional<Payment> retrievedPayment = readInTransaction(() -> paymentRepository.findById(payment.getPaymentId()));
     assertThat(retrievedPayment).isPresent();
     assertThat(retrievedPayment.get().getStatus()).isEqualTo(PaymentStatus.PENDING);
   }
 
   @Test
+  @Transactional
   @DisplayName("E2E: Payment with FX conversion")
   void testPaymentFlow_WithFX() {
     // Given - Create USD account
@@ -115,12 +124,12 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
         new CreateAccountCommand(customerId, "USD", "001", AccountType.CHECKING, false);
     Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
     UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
-    Account debitAccount = accountRepository.findById(accountId).orElseThrow();
+    Account debitAccount = readInTransaction(() -> accountRepository.findById(accountId)).orElseThrow();
 
     // Add initial balance
     debitAccount.createTransaction(
         TransactionType.CREDIT, Money.of(500.00, "USD"), "Initial deposit");
-    accountRepository.save(debitAccount);
+    writeInTransaction(() -> accountRepository.save(debitAccount));
 
     // When - Create payment requiring FX (USD to EUR)
     Beneficiary beneficiary =
@@ -145,6 +154,7 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
   }
 
   @Test
+  @Transactional
   @DisplayName("E2E: Account transaction management")
   void testAccountTransactionManagement() {
     // Given - Create account
@@ -153,27 +163,28 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
         new CreateAccountCommand(customerId, "EUR", "002", AccountType.SAVINGS, false);
     Map<String, Object> accountResult = accountService.handleCreateAccount(accountCmd);
     UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
-    Account account = accountRepository.findById(accountId).orElseThrow();
+    Account account = readInTransaction(() -> accountRepository.findById(accountId)).orElseThrow();
 
     // When - Add multiple transactions
     account.createTransaction(TransactionType.CREDIT, Money.of(500.00, "EUR"), "Deposit 1");
-    accountRepository.save(account);
+    writeInTransaction(() -> accountRepository.save(account));
 
-    Account retrieved1 = accountRepository.findById(accountId).orElseThrow();
+    Account retrieved1 = readInTransaction(() -> accountRepository.findById(accountId)).orElseThrow();
     retrieved1.createTransaction(TransactionType.DEBIT, Money.of(100.00, "EUR"), "Withdrawal 1");
-    accountRepository.save(retrieved1);
+    writeInTransaction(() -> accountRepository.save(retrieved1));
 
-    Account retrieved2 = accountRepository.findById(accountId).orElseThrow();
+    Account retrieved2 = readInTransaction(() -> accountRepository.findById(accountId)).orElseThrow();
     retrieved2.createTransaction(TransactionType.CREDIT, Money.of(200.00, "EUR"), "Deposit 2");
-    accountRepository.save(retrieved2);
+    writeInTransaction(() -> accountRepository.save(retrieved2));
 
     // Then - Verify final balance
-    Account finalAccount = accountRepository.findById(accountId).orElseThrow();
+    Account finalAccount = readInTransaction(() -> accountRepository.findById(accountId)).orElseThrow();
     assertThat(finalAccount.getAvailableBalance()).isEqualTo(Money.of(600.00, "EUR"));
     assertThat(finalAccount.getTransactions()).hasSize(3);
   }
 
   @Test
+  @Transactional
   @DisplayName("E2E: Multiple accounts and payments")
   void testMultipleAccountsAndPayments() {
     // Given - Create multiple accounts
@@ -184,19 +195,19 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
         accountService.handleCreateAccount(
             new CreateAccountCommand(customer1, "USD", "001", AccountType.CHECKING, false));
     UUID accountId1 = UUID.fromString((String) result1.get("accountId"));
-    Account account1 = accountRepository.findById(accountId1).orElseThrow();
+    Account account1 = readInTransaction(() -> accountRepository.findById(accountId1)).orElseThrow();
 
     Map<String, Object> result2 =
         accountService.handleCreateAccount(
             new CreateAccountCommand(customer2, "EUR", "002", AccountType.SAVINGS, false));
     UUID accountId2 = UUID.fromString((String) result2.get("accountId"));
-    Account account2 = accountRepository.findById(accountId2).orElseThrow();
+    Account account2 = readInTransaction(() -> accountRepository.findById(accountId2)).orElseThrow();
 
     // Add balances
     account1.createTransaction(TransactionType.CREDIT, Money.of(1000.00, "USD"), "Initial");
     account2.createTransaction(TransactionType.CREDIT, Money.of(500.00, "EUR"), "Initial");
-    accountRepository.save(account1);
-    accountRepository.save(account2);
+    writeInTransaction(() -> accountRepository.save(account1));
+    writeInTransaction(() -> accountRepository.save(account2));
 
     // When - Create payments from both accounts
     Beneficiary beneficiary = new Beneficiary("Recipient", "ACC999", "003", "Bank");
@@ -220,15 +231,16 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
                 beneficiary));
 
     // Then - Verify both payments exist
-    assertThat(paymentRepository.findById(payment1.getPaymentId())).isPresent();
-    assertThat(paymentRepository.findById(payment2.getPaymentId())).isPresent();
+    assertThat(readInTransaction(() -> paymentRepository.findById(payment1.getPaymentId()))).isPresent();
+    assertThat(readInTransaction(() -> paymentRepository.findById(payment2.getPaymentId()))).isPresent();
 
     // Verify accounts still exist
-    assertThat(accountRepository.findById(account1.getAccountId())).isPresent();
-    assertThat(accountRepository.findById(account2.getAccountId())).isPresent();
+    assertThat(readInTransaction(() -> accountRepository.findById(account1.getAccountId()))).isPresent();
+    assertThat(readInTransaction(() -> accountRepository.findById(account2.getAccountId()))).isPresent();
   }
 
   @Test
+  @Transactional
   @DisplayName("E2E: Payment idempotency check")
   void testPaymentIdempotency() {
     // Given - Create account
@@ -237,9 +249,9 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
         accountService.handleCreateAccount(
             new CreateAccountCommand(customerId, "USD", "001", AccountType.CHECKING, false));
     UUID accountId = UUID.fromString((String) accountResult.get("accountId"));
-    Account account = accountRepository.findById(accountId).orElseThrow();
+    Account account = readInTransaction(() -> accountRepository.findById(accountId)).orElseThrow();
     account.createTransaction(TransactionType.CREDIT, Money.of(500.00, "USD"), "Initial");
-    accountRepository.save(account);
+    writeInTransaction(() -> accountRepository.save(account));
 
     // When - Create payment with specific ID
     UUID paymentId = UUID.randomUUID();
@@ -252,10 +264,10 @@ class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
             Money.of(100.00, "USD"),
             LocalDate.now(),
             beneficiary);
-    paymentRepository.save(payment);
+    writeInTransaction(() -> paymentRepository.save(payment));
 
     // Then - Verify same payment ID can be queried
-    Optional<Payment> retrieved = paymentRepository.findById(paymentId);
+    Optional<Payment> retrieved = readInTransaction(() -> paymentRepository.findById(paymentId));
     assertThat(retrieved).isPresent();
     assertThat(retrieved.get().getPaymentId()).isEqualTo(paymentId);
 

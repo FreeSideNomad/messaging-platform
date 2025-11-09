@@ -12,8 +12,7 @@ import jakarta.jms.JMSException;
 import lombok.extern.slf4j.Slf4j;
 
 /** JMS Consumer for payment commands */
-@Requires(notEnv = "test")
-@Requires(property = "jms.consumers.enabled", value = "true", defaultValue = "false")
+@Requires(property = "jms.consumers.enabled", value = "true", defaultValue = "false", notEnv = "test")
 @JMSListener("mqConnectionFactory")
 @Slf4j
 public class PaymentCommandConsumer extends BaseCommandConsumer {

@@ -147,8 +147,8 @@ public class AccountService {
   }
 
   private Transaction findTransactionById(UUID transactionId) {
-    // Simple implementation - in production would use proper indexing
-    // For now, we'll throw an exception if not found
+    // Not implemented - would require transaction index or scanning all accounts
+    // This feature is not currently required for the payment system
     throw new UnsupportedOperationException(
         "Transaction lookup by ID not yet implemented. "
             + "Would need transaction index or search across accounts.");

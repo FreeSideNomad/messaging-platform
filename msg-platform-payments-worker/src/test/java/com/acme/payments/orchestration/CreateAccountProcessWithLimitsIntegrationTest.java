@@ -13,6 +13,8 @@ import io.micronaut.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,29 +34,42 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
 
   private CreateAccountProcessDefinition processDefinition;
 
-  @BeforeEach
-  void setUp() throws Exception {
-    // Setup Micronaut ApplicationContext with DI and AOP
-    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
-    // in PaymentsIntegrationTestBase
+  /**
+   * Initialize ApplicationContext once for the entire test class.
+   */
+  @BeforeAll
+  void setupOnce() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP - runs ONCE per test class
     super.setupContext();
+  }
 
+  /**
+   * Reset test data before each test method.
+   * Manually create the process definition (no DI needed).
+   */
+  @BeforeEach
+  void resetTestData() throws Exception {
     // Manually create the process definition (no DI needed)
     processDefinition = new CreateAccountProcessDefinition();
   }
 
-  @org.junit.jupiter.api.AfterEach
-  void tearDown() throws Exception {
+  /**
+   * Clean up ApplicationContext after all test methods complete.
+   */
+  @org.junit.jupiter.api.AfterAll
+  void tearDownOnce() throws Exception {
     super.tearDownContext();
   }
 
   @Test
+  @Transactional
   @DisplayName("Process definition should have correct type")
   void testProcessType() {
     assertThat(processDefinition.getProcessType()).isEqualTo("InitiateCreateAccountProcess");
   }
 
   @Test
+  @Transactional
   @DisplayName("Should initialize process state from InitiateCreateAccountProcess without limits")
   void testProcessInitialization_NoLimits() {
     // Given: Initiate create account process command without limits
@@ -77,6 +92,7 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
   }
 
   @Test
+  @Transactional
   @DisplayName("Should initialize process state from InitiateCreateAccountProcess with limits")
   void testProcessInitialization_WithLimits() {
     // Given: Initiate create account process command with limits
@@ -106,6 +122,7 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
   }
 
   @Test
+  @Transactional
   @DisplayName("Should handle account creation without limits")
   void testAccountCreation_NoLimits() {
     // Given: Create account command without limits
@@ -123,10 +140,11 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
 
     // Verify account exists in repository
     UUID accountId = UUID.fromString((String) result.get("accountId"));
-    assertThat(accountRepository.findById(accountId)).isPresent();
+    assertThat(readInTransaction(() -> accountRepository.findById(accountId))).isPresent();
   }
 
   @Test
+  @Transactional
   @DisplayName("Should handle limit creation after account creation")
   void testLimitCreation_AfterAccountCreation() {
     // Given: Account has been created
@@ -153,11 +171,12 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
     assertThat(limitsResult.get("limitCount")).isEqualTo(2);
 
     // Verify limits exist in repository
-    var savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
+    var savedLimits = readInTransaction(() -> accountLimitRepository.findActiveByAccountId(accountId));
     assertThat(savedLimits).hasSize(2);
   }
 
   @Test
+  @Transactional
   @DisplayName("Process graph should conditionally execute CreateLimits")
   void testProcessGraphConditionalExecution() {
     // Given: Process graph
@@ -190,6 +209,7 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
   }
 
   @Test
+  @Transactional
   @DisplayName("Should be retryable on transient errors")
   void testRetryability() {
     // Given: Process definition
@@ -207,6 +227,7 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
   }
 
   @Test
+  @Transactional
   @DisplayName("Should have max retries configured")
   void testMaxRetries() {
     // Given: Process definition
@@ -217,6 +238,7 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
   }
 
   @Test
+  @Transactional
   @DisplayName("Limits should be aligned to time buckets")
   void testTimeBucketAlignment() {
     // Given: Account created
@@ -235,7 +257,7 @@ class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationT
     limitService.handleCreateLimits(createLimitsCmd);
 
     // Then: Limit should be aligned to hour boundary
-    var savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
+    var savedLimits = readInTransaction(() -> accountLimitRepository.findActiveByAccountId(accountId));
     assertThat(savedLimits).hasSize(1);
 
     var limit = savedLimits.get(0);

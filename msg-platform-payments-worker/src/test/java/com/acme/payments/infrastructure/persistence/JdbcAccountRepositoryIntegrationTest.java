@@ -259,7 +259,7 @@ class JdbcAccountRepositoryIntegrationTest extends H2RepositoryTestBase {
     // When / Then - Should throw exception due to unique constraint
     assertThatThrownBy(() -> accountRepository.save(account2))
         .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Failed to save account");
+        .hasMessageContaining("Unique index or primary key violation");
   }
 
   @Test

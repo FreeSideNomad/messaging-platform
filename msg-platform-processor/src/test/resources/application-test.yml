@@ -15,10 +15,13 @@ datasources:
     maximum-pool-size: 10
     minimum-idle: 2
 
+db:
+  dialect: H2
+
 flyway:
   datasources:
     default:
-      enabled: false  # Disable for unit tests, enable explicitly in integration tests
+      enabled: true  # Enable for integration tests
 
 # Test environment settings
 test:
