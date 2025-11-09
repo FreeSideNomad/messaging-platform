@@ -43,11 +43,6 @@ datasources:
     max-lifetime: 1800000
     leak-detection-threshold: 60000
 
-flyway:
-  datasources:
-    default:
-      enabled: true
-
 # JMS configuration - PRODUCER ONLY (no consumers)
 jms:
   consumers:

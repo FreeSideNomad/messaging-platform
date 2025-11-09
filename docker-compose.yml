@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -96,6 +94,20 @@ services:
     networks:
       - messaging-network
 
+  # Redis (for fast-publish notify queue)
+  redis:
+    image: redis:7-alpine
+    container_name: messaging-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-network
+
   # Flyway Database Migration Service
   flyway-init:
     image: flyway/flyway:10.4.1
@@ -113,12 +125,12 @@ services:
     networks:
       - messaging-network
 
-  # API Instance
-  api:
+  # API Instance (Reliable Database)
+  api-reliable:
     build:
       context: .
       dockerfile: msg-platform-api/Dockerfile
-    container_name: messaging-api
+    container_name: messaging-api-reliable
     ports:
       - "8080:8080"
     environment:
@@ -130,7 +142,7 @@ services:
       SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: reliable
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MQ_HOST: ${MQ_HOST}
@@ -140,6 +152,8 @@ services:
       MQ_USER: ${MQ_USER}
       MQ_PASS: ${MQ_PASS}
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
       JAVA_OPTS: ${JAVA_OPTS}
     ulimits:
       nofile:
@@ -153,10 +167,12 @@ services:
         condition: service_healthy
       ibmmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       flyway-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/commands/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -164,7 +180,121 @@ services:
     networks:
       - messaging-network
 
-  # Payments Worker Instance
+  # API Instance (Payments Database)
+  api-payments:
+    build:
+      context: .
+      dockerfile: msg-platform-api/Dockerfile
+    container_name: messaging-api-payments
+    ports:
+      - "8081:8080"
+    environment:
+      MICRONAUT_SERVER_PORT: 8080
+      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API}
+      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API}
+      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API}
+      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_API}
+      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: payments
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MQ_HOST: ${MQ_HOST}
+      MQ_PORT: ${MQ_PORT}
+      MQ_QMGR: ${MQ_QMGR}
+      MQ_CHANNEL: ${MQ_CHANNEL}
+      MQ_USER: ${MQ_USER}
+      MQ_PASS: ${MQ_PASS}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      JAVA_OPTS: ${JAVA_OPTS}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 10000
+        hard: 10000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      flyway-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/commands/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # Platform Worker Instance (processes general commands)
+  platform-worker:
+    build:
+      context: .
+      dockerfile: msg-platform-worker/Dockerfile
+    container_name: messaging-platform-worker
+    ports:
+      - "9090:9090"
+    environment:
+      WORKER_ID: platform-worker-1
+      MICRONAUT_SERVER_PORT: ${PLATFORM_WORKER_PORT:-9090}
+      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_WORKER}
+      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_WORKER}
+      JMS_CONSUMERS_ENABLED: ${JMS_CONSUMERS_ENABLED_WORKER}
+      JMS_CONCURRENCY: ${JMS_CONCURRENCY}
+      OUTBOX_SWEEP_INTERVAL: ${OUTBOX_SWEEP_INTERVAL}
+      OUTBOX_CLAIM_TIMEOUT: ${OUTBOX_CLAIM_TIMEOUT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MQ_HOST: ${MQ_HOST}
+      MQ_PORT: ${MQ_PORT}
+      MQ_QMGR: ${MQ_QMGR}
+      MQ_CHANNEL: ${MQ_CHANNEL}
+      MQ_USER: ${MQ_USER}
+      MQ_PASS: ${MQ_PASS}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      JAVA_OPTS: ${JAVA_OPTS}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 10000
+        hard: 10000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      flyway-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network
+
+  # Payments Worker Instance (processes payment-specific commands)
   payments-worker:
     build:
       context: .
@@ -193,6 +323,8 @@ services:
       MQ_USER: ${MQ_USER}
       MQ_PASS: ${MQ_PASS}
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
       JAVA_OPTS: ${JAVA_OPTS}
     ulimits:
       nofile:
@@ -207,6 +339,8 @@ services:
       ibmmq:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       flyway-init:
         condition: service_completed_successfully
@@ -227,3 +361,4 @@ volumes:
   postgres_data:
   ibmmq_data:
   kafka_data:
+  redis_data:

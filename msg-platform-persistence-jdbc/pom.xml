@@ -42,17 +42,7 @@
       <scope>compile</scope>
     </dependency>
 
-    <!-- Flyway -->
-    <dependency>
-      <groupId>io.micronaut.flyway</groupId>
-      <artifactId>micronaut-flyway</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-database-postgresql</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+    <!-- Flyway removed: Migrations handled by dedicated flyway-init service in Docker -->
 
     <!-- Transaction support -->
     <dependency>
@@ -130,6 +120,20 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- H2 Database for in-memory testing -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Flyway for test migrations -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -180,7 +184,7 @@
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.70</minimum>
+                      <minimum>0.80</minimum>
                     </limit>
                   </limits>
                 </rule>

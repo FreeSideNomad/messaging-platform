@@ -8,7 +8,7 @@ import com.acme.reliable.config.TimeoutConfig;
 import com.acme.reliable.core.Aggregates;
 import com.acme.reliable.core.Envelope;
 import com.acme.reliable.core.Jsons;
-import com.acme.reliable.core.Outbox;
+import com.acme.reliable.domain.Outbox;
 import com.acme.reliable.core.PermanentException;
 import com.acme.reliable.core.RetryableBusinessException;
 import com.acme.reliable.core.TransientException;
@@ -26,7 +26,6 @@ public class TransactionalExecutor implements CommandExecutor {
   private final InboxService inbox;
   private final CommandService commands;
   private final OutboxService outboxStore;
-  private final Outbox outbox;
   private final DlqService dlq;
   private final CommandHandlerRegistry registry;
   private final FastPathPublisher fastPath;
@@ -37,7 +36,6 @@ public class TransactionalExecutor implements CommandExecutor {
       InboxService i,
       CommandService c,
       OutboxService os,
-      Outbox o,
       DlqService d,
       CommandHandlerRegistry r,
       FastPathPublisher f,
@@ -46,7 +44,6 @@ public class TransactionalExecutor implements CommandExecutor {
     this.inbox = i;
     this.commands = c;
     this.outboxStore = os;
-    this.outbox = o;
     this.dlq = d;
     this.registry = r;
     this.fastPath = f;
@@ -82,10 +79,10 @@ public class TransactionalExecutor implements CommandExecutor {
 
       commands.markSucceeded(env.commandId());
       var replyId =
-          outboxStore.addReturningId(outbox.rowMqReply(env, "CommandCompleted", resultJson));
+          outboxStore.addReturningId(Outbox.newMqReply(env, "CommandCompleted", resultJson, messagingConfig));
       var eventId =
           outboxStore.addReturningId(
-              outbox.rowKafkaEvent(
+              Outbox.newKafkaEvent(
                   messagingConfig.getTopicNaming().buildEventTopic(env.name()),
                   env.key(),
                   "CommandCompleted",
@@ -106,10 +103,10 @@ public class TransactionalExecutor implements CommandExecutor {
           "worker");
       var replyId =
           outboxStore.addReturningId(
-              outbox.rowMqReply(env, "CommandFailed", Jsons.of("error", e.getMessage())));
+              Outbox.newMqReply(env, "CommandFailed", Jsons.of("error", e.getMessage()), messagingConfig));
       var eventId =
           outboxStore.addReturningId(
-              outbox.rowKafkaEvent(
+              Outbox.newKafkaEvent(
                   messagingConfig.getTopicNaming().buildEventTopic(env.name()),
                   env.key(),
                   "CommandFailed",

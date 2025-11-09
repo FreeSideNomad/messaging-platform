@@ -1,0 +1,16 @@
+micronaut:
+  application:
+    name: msg-platform-messaging-ibmmq-test
+  server:
+    port: -1  # Random port for integration tests
+
+# Test environment marker
+test:
+  active: true
+
+# Configure logging for JMS during tests (optional)
+logger:
+  levels:
+    org.apache.activemq: WARN
+    jakarta.jms: DEBUG
+    com.acme.reliable.mq: DEBUG

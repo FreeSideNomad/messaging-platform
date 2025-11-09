@@ -1,6 +1,8 @@
 package com.acme.reliable.repository;
 
+import com.acme.reliable.domain.Command;
 import java.sql.Timestamp;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Repository for Command persistence and state management */
@@ -14,6 +16,9 @@ public interface CommandRepository {
       String payload,
       String idempotencyKey,
       String reply);
+
+  /** Retrieve a command by ID */
+  Optional<Command> findById(UUID id);
 
   /** Update command to RUNNING status with processing lease */
   void updateToRunning(UUID id, Timestamp lease);

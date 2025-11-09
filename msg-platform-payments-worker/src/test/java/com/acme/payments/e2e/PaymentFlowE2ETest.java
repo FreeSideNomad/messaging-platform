@@ -15,7 +15,6 @@ import com.acme.reliable.processor.process.ProcessManager;
 import com.acme.reliable.repository.ProcessRepository;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.support.TestPropertyProvider;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
@@ -23,26 +22,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * End-to-end integration tests for complete payment flows. Tests the full stack: domain services,
  * repositories, and database.
  */
 @MicronautTest(environments = "test", startApplication = false, transactional = false)
-@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Payment Flow E2E Tests")
-class PaymentFlowE2ETest implements TestPropertyProvider {
-
-  @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:16")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
+class PaymentFlowE2ETest {
 
   @Inject AccountService accountService;
 
@@ -65,21 +53,6 @@ class PaymentFlowE2ETest implements TestPropertyProvider {
   @MockBean(ProcessManager.class)
   ProcessManager processManager() {
     return mock(ProcessManager.class);
-  }
-
-  @Override
-  public Map<String, String> getProperties() {
-    postgres.start();
-    java.util.Map<String, String> props = new java.util.HashMap<>();
-    props.put("datasources.default.url", postgres.getJdbcUrl());
-    props.put("datasources.default.username", postgres.getUsername());
-    props.put("datasources.default.password", postgres.getPassword());
-    props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
-    props.put("datasources.default.auto-commit", "false");
-    props.put("flyway.datasources.default.enabled", "true");
-    props.put("flyway.datasources.default.locations", "filesystem:src/main/resources/db/migration");
-    props.put("jms.consumers.enabled", "false");
-    return props;
   }
 
   @Test

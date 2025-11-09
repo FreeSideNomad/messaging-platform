@@ -3,7 +3,6 @@ package com.acme.reliable.processor.config;
 import com.acme.reliable.command.CommandHandlerRegistry;
 import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.config.TimeoutConfig;
-import com.acme.reliable.core.Outbox;
 import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Factory;
 import jakarta.inject.Singleton;
@@ -36,11 +35,5 @@ public class CoreBeansFactory {
   @Singleton
   public CommandHandlerRegistry commandHandlerRegistry() {
     return new CommandHandlerRegistry();
-  }
-
-  /** Creates Outbox singleton with MessagingConfig dependency */
-  @Singleton
-  public Outbox outbox(MessagingConfig messagingConfig) {
-    return new Outbox(messagingConfig);
   }
 }

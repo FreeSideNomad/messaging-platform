@@ -1,8 +1,9 @@
 package com.acme.reliable.processor;
 
 import com.acme.reliable.command.CommandBus;
+import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.core.Jsons;
-import com.acme.reliable.core.Outbox;
+import com.acme.reliable.domain.Outbox;
 import com.acme.reliable.service.CommandService;
 import com.acme.reliable.service.OutboxService;
 import io.micronaut.transaction.annotation.Transactional;
@@ -14,15 +15,15 @@ import java.util.UUID;
 public class TransactionalCommandBus implements CommandBus {
   private final CommandService commands;
   private final OutboxService outboxStore;
-  private final Outbox outbox;
   private final FastPathPublisher fastPath;
+  private final MessagingConfig messagingConfig;
 
   public TransactionalCommandBus(
-      CommandService c, OutboxService os, Outbox o, FastPathPublisher f) {
+      CommandService c, OutboxService os, FastPathPublisher f, MessagingConfig messagingConfig) {
     this.commands = c;
     this.outboxStore = os;
-    this.outbox = o;
     this.fastPath = f;
+    this.messagingConfig = messagingConfig;
   }
 
   @Transactional
@@ -33,7 +34,7 @@ public class TransactionalCommandBus implements CommandBus {
     }
     UUID id = commands.savePending(name, idem, bizKey, payload, Jsons.toJson(reply));
     long outboxId =
-        outboxStore.addReturningId(outbox.rowCommandRequested(name, id, bizKey, payload, reply));
+        outboxStore.addReturningId(Outbox.newCommandRequested(name, id, bizKey, payload, reply, messagingConfig));
     // fastPath.registerAfterCommit(outboxId); // DISABLED: causing transaction leak
     return id;
   }

@@ -5,6 +5,7 @@ import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.Payment;
 import com.acme.payments.domain.model.PaymentStatus;
 import com.acme.payments.domain.repository.PaymentRepository;
+import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import jakarta.inject.Singleton;
 import java.sql.Connection;
 import java.sql.Date;
@@ -12,6 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import javax.sql.DataSource;
@@ -41,8 +44,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
       // Don't commit here - let the ambient transaction (if any) handle it
       // This allows repositories to work both in tests (@Transactional) and production
     } catch (SQLException e) {
-      log.error("Error saving payment: {}", payment.getPaymentId(), e);
-      throw new RuntimeException("Failed to save payment", e);
+      throw ExceptionTranslator.translateException(e, "save payment", log);
     }
   }
 
@@ -60,7 +62,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
                        beneficiary_name, beneficiary_account_number,
                        beneficiary_transit_number, beneficiary_bank_name,
                        created_at
-                FROM payment
+                FROM payments.payment
                 WHERE payment_id = ?
                 """;
 
@@ -74,15 +76,49 @@ public class JdbcPaymentRepository implements PaymentRepository {
         }
       }
     } catch (SQLException e) {
-      log.error("Error finding payment by id: {}", paymentId, e);
-      throw new RuntimeException("Failed to find payment", e);
+      throw ExceptionTranslator.translateException(e, "find payment by id", log);
     }
 
     return Optional.empty();
   }
 
+  @Override
+  public List<Payment> findByDebitAccountId(UUID debitAccountId) {
+    log.debug("Finding payments by debit account id: {}", debitAccountId);
+    List<Payment> payments = new ArrayList<>();
+
+    try (Connection conn = dataSource.getConnection()) {
+      String sql =
+          """
+                SELECT payment_id, debit_account_id, debit_transaction_id, fx_contract_id,
+                       debit_amount, debit_currency_code,
+                       credit_amount, credit_currency_code,
+                       value_date, status,
+                       beneficiary_name, beneficiary_account_number,
+                       beneficiary_transit_number, beneficiary_bank_name,
+                       created_at
+                FROM payments.payment
+                WHERE debit_account_id = ?
+                """;
+
+      try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setObject(1, debitAccountId);
+
+        try (ResultSet rs = stmt.executeQuery()) {
+          while (rs.next()) {
+            payments.add(mapPayment(rs));
+          }
+        }
+      }
+    } catch (SQLException e) {
+      throw ExceptionTranslator.translateException(e, "find payments by debit account id", log);
+    }
+
+    return payments;
+  }
+
   private boolean paymentExists(Connection conn, UUID paymentId) throws SQLException {
-    String sql = "SELECT 1 FROM payment WHERE payment_id = ?";
+    String sql = "SELECT 1 FROM payments.payment WHERE payment_id = ?";
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       stmt.setObject(1, paymentId);
       try (ResultSet rs = stmt.executeQuery()) {

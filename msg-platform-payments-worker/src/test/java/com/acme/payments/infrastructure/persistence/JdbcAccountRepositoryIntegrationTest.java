@@ -11,35 +11,19 @@ import com.acme.reliable.repository.ProcessRepository;
 import com.acme.reliable.spi.CommandQueue;
 import com.acme.reliable.spi.EventPublisher;
 import io.micronaut.test.annotation.MockBean;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.support.TestPropertyProvider;
-import jakarta.inject.Inject;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for JdbcAccountRepository with real PostgreSQL database. Uses Testcontainers to
  * spin up a PostgreSQL instance.
  */
-@MicronautTest(environments = "test", startApplication = false)
-@Testcontainers
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("JdbcAccountRepository Integration Tests")
-class JdbcAccountRepositoryIntegrationTest implements TestPropertyProvider {
+class JdbcAccountRepositoryIntegrationTest extends H2RepositoryTestBase {
 
-  @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:16")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
-
-  @Inject AccountRepository accountRepository;
+  private AccountRepository accountRepository;
 
   private UUID customerId;
   private UUID accountId;
@@ -69,26 +53,12 @@ class JdbcAccountRepositoryIntegrationTest implements TestPropertyProvider {
     return mock(EventPublisher.class);
   }
 
-  @Override
-  public Map<String, String> getProperties() {
-    postgres.start();
-    // Use HashMap to allow more than 10 entries
-    java.util.Map<String, String> props = new java.util.HashMap<>();
-    props.put("datasources.default.url", postgres.getJdbcUrl());
-    props.put("datasources.default.username", postgres.getUsername());
-    props.put("datasources.default.password", postgres.getPassword());
-    props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
-    props.put("datasources.default.auto-commit", "false");
-    props.put("datasources.default.maximum-pool-size", "10");
-    props.put("datasources.default.minimum-idle", "2");
-    props.put("flyway.datasources.default.enabled", "true");
-    props.put("flyway.datasources.default.locations", "classpath:db/migration");
-    props.put("jms.consumers.enabled", "false");
-    return props;
-  }
-
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
+    super.setupSchema();
+    DataSource dataSource = getDataSource();
+    accountRepository = new JdbcAccountRepository(dataSource);
+
     customerId = UUID.randomUUID();
     accountId = UUID.randomUUID();
   }

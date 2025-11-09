@@ -9,36 +9,20 @@ import com.acme.payments.domain.repository.AccountRepository;
 import com.acme.reliable.processor.process.ProcessManager;
 import com.acme.reliable.repository.ProcessRepository;
 import io.micronaut.test.annotation.MockBean;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.support.TestPropertyProvider;
-import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Integration tests for JdbcAccountLimitRepository with real PostgreSQL database. */
-@MicronautTest(environments = "test", startApplication = false)
-@Testcontainers
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("JdbcAccountLimitRepository Integration Tests")
-class JdbcAccountLimitRepositoryIntegrationTest implements TestPropertyProvider {
+class JdbcAccountLimitRepositoryIntegrationTest extends H2RepositoryTestBase {
 
-  @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:16")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
+  private AccountLimitRepository limitRepository;
 
-  @Inject AccountLimitRepository limitRepository;
-
-  @Inject AccountRepository accountRepository;
+  private AccountRepository accountRepository;
 
   private UUID accountId;
   private UUID limitId;
@@ -53,25 +37,13 @@ class JdbcAccountLimitRepositoryIntegrationTest implements TestPropertyProvider 
     return mock(ProcessManager.class);
   }
 
-  @Override
-  public Map<String, String> getProperties() {
-    postgres.start();
-    java.util.Map<String, String> props = new java.util.HashMap<>();
-    props.put("datasources.default.url", postgres.getJdbcUrl());
-    props.put("datasources.default.username", postgres.getUsername());
-    props.put("datasources.default.password", postgres.getPassword());
-    props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
-    props.put("datasources.default.auto-commit", "false");
-    props.put("datasources.default.maximum-pool-size", "10");
-    props.put("datasources.default.minimum-idle", "2");
-    props.put("flyway.datasources.default.enabled", "true");
-    props.put("flyway.datasources.default.locations", "classpath:db/migration");
-    props.put("jms.consumers.enabled", "false");
-    return props;
-  }
-
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
+    super.setupSchema();
+    DataSource dataSource = getDataSource();
+    accountRepository = new JdbcAccountRepository(dataSource);
+    limitRepository = new JdbcAccountLimitRepository(dataSource);
+
     accountId = UUID.randomUUID();
     limitId = UUID.randomUUID();
   }

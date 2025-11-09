@@ -73,11 +73,16 @@
       <scope>runtime</scope>
     </dependency>
 
-    <!-- Flyway for DB migrations -->
+    <!-- Flyway for test migrations -->
     <dependency>
       <groupId>io.micronaut.flyway</groupId>
       <artifactId>micronaut-flyway</artifactId>
-      <scope>compile</scope>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- Testing -->
@@ -116,6 +121,18 @@
     <dependency>
       <groupId>io.micronaut.test</groupId>
       <artifactId>micronaut-test-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- H2 for in-memory testing -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Awaitility for async testing -->
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

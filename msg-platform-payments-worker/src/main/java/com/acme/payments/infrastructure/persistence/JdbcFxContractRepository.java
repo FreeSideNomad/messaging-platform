@@ -4,6 +4,7 @@ import com.acme.payments.domain.model.FxContract;
 import com.acme.payments.domain.model.FxStatus;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.repository.FxContractRepository;
+import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import jakarta.inject.Singleton;
 import java.sql.Connection;
 import java.sql.Date;
@@ -40,7 +41,7 @@ public class JdbcFxContractRepository implements FxContractRepository {
       // This allows repositories to work both in tests (@Transactional) and production
     } catch (SQLException e) {
       log.error("Error saving FX contract: {}", fxContract.getFxContractId(), e);
-      throw new RuntimeException("Failed to save FX contract", e);
+      throw ExceptionTranslator.translateException(e, "save FX contract", log);
     }
   }
 
@@ -55,7 +56,7 @@ public class JdbcFxContractRepository implements FxContractRepository {
                        debit_amount, debit_currency_code,
                        credit_amount, credit_currency_code,
                        rate, value_date, status
-                FROM fx_contract
+                FROM payments.fx_contract
                 WHERE fx_contract_id = ?
                 """;
 
@@ -70,14 +71,14 @@ public class JdbcFxContractRepository implements FxContractRepository {
       }
     } catch (SQLException e) {
       log.error("Error finding FX contract by id: {}", fxContractId, e);
-      throw new RuntimeException("Failed to find FX contract", e);
+      throw ExceptionTranslator.translateException(e, "find FX contract by id", log);
     }
 
     return Optional.empty();
   }
 
   private boolean fxContractExists(Connection conn, UUID fxContractId) throws SQLException {
-    String sql = "SELECT 1 FROM fx_contract WHERE fx_contract_id = ?";
+    String sql = "SELECT 1 FROM payments.fx_contract WHERE fx_contract_id = ?";
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       stmt.setObject(1, fxContractId);
       try (ResultSet rs = stmt.executeQuery()) {
@@ -89,7 +90,7 @@ public class JdbcFxContractRepository implements FxContractRepository {
   private void insertFxContract(Connection conn, FxContract fxContract) throws SQLException {
     String sql =
         """
-            INSERT INTO fx_contract (fx_contract_id, customer_id, debit_account_id,
+            INSERT INTO payments.fx_contract (fx_contract_id, customer_id, debit_account_id,
                                     debit_amount, debit_currency_code,
                                     credit_amount, credit_currency_code,
                                     rate, value_date, status)
@@ -115,7 +116,7 @@ public class JdbcFxContractRepository implements FxContractRepository {
   private void updateFxContract(Connection conn, FxContract fxContract) throws SQLException {
     String sql =
         """
-            UPDATE fx_contract
+            UPDATE payments.fx_contract
             SET status = ?
             WHERE fx_contract_id = ?
             """;

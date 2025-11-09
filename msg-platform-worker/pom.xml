@@ -66,6 +66,70 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- HTTP client for E2E tests -->
+    <dependency>
+      <groupId>io.micronaut</groupId>
+      <artifactId>micronaut-http-client</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- AssertJ for fluent assertions -->
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- JUnit 5 -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micronaut.test</groupId>
+      <artifactId>micronaut-test-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Mockito for mocking -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- H2 for in-memory testing -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Flyway for test migrations -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Awaitility for async testing -->
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Test Resources -->
     <dependency>
       <groupId>io.micronaut.testresources</groupId>
@@ -99,6 +163,10 @@
             <arg>-Amicronaut.processing.module=msg-platform-worker</arg>
           </compilerArgs>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -155,5 +223,25 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!-- Profile to run E2E tests: mvn clean test -Pe2e -->
+    <profile>
+      <id>e2e</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <!-- Run only E2E tests (remove the exclusion) -->
+              <excludedGroups></excludedGroups>
+              <groups>e2e</groups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

@@ -1,8 +1,8 @@
 package com.acme.reliable.processor;
 
+import com.acme.reliable.repository.OutboxRepository;
 import com.acme.reliable.spi.KafkaPublisher;
 import com.acme.reliable.spi.MqPublisher;
-import com.acme.reliable.spi.OutboxDao;
 import io.micronaut.scheduling.annotation.Scheduled;
 import jakarta.inject.Singleton;
 import java.time.Duration;
@@ -14,11 +14,11 @@ import org.slf4j.LoggerFactory;
 public class OutboxSweeper {
   private static final Logger LOG = LoggerFactory.getLogger(OutboxSweeper.class);
 
-  private final OutboxDao outbox;
+  private final OutboxRepository outbox;
   private final MqPublisher mq;
   private final KafkaPublisher kafka;
 
-  public OutboxSweeper(OutboxDao outbox, MqPublisher mq, KafkaPublisher kafka) {
+  public OutboxSweeper(OutboxRepository outbox, MqPublisher mq, KafkaPublisher kafka) {
     this.outbox = outbox;
     this.mq = mq;
     this.kafka = kafka;
@@ -39,19 +39,19 @@ public class OutboxSweeper {
 
       for (var row : rows) {
         try {
-          switch (row.category()) {
+          switch (row.getCategory()) {
             case "command", "reply" ->
-                mq.publish(row.topic(), row.key(), row.type(), row.payload(), row.headers());
+                mq.publish(row.getTopic(), row.getKey(), row.getType(), row.getPayload(), row.getHeaders());
             case "event" ->
-                kafka.publish(row.topic(), row.key(), row.type(), row.payload(), row.headers());
-            default -> throw new IllegalArgumentException("Unknown category: " + row.category());
+                kafka.publish(row.getTopic(), row.getKey(), row.getType(), row.getPayload(), row.getHeaders());
+            default -> throw new IllegalArgumentException("Unknown category: " + row.getCategory());
           }
-          outbox.markPublished(row.id());
-          LOG.debug("Swept and published outbox id={} category={}", row.id(), row.category());
+          outbox.markPublished(row.getId());
+          LOG.debug("Swept and published outbox id={} category={}", row.getId(), row.getCategory());
         } catch (Exception e) {
-          LOG.warn("Failed to publish outbox id={}: {}", row.id(), e.getMessage());
+          LOG.warn("Failed to publish outbox id={}: {}", row.getId(), e.getMessage());
           outbox.markFailed(
-              row.id(), e.getMessage(), Instant.now().plusSeconds(backoff(row.attempts() + 1)));
+              row.getId(), e.getMessage(), Instant.now().plusSeconds(backoff(row.getAttempts() + 1)));
         }
       }
     } catch (Exception e) {

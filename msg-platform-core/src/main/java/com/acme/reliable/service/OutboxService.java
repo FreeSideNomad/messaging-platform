@@ -1,6 +1,6 @@
 package com.acme.reliable.service;
 
-import com.acme.reliable.spi.OutboxRow;
+import com.acme.reliable.domain.Outbox;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,13 +8,13 @@ import java.util.Optional;
 public interface OutboxService {
 
   /** Add an outbox entry and return its ID */
-  long addReturningId(OutboxRow row);
+  long addReturningId(Outbox outbox);
 
   /** Claim a single outbox entry by ID */
-  Optional<OutboxRow> claimOne(long id);
+  Optional<Outbox> claimOne(long id);
 
   /** Claim a batch of outbox entries for processing */
-  List<OutboxRow> claim(int max, String claimer);
+  List<Outbox> claim(int max, String claimer);
 
   /** Mark an outbox entry as published */
   void markPublished(long id);

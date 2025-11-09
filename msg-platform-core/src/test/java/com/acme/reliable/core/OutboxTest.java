@@ -3,7 +3,7 @@ package com.acme.reliable.core;
 import static org.assertj.core.api.Assertions.*;
 
 import com.acme.reliable.config.MessagingConfig;
-import com.acme.reliable.spi.OutboxRow;
+import com.acme.reliable.domain.Outbox;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -15,13 +15,11 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for Outbox */
 class OutboxTest {
 
-  private Outbox outbox;
   private MessagingConfig config;
 
   @BeforeEach
   void setUp() {
     config = new MessagingConfig();
-    outbox = new Outbox(config);
   }
 
   @Nested
@@ -34,24 +32,24 @@ class OutboxTest {
       UUID commandId = UUID.randomUUID();
       Map<String, String> replyHeaders = Map.of("replyTo", "TEST.REPLY.Q");
 
-      OutboxRow row =
-          outbox.rowCommandRequested(
-              "CreateUser", commandId, "user-123", "{\"name\":\"John\"}", replyHeaders);
+      Outbox row =
+          Outbox.newCommandRequested(
+              "CreateUser", commandId, "user-123", "{\"name\":\"John\"}", replyHeaders, config);
 
       assertThat(row).isNotNull();
-      assertThat(row.id()).isNotNull();
-      assertThat(row.category()).isEqualTo("command");
-      assertThat(row.topic()).isEqualTo("APP.CMD.CREATEUSER.Q");
-      assertThat(row.key()).isEqualTo("user-123");
-      assertThat(row.type()).isEqualTo("CommandRequested");
-      assertThat(row.payload()).isEqualTo("{\"name\":\"John\"}");
-      assertThat(row.attempts()).isEqualTo(0);
+      assertThat(row.getId()).isNotNull();
+      assertThat(row.getCategory()).isEqualTo("command");
+      assertThat(row.getTopic()).isEqualTo("APP.CMD.CREATEUSER.Q");
+      assertThat(row.getKey()).isEqualTo("user-123");
+      assertThat(row.getType()).isEqualTo("CommandRequested");
+      assertThat(row.getPayload()).isEqualTo("{\"name\":\"John\"}");
+      assertThat(row.getAttempts()).isEqualTo(0);
 
       // Verify merged headers
-      assertThat(row.headers()).containsEntry("commandId", commandId.toString());
-      assertThat(row.headers()).containsEntry("commandName", "CreateUser");
-      assertThat(row.headers()).containsEntry("businessKey", "user-123");
-      assertThat(row.headers()).containsEntry("replyTo", "TEST.REPLY.Q");
+      assertThat(row.getHeaders()).containsEntry("commandId", commandId.toString());
+      assertThat(row.getHeaders()).containsEntry("commandName", "CreateUser");
+      assertThat(row.getHeaders()).containsEntry("businessKey", "user-123");
+      assertThat(row.getHeaders()).containsEntry("replyTo", "TEST.REPLY.Q");
     }
 
     @Test
@@ -59,13 +57,13 @@ class OutboxTest {
     void testRowCommandRequestedEmptyHeaders() {
       UUID commandId = UUID.randomUUID();
 
-      OutboxRow row =
-          outbox.rowCommandRequested("DeleteUser", commandId, "user-456", "{}", Map.of());
+      Outbox row =
+          Outbox.newCommandRequested("DeleteUser", commandId, "user-456", "{}", Map.of(), config);
 
-      assertThat(row.headers()).containsEntry("commandId", commandId.toString());
-      assertThat(row.headers()).containsEntry("commandName", "DeleteUser");
-      assertThat(row.headers()).containsEntry("businessKey", "user-456");
-      assertThat(row.headers()).hasSize(3);
+      assertThat(row.getHeaders()).containsEntry("commandId", commandId.toString());
+      assertThat(row.getHeaders()).containsEntry("commandName", "DeleteUser");
+      assertThat(row.getHeaders()).containsEntry("businessKey", "user-456");
+      assertThat(row.getHeaders()).hasSize(3);
     }
 
     @Test
@@ -74,12 +72,11 @@ class OutboxTest {
       MessagingConfig customConfig = new MessagingConfig();
       customConfig.getQueueNaming().setCommandPrefix("CUSTOM.CMD.");
       customConfig.getQueueNaming().setQueueSuffix(".QUEUE");
-      Outbox customOutbox = new Outbox(customConfig);
 
-      OutboxRow row =
-          customOutbox.rowCommandRequested("TestCommand", UUID.randomUUID(), "key", "{}", Map.of());
+      Outbox row =
+          Outbox.newCommandRequested("TestCommand", UUID.randomUUID(), "key", "{}", Map.of(), customConfig);
 
-      assertThat(row.topic()).isEqualTo("CUSTOM.CMD.TESTCOMMAND.QUEUE");
+      assertThat(row.getTopic()).isEqualTo("CUSTOM.CMD.TESTCOMMAND.QUEUE");
     }
   }
 
@@ -90,28 +87,28 @@ class OutboxTest {
     @Test
     @DisplayName("rowKafkaEvent - should create event outbox row")
     void testRowKafkaEvent() {
-      OutboxRow row =
-          outbox.rowKafkaEvent(
+      Outbox row =
+          Outbox.newKafkaEvent(
               "events.UserCreated", "user-789", "UserCreated", "{\"userId\":\"789\"}");
 
       assertThat(row).isNotNull();
-      assertThat(row.id()).isNotNull();
-      assertThat(row.category()).isEqualTo("event");
-      assertThat(row.topic()).isEqualTo("events.UserCreated");
-      assertThat(row.key()).isEqualTo("user-789");
-      assertThat(row.type()).isEqualTo("UserCreated");
-      assertThat(row.payload()).isEqualTo("{\"userId\":\"789\"}");
-      assertThat(row.headers()).isEmpty();
-      assertThat(row.attempts()).isEqualTo(0);
+      assertThat(row.getId()).isNotNull();
+      assertThat(row.getCategory()).isEqualTo("event");
+      assertThat(row.getTopic()).isEqualTo("events.UserCreated");
+      assertThat(row.getKey()).isEqualTo("user-789");
+      assertThat(row.getType()).isEqualTo("UserCreated");
+      assertThat(row.getPayload()).isEqualTo("{\"userId\":\"789\"}");
+      assertThat(row.getHeaders()).isEmpty();
+      assertThat(row.getAttempts()).isEqualTo(0);
     }
 
     @Test
     @DisplayName("rowKafkaEvent - should handle empty payload")
     void testRowKafkaEventEmptyPayload() {
-      OutboxRow row = outbox.rowKafkaEvent("events.Test", "key", "TestEvent", "");
+      Outbox row = Outbox.newKafkaEvent("events.Test", "key", "TestEvent", "");
 
-      assertThat(row.payload()).isEmpty();
-      assertThat(row.headers()).isEmpty();
+      assertThat(row.getPayload()).isEmpty();
+      assertThat(row.getHeaders()).isEmpty();
     }
   }
 
@@ -140,21 +137,21 @@ class OutboxTest {
               headers,
               "{}");
 
-      OutboxRow row = outbox.rowMqReply(env, "CommandCompleted", "{\"result\":\"success\"}");
+      Outbox row = Outbox.newMqReply(env, "CommandCompleted", "{\"result\":\"success\"}", config);
 
       assertThat(row).isNotNull();
-      assertThat(row.id()).isNotNull();
-      assertThat(row.category()).isEqualTo("reply");
-      assertThat(row.topic()).isEqualTo("CUSTOM.REPLY.Q");
-      assertThat(row.key()).isEqualTo("key-123");
-      assertThat(row.type()).isEqualTo("CommandCompleted");
-      assertThat(row.payload()).isEqualTo("{\"result\":\"success\"}");
-      assertThat(row.attempts()).isEqualTo(0);
+      assertThat(row.getId()).isNotNull();
+      assertThat(row.getCategory()).isEqualTo("reply");
+      assertThat(row.getTopic()).isEqualTo("CUSTOM.REPLY.Q");
+      assertThat(row.getKey()).isEqualTo("key-123");
+      assertThat(row.getType()).isEqualTo("CommandCompleted");
+      assertThat(row.getPayload()).isEqualTo("{\"result\":\"success\"}");
+      assertThat(row.getAttempts()).isEqualTo(0);
 
       // Verify merged headers
-      assertThat(row.headers()).containsEntry("correlationId", correlationId.toString());
-      assertThat(row.headers()).containsEntry("replyTo", "CUSTOM.REPLY.Q");
-      assertThat(row.headers()).containsEntry("customHeader", "value");
+      assertThat(row.getHeaders()).containsEntry("correlationId", correlationId.toString());
+      assertThat(row.getHeaders()).containsEntry("replyTo", "CUSTOM.REPLY.Q");
+      assertThat(row.getHeaders()).containsEntry("customHeader", "value");
     }
 
     @Test
@@ -174,10 +171,10 @@ class OutboxTest {
               Map.of(),
               "{}");
 
-      OutboxRow row = outbox.rowMqReply(env, "CommandFailed", "{\"error\":\"test\"}");
+      Outbox row = Outbox.newMqReply(env, "CommandFailed", "{\"error\":\"test\"}", config);
 
-      assertThat(row.topic()).isEqualTo("APP.CMD.REPLY.Q");
-      assertThat(row.headers()).containsEntry("correlationId", correlationId.toString());
+      assertThat(row.getTopic()).isEqualTo("APP.CMD.REPLY.Q");
+      assertThat(row.getHeaders()).containsEntry("correlationId", correlationId.toString());
     }
 
     @Test
@@ -185,7 +182,6 @@ class OutboxTest {
     void testRowMqReplyCustomDefaultQueue() {
       MessagingConfig customConfig = new MessagingConfig();
       customConfig.getQueueNaming().setReplyQueue("MY.REPLY.QUEUE");
-      Outbox customOutbox = new Outbox(customConfig);
 
       UUID correlationId = UUID.randomUUID();
       Envelope env =
@@ -201,9 +197,9 @@ class OutboxTest {
               Map.of(),
               "{}");
 
-      OutboxRow row = customOutbox.rowMqReply(env, "Reply", "{}");
+      Outbox row = Outbox.newMqReply(env, "Reply", "{}", customConfig);
 
-      assertThat(row.topic()).isEqualTo("MY.REPLY.QUEUE");
+      assertThat(row.getTopic()).isEqualTo("MY.REPLY.QUEUE");
     }
 
     @Test
@@ -223,10 +219,10 @@ class OutboxTest {
               Map.of(),
               "{}");
 
-      OutboxRow row = outbox.rowMqReply(env, "TestReply", "{}");
+      Outbox row = Outbox.newMqReply(env, "TestReply", "{}", config);
 
-      assertThat(row.headers()).containsEntry("correlationId", correlationId.toString());
-      assertThat(row.headers()).hasSize(1);
+      assertThat(row.getHeaders()).containsEntry("correlationId", correlationId.toString());
+      assertThat(row.getHeaders()).hasSize(1);
     }
   }
 
@@ -237,11 +233,11 @@ class OutboxTest {
     @Test
     @DisplayName("should use placeholder ID (0L) for database auto-generation")
     void testPlaceholderIds() {
-      OutboxRow row1 = outbox.rowKafkaEvent("topic", "key", "type", "{}");
-      OutboxRow row2 = outbox.rowKafkaEvent("topic", "key", "type", "{}");
+      Outbox row1 = Outbox.newKafkaEvent("topic", "key", "type", "{}");
+      Outbox row2 = Outbox.newKafkaEvent("topic", "key", "type", "{}");
 
-      assertThat(row1.id()).isEqualTo(0L);
-      assertThat(row2.id()).isEqualTo(0L);
+      assertThat(row1.getId()).isEqualTo(0L);
+      assertThat(row2.getId()).isEqualTo(0L);
     }
 
     @Test
@@ -252,11 +248,9 @@ class OutboxTest {
       customConfig.getQueueNaming().setQueueSuffix(".QUEUE");
       customConfig.getQueueNaming().setReplyQueue("PROD.REPLY.QUEUE");
 
-      Outbox customOutbox = new Outbox(customConfig);
-
-      OutboxRow cmdRow =
-          customOutbox.rowCommandRequested("Test", UUID.randomUUID(), "key", "{}", Map.of());
-      assertThat(cmdRow.topic()).isEqualTo("PROD.CMD.TEST.QUEUE");
+      Outbox cmdRow =
+          Outbox.newCommandRequested("Test", UUID.randomUUID(), "key", "{}", Map.of(), customConfig);
+      assertThat(cmdRow.getTopic()).isEqualTo("PROD.CMD.TEST.QUEUE");
 
       Envelope env =
           new Envelope(
@@ -270,8 +264,8 @@ class OutboxTest {
               "key",
               Map.of(),
               "{}");
-      OutboxRow replyRow = customOutbox.rowMqReply(env, "Reply", "{}");
-      assertThat(replyRow.topic()).isEqualTo("PROD.REPLY.QUEUE");
+      Outbox replyRow = Outbox.newMqReply(env, "Reply", "{}", customConfig);
+      assertThat(replyRow.getTopic()).isEqualTo("PROD.REPLY.QUEUE");
     }
   }
 }

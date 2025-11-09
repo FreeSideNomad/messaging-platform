@@ -4,6 +4,7 @@ import com.acme.payments.domain.model.AccountLimit;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
 import com.acme.payments.domain.repository.AccountLimitRepository;
+import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import jakarta.inject.Singleton;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,7 +43,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
       // This allows repositories to work both in tests (@Transactional) and production
     } catch (SQLException e) {
       log.error("Error saving account limit: {}", limit.getLimitId(), e);
-      throw new RuntimeException("Failed to save account limit", e);
+      throw ExceptionTranslator.translateException(e, "save account limit", log);
     }
   }
 
@@ -57,7 +58,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
           """
                 SELECT limit_id, account_id, period_type, limit_amount, utilized,
                        currency_code, period_start, period_end
-                FROM account_limit
+                FROM payments.account_limit
                 WHERE account_id = ?
                 AND period_start <= CURRENT_TIMESTAMP
                 AND period_end > CURRENT_TIMESTAMP
@@ -75,7 +76,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
       }
     } catch (SQLException e) {
       log.error("Error finding active limits for account: {}", accountId, e);
-      throw new RuntimeException("Failed to find active limits", e);
+      throw ExceptionTranslator.translateException(e, "find active account limits", log);
     }
 
     return limits;
@@ -92,7 +93,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
           """
                 SELECT limit_id, account_id, period_type, limit_amount, utilized,
                        currency_code, period_start, period_end
-                FROM account_limit
+                FROM payments.account_limit
                 WHERE account_id = ?
                 AND period_type = ?
                 AND period_start <= CURRENT_TIMESTAMP
@@ -112,14 +113,14 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
       }
     } catch (SQLException e) {
       log.error("Error finding limits for account {} and period {}", accountId, periodType, e);
-      throw new RuntimeException("Failed to find limits", e);
+      throw ExceptionTranslator.translateException(e, "find account limits by account id", log);
     }
 
     return limits;
   }
 
   private boolean limitExists(Connection conn, UUID limitId) throws SQLException {
-    String sql = "SELECT 1 FROM account_limit WHERE limit_id = ?";
+    String sql = "SELECT 1 FROM payments.account_limit WHERE limit_id = ?";
     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
       stmt.setObject(1, limitId);
       try (ResultSet rs = stmt.executeQuery()) {
@@ -131,7 +132,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
   private void insertLimit(Connection conn, AccountLimit limit) throws SQLException {
     String sql =
         """
-            INSERT INTO account_limit (limit_id, account_id, period_type, limit_amount, utilized,
+            INSERT INTO payments.account_limit (limit_id, account_id, period_type, limit_amount, utilized,
                                       currency_code, period_start, period_end)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
@@ -153,7 +154,7 @@ public class JdbcAccountLimitRepository implements AccountLimitRepository {
   private void updateLimit(Connection conn, AccountLimit limit) throws SQLException {
     String sql =
         """
-            UPDATE account_limit
+            UPDATE payments.account_limit
             SET utilized = ?, period_end = ?
             WHERE limit_id = ?
             """;

@@ -144,12 +144,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>io.micronaut.flyway</groupId>
-      <artifactId>micronaut-flyway</artifactId>
-      <scope>test</scope>
-    </dependency>
-
     <!-- H2 for unit tests (in-memory database) -->
     <dependency>
       <groupId>com.h2database</groupId>

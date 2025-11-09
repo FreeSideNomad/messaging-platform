@@ -5,6 +5,7 @@ import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.Transaction;
 import com.acme.payments.domain.model.TransactionType;
 import com.acme.payments.domain.repository.AccountRepository;
+import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import jakarta.inject.Singleton;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -44,8 +45,7 @@ public class JdbcAccountRepository implements AccountRepository {
       // Don't commit here - let the ambient transaction (if any) handle it
       // This allows repositories to work both in tests (@Transactional) and production
     } catch (SQLException e) {
-      log.error("Error saving account: {}", account.getAccountId(), e);
-      throw new RuntimeException("Failed to save account", e);
+      throw ExceptionTranslator.translateException(e, "save account", log);
     }
   }
 
@@ -74,8 +74,7 @@ public class JdbcAccountRepository implements AccountRepository {
         }
       }
     } catch (SQLException e) {
-      log.error("Error finding account by id: {}", accountId, e);
-      throw new RuntimeException("Failed to find account", e);
+      throw ExceptionTranslator.translateException(e, "find account by id", log);
     }
 
     return Optional.empty();
@@ -106,8 +105,7 @@ public class JdbcAccountRepository implements AccountRepository {
         }
       }
     } catch (SQLException e) {
-      log.error("Error finding account by number: {}", accountNumber, e);
-      throw new RuntimeException("Failed to find account", e);
+      throw ExceptionTranslator.translateException(e, "find account by account number", log);
     }
 
     return Optional.empty();

@@ -1,6 +1,7 @@
 package com.acme.reliable.persistence.jdbc.process;
 
 import com.acme.reliable.core.Jsons;
+import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import com.acme.reliable.process.*;
 import com.acme.reliable.repository.ProcessRepository;
 import io.micronaut.transaction.annotation.Transactional;
@@ -12,13 +13,15 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** JDBC implementation of ProcessRepository with full CRUD operations */
-@Singleton
-public class JdbcProcessRepository implements ProcessRepository {
+/**
+ * Abstract JDBC implementation of ProcessRepository using Template Method pattern.
+ * Subclasses override database-specific SQL methods.
+ */
+public abstract class JdbcProcessRepository implements ProcessRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(JdbcProcessRepository.class);
 
-  private final DataSource dataSource;
+  protected final DataSource dataSource;
 
   public JdbcProcessRepository(DataSource dataSource) {
     this.dataSource = dataSource;
@@ -27,27 +30,21 @@ public class JdbcProcessRepository implements ProcessRepository {
   @Override
   @Transactional
   public void insert(ProcessInstance instance, ProcessEvent initialEvent) {
-    try (Connection conn = dataSource.getConnection()) {
-      // Insert process_instance
-      String insertSql =
-          """
-                INSERT INTO platform.process_instance
-                (process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
-                """;
+    String insertSql = getInsertSql();
 
-      try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-        ps.setObject(1, instance.processId());
-        ps.setString(2, instance.processType());
-        ps.setString(3, instance.businessKey());
-        ps.setString(4, instance.status().name());
-        ps.setString(5, instance.currentStep());
-        ps.setString(6, Jsons.toJson(instance.data()));
-        ps.setInt(7, instance.retries());
-        ps.setTimestamp(8, Timestamp.from(instance.createdAt()));
-        ps.setTimestamp(9, Timestamp.from(instance.updatedAt()));
-        ps.executeUpdate();
-      }
+    try (Connection conn = dataSource.getConnection();
+        PreparedStatement ps = conn.prepareStatement(insertSql)) {
+
+      ps.setObject(1, instance.processId());
+      ps.setString(2, instance.processType());
+      ps.setString(3, instance.businessKey());
+      ps.setString(4, instance.status().name());
+      ps.setString(5, instance.currentStep());
+      ps.setString(6, Jsons.toJson(instance.data()));
+      ps.setInt(7, instance.retries());
+      ps.setTimestamp(8, Timestamp.from(instance.createdAt()));
+      ps.setTimestamp(9, Timestamp.from(instance.updatedAt()));
+      ps.executeUpdate();
 
       // Insert initial event to process_log
       insertLogEntry(conn, instance.processId(), initialEvent);
@@ -59,20 +56,14 @@ public class JdbcProcessRepository implements ProcessRepository {
           instance.businessKey());
 
     } catch (SQLException e) {
-      LOG.error("Failed to insert process instance: {}", instance.processId(), e);
-      throw new RuntimeException("Failed to insert process instance", e);
+      throw ExceptionTranslator.translateException(e, "insert process instance", LOG);
     }
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<ProcessInstance> findById(UUID processId) {
-    String sql =
-        """
-            SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM platform.process_instance
-            WHERE process_id = ?
-            """;
+    String sql = getFindByIdSql();
 
     try (Connection conn = dataSource.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -88,23 +79,14 @@ public class JdbcProcessRepository implements ProcessRepository {
       return Optional.empty();
 
     } catch (SQLException e) {
-      LOG.error("Failed to find process by ID: {}", processId, e);
-      throw new RuntimeException("Failed to find process", e);
+      throw ExceptionTranslator.translateException(e, "find process by ID", LOG);
     }
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<ProcessInstance> findByStatus(ProcessStatus status, int limit) {
-    String sql =
-        """
-            SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM platform.process_instance
-            WHERE status = ?
-            ORDER BY created_at DESC
-            LIMIT ?
-            """;
-
+    String sql = getFindByStatusSql();
     return findByQuery(sql, status.name(), limit);
   }
 
@@ -112,14 +94,7 @@ public class JdbcProcessRepository implements ProcessRepository {
   @Transactional(readOnly = true)
   public List<ProcessInstance> findByTypeAndStatus(
       String processType, ProcessStatus status, int limit) {
-    String sql =
-        """
-            SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM platform.process_instance
-            WHERE process_type = ? AND status = ?
-            ORDER BY created_at DESC
-            LIMIT ?
-            """;
+    String sql = getFindByTypeAndStatusSql();
 
     try (Connection conn = dataSource.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -138,39 +113,28 @@ public class JdbcProcessRepository implements ProcessRepository {
       return instances;
 
     } catch (SQLException e) {
-      LOG.error("Failed to find by type and status: {} {}", processType, status, e);
-      throw new RuntimeException("Failed to find processes", e);
+      throw ExceptionTranslator.translateException(e, "find processes by type and status", LOG);
     }
   }
 
   @Override
   @Transactional
   public void update(ProcessInstance instance, ProcessEvent event) {
-    try (Connection conn = dataSource.getConnection()) {
-      // Update process_instance
-      String updateSql =
-          """
-                UPDATE platform.process_instance
-                SET status = ?,
-                    current_step = ?,
-                    data = ?::jsonb,
-                    retries = ?,
-                    updated_at = ?
-                WHERE process_id = ?
-                """;
+    String updateSql = getUpdateSql();
 
-      try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-        ps.setString(1, instance.status().name());
-        ps.setString(2, instance.currentStep());
-        ps.setString(3, Jsons.toJson(instance.data()));
-        ps.setInt(4, instance.retries());
-        ps.setTimestamp(5, Timestamp.from(instance.updatedAt()));
-        ps.setObject(6, instance.processId());
+    try (Connection conn = dataSource.getConnection();
+        PreparedStatement ps = conn.prepareStatement(updateSql)) {
 
-        int updated = ps.executeUpdate();
-        if (updated == 0) {
-          LOG.warn("No rows updated for process: {}", instance.processId());
-        }
+      ps.setString(1, instance.status().name());
+      ps.setString(2, instance.currentStep());
+      ps.setString(3, Jsons.toJson(instance.data()));
+      ps.setInt(4, instance.retries());
+      ps.setTimestamp(5, Timestamp.from(instance.updatedAt()));
+      ps.setObject(6, instance.processId());
+
+      int updated = ps.executeUpdate();
+      if (updated == 0) {
+        LOG.warn("No rows updated for process: {}", instance.processId());
       }
 
       // Insert event to process_log
@@ -179,8 +143,7 @@ public class JdbcProcessRepository implements ProcessRepository {
       LOG.debug("Updated process instance: {} status={}", instance.processId(), instance.status());
 
     } catch (SQLException e) {
-      LOG.error("Failed to update process instance: {}", instance.processId(), e);
-      throw new RuntimeException("Failed to update process instance", e);
+      throw ExceptionTranslator.translateException(e, "update process instance", LOG);
     }
   }
 
@@ -193,14 +156,7 @@ public class JdbcProcessRepository implements ProcessRepository {
   @Override
   @Transactional(readOnly = true)
   public List<ProcessLogEntry> getLog(UUID processId, int limit) {
-    String sql =
-        """
-            SELECT process_id, seq, at, event
-            FROM platform.process_log
-            WHERE process_id = ?
-            ORDER BY seq
-            LIMIT ?
-            """;
+    String sql = getLogQuerySql();
 
     try (Connection conn = dataSource.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -218,22 +174,14 @@ public class JdbcProcessRepository implements ProcessRepository {
       return entries;
 
     } catch (SQLException e) {
-      LOG.error("Failed to get log for process: {}", processId, e);
-      throw new RuntimeException("Failed to get process log", e);
+      throw ExceptionTranslator.translateException(e, "get process log", LOG);
     }
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<ProcessInstance> findByBusinessKey(String processType, String businessKey) {
-    String sql =
-        """
-            SELECT process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at
-            FROM platform.process_instance
-            WHERE process_type = ? AND business_key = ?
-            ORDER BY created_at DESC
-            LIMIT 1
-            """;
+    String sql = getFindByBusinessKeySql();
 
     try (Connection conn = dataSource.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -250,8 +198,7 @@ public class JdbcProcessRepository implements ProcessRepository {
       return Optional.empty();
 
     } catch (SQLException e) {
-      LOG.error("Failed to find by business key: {} {}", processType, businessKey, e);
-      throw new RuntimeException("Failed to find process", e);
+      throw ExceptionTranslator.translateException(e, "find process by business key", LOG);
     }
   }
 
@@ -274,18 +221,13 @@ public class JdbcProcessRepository implements ProcessRepository {
       return instances;
 
     } catch (SQLException e) {
-      LOG.error("Failed to execute query", e);
-      throw new RuntimeException("Failed to find processes", e);
+      throw ExceptionTranslator.translateException(e, "find processes by status", LOG);
     }
   }
 
   private void insertLogEntry(Connection conn, UUID processId, ProcessEvent event)
       throws SQLException {
-    String sql =
-        """
-            INSERT INTO platform.process_log (process_id, event)
-            VALUES (?, ?::jsonb)
-            """;
+    String sql = getInsertLogEntrySql();
 
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setObject(1, processId);
@@ -330,4 +272,22 @@ public class JdbcProcessRepository implements ProcessRepository {
 
     return new ProcessLogEntry(processId, seq, at, event);
   }
+
+  // Template methods for database-specific SQL
+
+  protected abstract String getInsertSql();
+
+  protected abstract String getFindByIdSql();
+
+  protected abstract String getFindByStatusSql();
+
+  protected abstract String getFindByTypeAndStatusSql();
+
+  protected abstract String getUpdateSql();
+
+  protected abstract String getLogQuerySql();
+
+  protected abstract String getFindByBusinessKeySql();
+
+  protected abstract String getInsertLogEntrySql();
 }

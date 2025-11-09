@@ -25,7 +25,6 @@
     <module>msg-platform-api</module>
     <module>msg-platform-worker</module>
     <module>msg-platform-payments-worker</module>
-    <module>coverage-aggregate</module>
   </modules>
 
   <properties>
@@ -39,6 +38,7 @@
     <micronaut.aot.enabled>false</micronaut.aot.enabled>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <ibmmq.version>9.4.3.1</ibmmq.version>
+    <activemq.version>5.18.3</activemq.version>
     <flyway.version>11.1.0</flyway.version>
     <snakeyaml.version>2.5</snakeyaml.version>
     <junit.excludeTags>e2e</junit.excludeTags>
@@ -91,6 +91,18 @@
         <version>${ibmmq.version}</version>
       </dependency>
 
+      <!-- ActiveMQ for Testing (Jakarta-compatible) -->
+      <dependency>
+        <groupId>org.apache.activemq</groupId>
+        <artifactId>activemq-broker</artifactId>
+        <version>${activemq.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.activemq</groupId>
+        <artifactId>activemq-client-jakarta</artifactId>
+        <version>${activemq.version}</version>
+      </dependency>
+
       <!-- Flyway PostgreSQL -->
       <dependency>
         <groupId>org.flywaydb</groupId>
@@ -121,6 +133,13 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>kafka</artifactId>
         <version>1.20.3</version>
+      </dependency>
+
+      <!-- Awaitility for async testing -->
+      <dependency>
+        <groupId>org.awaitility</groupId>
+        <artifactId>awaitility</artifactId>
+        <version>4.2.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

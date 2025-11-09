@@ -7,6 +7,7 @@ import com.acme.reliable.processor.ResponseRegistry;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Header;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -86,6 +87,11 @@ public class CommandController {
           .header(HEADER_COMMAND_ID, cmdId.toString())
           .body("{\"error\":\"" + e.getMessage() + "\"}");
     }
+  }
+
+  @Get("/health")
+  public HttpResponse<String> health() {
+    return HttpResponse.ok("{\"status\":\"UP\"}");
   }
 
   private String businessKey(String payload) {

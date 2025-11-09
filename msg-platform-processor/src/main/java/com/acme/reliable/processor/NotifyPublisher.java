@@ -1,8 +1,8 @@
 package com.acme.reliable.processor;
 
+import com.acme.reliable.repository.OutboxRepository;
 import com.acme.reliable.spi.KafkaPublisher;
 import com.acme.reliable.spi.MqPublisher;
-import com.acme.reliable.spi.OutboxDao;
 import io.micronaut.context.annotation.Requires;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Singleton;
@@ -22,7 +22,7 @@ public class NotifyPublisher implements AutoCloseable {
   private static final String NOTIFY_QUEUE = "outbox:notify";
 
   private final RedissonClient redisson;
-  private final OutboxDao outbox;
+  private final OutboxRepository outbox;
   private final MqPublisher mq;
   private final KafkaPublisher kafka;
   private final ScheduledExecutorService resub = Executors.newSingleThreadScheduledExecutor();
@@ -30,7 +30,7 @@ public class NotifyPublisher implements AutoCloseable {
   private final AtomicBoolean running = new AtomicBoolean(true);
 
   public NotifyPublisher(
-      RedissonClient redisson, OutboxDao outbox, MqPublisher mq, KafkaPublisher kafka) {
+      RedissonClient redisson, OutboxRepository outbox, MqPublisher mq, KafkaPublisher kafka) {
     this.redisson = redisson;
     this.outbox = outbox;
     this.mq = mq;
@@ -62,22 +62,22 @@ public class NotifyPublisher implements AutoCloseable {
           .ifPresentOrElse(
               row -> {
                 try {
-                  switch (row.category()) {
+                  switch (row.getCategory()) {
                     case "command", "reply" ->
                         mq.publish(
-                            row.topic(), row.key(), row.type(), row.payload(), row.headers());
+                            row.getTopic(), row.getKey(), row.getType(), row.getPayload(), row.getHeaders());
                     case "event" ->
                         kafka.publish(
-                            row.topic(), row.key(), row.type(), row.payload(), row.headers());
+                            row.getTopic(), row.getKey(), row.getType(), row.getPayload(), row.getHeaders());
                     default ->
-                        throw new IllegalArgumentException("bad category: " + row.category());
+                        throw new IllegalArgumentException("bad category: " + row.getCategory());
                   }
                   outbox.markPublished(id);
-                  LOG.debug("Published outbox id={} category={}", id, row.category());
+                  LOG.debug("Published outbox id={} category={}", id, row.getCategory());
                 } catch (Exception e) {
                   LOG.warn("Failed to publish outbox id={}: {}", id, e.getMessage());
                   outbox.markFailed(
-                      id, e.getMessage(), Instant.now().plusSeconds(backoff(row.attempts() + 1)));
+                      id, e.getMessage(), Instant.now().plusSeconds(backoff(row.getAttempts() + 1)));
                 } finally {
                   permits.release();
                 }

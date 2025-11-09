@@ -1,0 +1,98 @@
+-- H2 Test Schema for Reliable Commands Framework
+-- Platform-specific H2 dialect SQL
+
+-- Create command table with all fields
+CREATE TABLE command (
+  id UUID PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  business_key VARCHAR(255) NOT NULL,
+  payload TEXT NOT NULL,
+  idempotency_key VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP,
+  retries INT NOT NULL DEFAULT 0,
+  processing_lease_until TIMESTAMP,
+  last_error TEXT,
+  reply TEXT NOT NULL DEFAULT '{}',
+  CONSTRAINT uk_command_name_bkey UNIQUE (name, business_key),
+  CONSTRAINT uk_command_idempotency UNIQUE (idempotency_key)
+);
+
+CREATE INDEX idx_command_status ON command(status);
+CREATE INDEX idx_command_idempotency ON command(idempotency_key);
+
+-- Create inbox table
+CREATE TABLE inbox (
+  message_id VARCHAR(255) NOT NULL,
+  handler VARCHAR(255) NOT NULL,
+  processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (message_id, handler)
+);
+
+-- Create outbox table
+CREATE TABLE outbox (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  category VARCHAR(255) NOT NULL,
+  topic VARCHAR(255),
+  "key" VARCHAR(255),
+  "type" VARCHAR(255) NOT NULL,
+  payload TEXT NOT NULL,
+  headers TEXT NOT NULL DEFAULT '{}',
+  status VARCHAR(50) NOT NULL DEFAULT 'NEW',
+  attempts INT NOT NULL DEFAULT 0,
+  next_at TIMESTAMP,
+  claimed_at TIMESTAMP,
+  claimed_by VARCHAR(255),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  published_at TIMESTAMP,
+  last_error TEXT
+);
+
+CREATE INDEX idx_outbox_dispatch ON outbox(status, created_at);
+CREATE INDEX idx_outbox_claimed ON outbox(status, claimed_at);
+
+-- Create command DLQ table
+CREATE TABLE command_dlq (
+  id UUID PRIMARY KEY,
+  command_id UUID NOT NULL,
+  command_name VARCHAR(255) NOT NULL,
+  business_key VARCHAR(255) NOT NULL,
+  payload TEXT NOT NULL,
+  failed_status VARCHAR(50) NOT NULL,
+  error_class VARCHAR(255) NOT NULL,
+  error_message TEXT,
+  attempts INT NOT NULL DEFAULT 0,
+  parked_by VARCHAR(255) NOT NULL,
+  parked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create process instance table
+CREATE TABLE process_instance (
+  process_id UUID PRIMARY KEY,
+  process_type VARCHAR(255) NOT NULL,
+  business_key VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  current_step VARCHAR(255) NOT NULL,
+  data TEXT NOT NULL DEFAULT '{}',
+  retries INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_process_instance_status ON process_instance(status);
+CREATE INDEX idx_process_instance_type_key ON process_instance(process_type, business_key);
+CREATE INDEX idx_process_instance_updated ON process_instance(updated_at);
+CREATE INDEX idx_process_instance_type_status ON process_instance(process_type, status);
+
+-- Create process log table
+CREATE TABLE process_log (
+  process_id UUID NOT NULL,
+  seq BIGINT AUTO_INCREMENT,
+  at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  event TEXT NOT NULL,
+  PRIMARY KEY (process_id, seq)
+);
+
+CREATE INDEX idx_process_log_at ON process_log(at);
+CREATE INDEX idx_process_log_process_id ON process_log(process_id);

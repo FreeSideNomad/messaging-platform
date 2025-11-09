@@ -20,49 +20,20 @@ import com.acme.reliable.spi.CommandQueue;
 import com.acme.reliable.spi.EventPublisher;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.support.TestPropertyProvider;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration test for CreateAccount process with limit creation. Tests the process definition and
  * command flow.
  */
 @MicronautTest(environments = "test", startApplication = false, transactional = false)
-@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class CreateAccountProcessWithLimitsIntegrationTest implements TestPropertyProvider {
-
-  @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:16")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
-
-  @Override
-  public Map<String, String> getProperties() {
-    postgres.start();
-    Map<String, String> props = new HashMap<>();
-    props.put("datasources.default.url", postgres.getJdbcUrl());
-    props.put("datasources.default.username", postgres.getUsername());
-    props.put("datasources.default.password", postgres.getPassword());
-    props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
-    props.put("datasources.default.auto-commit", "false");
-    props.put("datasources.default.maximum-pool-size", "10");
-    props.put("datasources.default.minimum-idle", "2");
-    props.put("flyway.datasources.default.enabled", "true");
-    props.put("flyway.datasources.default.locations", "classpath:db/migration");
-    props.put("jms.consumers.enabled", "false");
-    return props;
-  }
+class CreateAccountProcessWithLimitsIntegrationTest {
 
   @MockBean(AutoCommandHandlerRegistry.class)
   AutoCommandHandlerRegistry autoCommandHandlerRegistry() {

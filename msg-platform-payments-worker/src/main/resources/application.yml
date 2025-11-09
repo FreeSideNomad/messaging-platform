@@ -27,11 +27,6 @@ datasources:
     maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
     minimum-idle: ${HIKARI_MIN_IDLE:10}
 
-flyway:
-  datasources:
-    default:
-      enabled: true
-
 jms:
   consumers:
     enabled: true

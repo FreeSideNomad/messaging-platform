@@ -22,8 +22,8 @@ COPY msg-platform-events-kafka/src msg-platform-events-kafka/src
 COPY msg-platform-processor/src msg-platform-processor/src
 COPY msg-platform-payments-worker/src msg-platform-payments-worker/src
 
-# Build only Payments Worker module (skip tests completely)
-RUN mvn clean package -DskipTests -Dmaven.test.skip=true -pl msg-platform-payments-worker -am
+# Build all modules (dependencies needed for Payments Worker)
+RUN mvn clean package -DskipTests -Dmaven.test.skip=true 2>&1 | grep -E "(Building|SUCCESS|ERROR)" && test -f msg-platform-payments-worker/target/msg-platform-payments-worker-*.jar
 
 # Runtime stage
 FROM eclipse-temurin:17-jre
