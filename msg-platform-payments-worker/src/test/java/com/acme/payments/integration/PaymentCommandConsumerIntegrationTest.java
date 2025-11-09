@@ -4,16 +4,14 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.acme.payments.domain.model.Account;
-import com.acme.payments.domain.repository.AccountRepository;
 import com.acme.payments.integration.testdata.PaymentTestData;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import jakarta.jms.Queue;
 import jakarta.jms.Session;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,27 +24,32 @@ import org.junit.jupiter.api.Test;
  * 2. Consumer receives and processes
  * 3. Account created in H2 database
  * 4. Response sent to reply queue
+ *
+ * This test class extends PaymentsIntegrationTestBase which provides:
+ * - H2 in-memory database with Flyway migrations
+ * - Embedded ActiveMQ broker with VM transport
+ * - Hardwired service and repository instances (no @MicronautTest DI required)
  */
-@MicronautTest(environments = {"test"})
 @DisplayName("Payment Command Consumer Integration Tests")
-class PaymentCommandConsumerIntegrationTest {
+class PaymentCommandConsumerIntegrationTest extends PaymentsIntegrationTestBase {
 
   private static final String COMMAND_QUEUE = "APP.CMD.CREATEACCOUNT.Q";
   private static final String REPLY_QUEUE = "APP.CMD.REPLY.Q";
 
-  private final ConnectionFactory jmsFactory;
-  private final AccountRepository accountRepository;
-
-  PaymentCommandConsumerIntegrationTest(
-      ConnectionFactory jmsFactory, AccountRepository accountRepository) {
-    this.jmsFactory = jmsFactory;
-    this.accountRepository = accountRepository;
-  }
-
   @BeforeEach
-  void setup() {
+  void setup() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP
+    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
+    // in PaymentsIntegrationTestBase
+    super.setupContext();
+
     // Reset state before each test
     // Queues are cleared via embedded ActiveMQ non-persistent configuration
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
   }
 
   @Test
@@ -168,7 +171,7 @@ class PaymentCommandConsumerIntegrationTest {
    * Sends a message to the specified JMS queue using embedded ActiveMQ.
    */
   private void sendJmsMessage(String queueName, String messageBody) throws JMSException {
-    try (var connection = jmsFactory.createConnection();
+    try (var connection = connectionFactory.createConnection();
         var session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
 
       Queue queue = session.createQueue(queueName);

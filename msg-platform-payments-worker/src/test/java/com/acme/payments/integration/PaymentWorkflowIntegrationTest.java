@@ -3,29 +3,16 @@ package com.acme.payments.integration;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateLimitsCommand;
 import com.acme.payments.application.command.CreatePaymentCommand;
-import com.acme.payments.domain.model.AccountType;
-import com.acme.payments.domain.model.Beneficiary;
-import com.acme.payments.domain.model.Money;
-import com.acme.payments.domain.model.PeriodType;
-import com.acme.payments.domain.repository.AccountRepository;
-import com.acme.payments.domain.repository.AccountLimitRepository;
-import com.acme.payments.domain.repository.PaymentRepository;
 import com.acme.payments.integration.testdata.PaymentTestData;
-import com.acme.reliable.core.Jsons;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import jakarta.jms.Queue;
 import jakarta.jms.Session;
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,35 +30,34 @@ import org.junit.jupiter.api.Test;
  * - Database state is correctly updated for each command
  * - Workflow completion is deterministic
  * - Concurrent workflows maintain isolation
+ *
+ * This test class extends PaymentsIntegrationTestBase which provides:
+ * - H2 in-memory database with Flyway migrations
+ * - Embedded ActiveMQ broker with VM transport
+ * - Hardwired service and repository instances (no @MicronautTest DI required)
  */
-@MicronautTest(environments = {"test"})
 @DisplayName("Payment Workflow Integration Tests")
-class PaymentWorkflowIntegrationTest {
+class PaymentWorkflowIntegrationTest extends PaymentsIntegrationTestBase {
 
   private static final String CREATE_ACCOUNT_QUEUE = "APP.CMD.CREATEACCOUNT.Q";
   private static final String CREATE_LIMITS_QUEUE = "APP.CMD.CREATELIMITS.Q";
   private static final String CREATE_PAYMENT_QUEUE = "APP.CMD.CREATEPAYMENT.Q";
 
-  private final ConnectionFactory jmsFactory;
-  private final AccountRepository accountRepository;
-  private final AccountLimitRepository accountLimitRepository;
-  private final PaymentRepository paymentRepository;
-
-  PaymentWorkflowIntegrationTest(
-      ConnectionFactory jmsFactory,
-      AccountRepository accountRepository,
-      AccountLimitRepository accountLimitRepository,
-      PaymentRepository paymentRepository) {
-    this.jmsFactory = jmsFactory;
-    this.accountRepository = accountRepository;
-    this.accountLimitRepository = accountLimitRepository;
-    this.paymentRepository = paymentRepository;
-  }
-
   @BeforeEach
-  void setup() {
+  void setup() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP
+    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
+    // in PaymentsIntegrationTestBase
+    // This also creates embedded ActiveMQ via TestMqFactoryProvider
+    super.setupContext();
+
     // Reset state before each test
     // Queues are cleared via embedded ActiveMQ non-persistent configuration
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
   }
 
   // ============================================================================
@@ -455,7 +441,7 @@ class PaymentWorkflowIntegrationTest {
    * Sends a message to the specified JMS queue using embedded ActiveMQ.
    */
   private void sendJmsMessage(String queueName, String messageBody) throws JMSException {
-    try (var connection = jmsFactory.createConnection();
+    try (var connection = connectionFactory.createConnection();
         var session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
 
       Queue queue = session.createQueue(queueName);

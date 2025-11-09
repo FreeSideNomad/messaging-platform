@@ -1,62 +1,45 @@
 package com.acme.payments.e2e;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreatePaymentCommand;
 import com.acme.payments.domain.model.*;
-import com.acme.payments.domain.repository.AccountRepository;
-import com.acme.payments.domain.repository.PaymentRepository;
-import com.acme.payments.domain.service.AccountService;
-import com.acme.payments.domain.service.PaymentService;
-import com.acme.reliable.processor.command.AutoCommandHandlerRegistry;
-import com.acme.reliable.processor.process.ProcessManager;
-import com.acme.reliable.repository.ProcessRepository;
-import io.micronaut.test.annotation.MockBean;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.transaction.annotation.Transactional;
-import jakarta.inject.Inject;
+import com.acme.payments.integration.PaymentsIntegrationTestBase;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * End-to-end integration tests for complete payment flows. Tests the full stack: domain services,
  * repositories, and database.
+ *
+ * This test class extends PaymentsIntegrationTestBase which provides:
+ * - H2 in-memory database with Flyway migrations
+ * - Micronaut ApplicationContext for proper DI and AOP
+ * - Hardwired service and repository instances (no @MicronautTest needed)
  */
-@MicronautTest(environments = "test", startApplication = false, transactional = false)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Payment Flow E2E Tests")
-class PaymentFlowE2ETest {
+class PaymentFlowE2ETest extends PaymentsIntegrationTestBase {
 
-  @Inject AccountService accountService;
-
-  @Inject PaymentService paymentService;
-
-  @Inject AccountRepository accountRepository;
-
-  @Inject PaymentRepository paymentRepository;
-
-  @MockBean(AutoCommandHandlerRegistry.class)
-  AutoCommandHandlerRegistry autoCommandHandlerRegistry() {
-    return mock(AutoCommandHandlerRegistry.class);
+  @BeforeEach
+  void setUp() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP
+    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
+    // in PaymentsIntegrationTestBase
+    super.setupContext();
   }
 
-  @MockBean(ProcessRepository.class)
-  ProcessRepository processRepository() {
-    return mock(ProcessRepository.class);
-  }
-
-  @MockBean(ProcessManager.class)
-  ProcessManager processManager() {
-    return mock(ProcessManager.class);
+  @org.junit.jupiter.api.AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Create account flow")
   void testCreateAccountFlow() {
     // Given
@@ -78,7 +61,6 @@ class PaymentFlowE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Simple payment flow (no FX)")
   void testSimplePaymentFlow_NoFX() {
     // Given - Create debit account
@@ -121,7 +103,6 @@ class PaymentFlowE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Payment with FX conversion")
   void testPaymentFlow_WithFX() {
     // Given - Create USD account
@@ -160,7 +141,6 @@ class PaymentFlowE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Account transaction management")
   void testAccountTransactionManagement() {
     // Given - Create account
@@ -190,7 +170,6 @@ class PaymentFlowE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Multiple accounts and payments")
   void testMultipleAccountsAndPayments() {
     // Given - Create multiple accounts
@@ -246,7 +225,6 @@ class PaymentFlowE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Payment idempotency check")
   void testPaymentIdempotency() {
     // Given - Create account

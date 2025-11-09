@@ -3,7 +3,6 @@ package com.acme.payments.integration;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.acme.payments.application.command.BookLimitsCommand;
-import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateLimitsCommand;
 import com.acme.payments.application.command.CreatePaymentCommand;
 import com.acme.payments.application.command.CreateTransactionCommand;
@@ -16,16 +15,9 @@ import com.acme.payments.domain.model.Payment;
 import com.acme.payments.domain.model.PeriodType;
 import com.acme.payments.domain.model.Transaction;
 import com.acme.payments.domain.model.TransactionType;
-import com.acme.payments.domain.repository.AccountLimitRepository;
-import com.acme.payments.domain.repository.AccountRepository;
-import com.acme.payments.domain.repository.PaymentRepository;
 import com.acme.payments.domain.service.AccountService;
-import com.acme.payments.domain.service.LimitService;
 import com.acme.payments.domain.service.PaymentService;
 import com.acme.payments.integration.testdata.PaymentTestData;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.transaction.annotation.Transactional;
-import jakarta.inject.Inject;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -44,26 +36,30 @@ import org.junit.jupiter.api.Test;
  * 2. Limit service: limit creation, booking, reversal
  * 3. Payment service: payment creation and retrieval
  *
- * All tests use transactional boundaries to verify database persistence.
+ * This test class extends PaymentsIntegrationTestBase which provides:
+ * - H2 in-memory database with Flyway migrations
+ * - Hardwired service and repository instances (no @MicronautTest DI required)
  */
-@MicronautTest(environments = {"test"})
 @DisplayName("Payment Service Integration Tests")
-class PaymentServiceIntegrationTest {
-
-  @Inject private AccountService accountService;
-  @Inject private LimitService limitService;
-  @Inject private PaymentService paymentService;
-  @Inject private AccountRepository accountRepository;
-  @Inject private AccountLimitRepository accountLimitRepository;
-  @Inject private PaymentRepository paymentRepository;
+class PaymentServiceIntegrationTest extends PaymentsIntegrationTestBase {
 
   private UUID customerId;
   private String testAccountNumber;
 
   @BeforeEach
-  void setup() {
+  void setup() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP
+    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
+    // in PaymentsIntegrationTestBase
+    super.setupContext();
+
     customerId = PaymentTestData.customerId();
     testAccountNumber = "TEST_ACCT_" + System.nanoTime();
+  }
+
+  @org.junit.jupiter.api.AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
   }
 
   // ============================================================================
@@ -71,7 +67,6 @@ class PaymentServiceIntegrationTest {
   // ============================================================================
 
   @Test
-  @Transactional
   @DisplayName("Should create account without limits")
   void testCreateAccount_NoLimits() {
     // Act: Create account
@@ -100,7 +95,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should create account with limit-based flag")
   void testCreateAccount_LimitBased() {
     // Act: Create limit-based account
@@ -118,7 +112,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should retrieve account by ID")
   void testGetAccountById() {
     // Arrange: Create account
@@ -136,7 +129,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should throw exception for non-existent account")
   void testGetAccountById_NotFound() {
     // Act & Assert
@@ -147,7 +139,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should create transaction on account")
   void testCreateTransaction() {
     // Arrange: Create account
@@ -177,7 +168,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should reverse transaction")
   void testReverseTransaction() {
     // Arrange: Create account and transaction
@@ -211,7 +201,6 @@ class PaymentServiceIntegrationTest {
   // ============================================================================
 
   @Test
-  @Transactional
   @DisplayName("Should create limits for account")
   void testCreateLimits_SinglePeriod() {
     // Arrange: Create account
@@ -245,7 +234,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should create multiple limits for account")
   void testCreateLimits_MultiplePeriods() {
     // Arrange: Create account
@@ -284,7 +272,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should book limits against active limits")
   void testBookLimits() {
     // Arrange: Create account with limits
@@ -315,7 +302,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should reverse limits booking")
   void testReverseLimits() {
     // Arrange: Create account with limits and booking
@@ -352,7 +338,6 @@ class PaymentServiceIntegrationTest {
   // ============================================================================
 
   @Test
-  @Transactional
   @DisplayName("Should create payment")
   void testCreatePayment() {
     // Arrange: Create account
@@ -386,7 +371,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should create payment with currency conversion")
   void testCreatePayment_WithCurrencyConversion() {
     // Arrange: Create account
@@ -416,7 +400,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should retrieve payment by ID")
   void testGetPaymentById() {
     // Arrange: Create payment
@@ -446,7 +429,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should throw exception for non-existent payment")
   void testGetPaymentById_NotFound() {
     // Act & Assert
@@ -457,7 +439,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should update payment")
   void testUpdatePayment() {
     // Arrange: Create payment
@@ -491,7 +472,6 @@ class PaymentServiceIntegrationTest {
   // ============================================================================
 
   @Test
-  @Transactional
   @DisplayName("Should complete account creation with limits then process payment")
   void testCompleteAccountWithLimitsThenPayment() {
     // Step 1: Create account
@@ -548,7 +528,6 @@ class PaymentServiceIntegrationTest {
   // ============================================================================
 
   @Test
-  @Transactional
   @DisplayName("Should handle invalid currency mismatch in limits")
   void testCreateLimits_CurrencyMismatch() {
     // Arrange: Create USD account
@@ -567,7 +546,6 @@ class PaymentServiceIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should handle null account limit gracefully")
   void testBookLimits_NoActiveLimits() {
     // Arrange: Create account without limits

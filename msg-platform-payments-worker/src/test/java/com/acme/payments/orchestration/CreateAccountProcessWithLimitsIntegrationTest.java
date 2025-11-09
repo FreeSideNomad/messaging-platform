@@ -1,78 +1,47 @@
 package com.acme.payments.orchestration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.InitiateCreateAccountProcess;
 import com.acme.payments.domain.model.AccountType;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
-import com.acme.payments.domain.repository.AccountLimitRepository;
-import com.acme.payments.domain.repository.AccountRepository;
-import com.acme.payments.domain.service.AccountService;
-import com.acme.payments.domain.service.LimitService;
+import com.acme.payments.integration.PaymentsIntegrationTestBase;
 import com.acme.reliable.core.Jsons;
-import com.acme.reliable.processor.command.AutoCommandHandlerRegistry;
-import com.acme.reliable.processor.process.ProcessManager;
-import com.acme.reliable.repository.ProcessRepository;
-import com.acme.reliable.spi.CommandQueue;
-import com.acme.reliable.spi.EventPublisher;
-import io.micronaut.test.annotation.MockBean;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.transaction.annotation.Transactional;
-import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Integration test for CreateAccount process with limit creation. Tests the process definition and
  * command flow.
+ *
+ * This test class extends PaymentsIntegrationTestBase which provides:
+ * - H2 in-memory database with Flyway migrations
+ * - Hardwired service and repository instances (no @MicronautTest DI required)
  */
-@MicronautTest(environments = "test", startApplication = false, transactional = false)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class CreateAccountProcessWithLimitsIntegrationTest {
+class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationTestBase {
 
-  @MockBean(AutoCommandHandlerRegistry.class)
-  AutoCommandHandlerRegistry autoCommandHandlerRegistry() {
-    return mock(AutoCommandHandlerRegistry.class);
-  }
-
-  @MockBean(ProcessRepository.class)
-  ProcessRepository processRepository() {
-    return mock(ProcessRepository.class);
-  }
-
-  @MockBean(ProcessManager.class)
-  ProcessManager processManager() {
-    return mock(ProcessManager.class);
-  }
-
-  @MockBean(CommandQueue.class)
-  CommandQueue commandQueue() {
-    return mock(CommandQueue.class);
-  }
-
-  @MockBean(EventPublisher.class)
-  EventPublisher eventPublisher() {
-    return mock(EventPublisher.class);
-  }
-
-  @Inject private CreateAccountProcessDefinition processDefinition;
-
-  @Inject private AccountService accountService;
-
-  @Inject private LimitService limitService;
-
-  @Inject private AccountRepository accountRepository;
-
-  @Inject private AccountLimitRepository limitRepository;
+  private CreateAccountProcessDefinition processDefinition;
 
   @BeforeEach
-  void setUp() {
-    // Clean up test data if needed
+  void setUp() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP
+    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
+    // in PaymentsIntegrationTestBase
+    super.setupContext();
+
+    // Manually create the process definition (no DI needed)
+    processDefinition = new CreateAccountProcessDefinition();
+  }
+
+  @org.junit.jupiter.api.AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
   }
 
   @Test
@@ -133,7 +102,6 @@ class CreateAccountProcessWithLimitsIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should handle account creation without limits")
   void testAccountCreation_NoLimits() {
     // Given: Create account command without limits
@@ -155,7 +123,6 @@ class CreateAccountProcessWithLimitsIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Should handle limit creation after account creation")
   void testLimitCreation_AfterAccountCreation() {
     // Given: Account has been created
@@ -182,7 +149,7 @@ class CreateAccountProcessWithLimitsIntegrationTest {
     assertThat(limitsResult.get("limitCount")).isEqualTo(2);
 
     // Verify limits exist in repository
-    var savedLimits = limitRepository.findActiveByAccountId(accountId);
+    var savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
     assertThat(savedLimits).hasSize(2);
   }
 
@@ -246,7 +213,6 @@ class CreateAccountProcessWithLimitsIntegrationTest {
   }
 
   @Test
-  @Transactional
   @DisplayName("Limits should be aligned to time buckets")
   void testTimeBucketAlignment() {
     // Given: Account created
@@ -265,7 +231,7 @@ class CreateAccountProcessWithLimitsIntegrationTest {
     limitService.handleCreateLimits(createLimitsCmd);
 
     // Then: Limit should be aligned to hour boundary
-    var savedLimits = limitRepository.findActiveByAccountId(accountId);
+    var savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
     assertThat(savedLimits).hasSize(1);
 
     var limit = savedLimits.get(0);

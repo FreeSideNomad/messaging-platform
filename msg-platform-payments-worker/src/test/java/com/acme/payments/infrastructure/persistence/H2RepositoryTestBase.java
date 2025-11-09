@@ -24,7 +24,7 @@ public abstract class H2RepositoryTestBase {
    * Uses relative path to migrations directory for portability.
    */
   @BeforeAll
-  void setupSchema() throws Exception {
+  protected void setupSchema() throws Exception {
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
     config.setDriverClassName("org.h2.Driver");

@@ -1,7 +1,6 @@
 package com.acme.payments.e2e;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.InitiateCreateAccountProcess;
@@ -10,56 +9,40 @@ import com.acme.payments.domain.model.AccountLimit;
 import com.acme.payments.domain.model.AccountType;
 import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
-import com.acme.payments.domain.repository.AccountLimitRepository;
-import com.acme.payments.domain.repository.AccountRepository;
-import com.acme.payments.domain.service.AccountService;
-import com.acme.payments.domain.service.LimitService;
+import com.acme.payments.integration.PaymentsIntegrationTestBase;
 import com.acme.reliable.core.Jsons;
-import com.acme.reliable.processor.command.AutoCommandHandlerRegistry;
-import com.acme.reliable.processor.process.ProcessManager;
-import com.acme.reliable.repository.ProcessRepository;
-import io.micronaut.test.annotation.MockBean;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.transaction.annotation.Transactional;
-import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * End-to-end test for account creation with limits. Tests the complete flow from command submission
  * through process execution.
+ *
+ * This test class extends PaymentsIntegrationTestBase which provides:
+ * - H2 in-memory database with Flyway migrations
+ * - Micronaut ApplicationContext for proper DI and AOP
+ * - Hardwired service and repository instances (no @MicronautTest needed)
  */
-@MicronautTest(environments = "test", startApplication = false, transactional = false)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class CreateAccountWithLimitsE2ETest {
+class CreateAccountWithLimitsE2ETest extends PaymentsIntegrationTestBase {
 
-  @MockBean(AutoCommandHandlerRegistry.class)
-  AutoCommandHandlerRegistry autoCommandHandlerRegistry() {
-    return mock(AutoCommandHandlerRegistry.class);
+  @BeforeEach
+  void setUp() throws Exception {
+    // Setup Micronaut ApplicationContext with DI and AOP
+    // Database setup (H2 with Flyway) is handled automatically by setupDatabaseForTest() @BeforeEach
+    // in PaymentsIntegrationTestBase
+    super.setupContext();
   }
 
-  @MockBean(ProcessRepository.class)
-  ProcessRepository processRepository() {
-    return mock(ProcessRepository.class);
+  @org.junit.jupiter.api.AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
   }
-
-  @MockBean(ProcessManager.class)
-  ProcessManager processManager() {
-    return mock(ProcessManager.class);
-  }
-
-  @Inject private AccountService accountService;
-
-  @Inject private LimitService limitService;
-
-  @Inject private AccountRepository accountRepository;
-
-  @Inject private AccountLimitRepository limitRepository;
 
   @Test
-  @Transactional
   @DisplayName("E2E: Create regular account without limits")
   void testCreateAccountWithoutLimits_E2E() {
     // Given: A create account command without limits
@@ -83,12 +66,11 @@ class CreateAccountWithLimitsE2ETest {
     assertThat(account.isLimitBased()).isFalse();
 
     // Verify no limits were created
-    List<AccountLimit> limits = limitRepository.findActiveByAccountId(accountId);
+    List<AccountLimit> limits = accountLimitRepository.findActiveByAccountId(accountId);
     assertThat(limits).isEmpty();
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Create limit-based account with single limit")
   void testCreateAccountWithSingleLimit_E2E() {
     // Given: A create account command with single limit
@@ -112,7 +94,7 @@ class CreateAccountWithLimitsE2ETest {
     assertThat(account.isLimitBased()).isTrue();
 
     // And: Limit should be created
-    List<AccountLimit> savedLimits = limitRepository.findActiveByAccountId(accountId);
+    List<AccountLimit> savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
     assertThat(savedLimits).hasSize(1);
 
     AccountLimit limit = savedLimits.get(0);
@@ -123,7 +105,6 @@ class CreateAccountWithLimitsE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Create limit-based account with multiple limits")
   void testCreateAccountWithMultipleLimits_E2E() {
     // Given: A create account command with multiple limits
@@ -155,7 +136,7 @@ class CreateAccountWithLimitsE2ETest {
     // And: All limits should be created
     assertThat(limitsResult.get("limitCount")).isEqualTo(4);
 
-    List<AccountLimit> savedLimits = limitRepository.findActiveByAccountId(accountId);
+    List<AccountLimit> savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
     assertThat(savedLimits).hasSize(4);
 
     // Verify each limit type
@@ -186,7 +167,6 @@ class CreateAccountWithLimitsE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Limits should have proper time bucket alignment")
   void testLimitTimeBucketAlignment_E2E() {
     // Given: Account with hour and day limits
@@ -208,7 +188,7 @@ class CreateAccountWithLimitsE2ETest {
     limitService.handleCreateLimits(createLimitsCmd);
 
     // Then: Limits should be aligned to period boundaries
-    List<AccountLimit> savedLimits = limitRepository.findActiveByAccountId(accountId);
+    List<AccountLimit> savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
 
     AccountLimit hourLimit =
         savedLimits.stream()
@@ -234,7 +214,6 @@ class CreateAccountWithLimitsE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Account creation should be idempotent")
   void testIdempotency_E2E() {
     // Given: A create account command
@@ -256,7 +235,6 @@ class CreateAccountWithLimitsE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Should handle all supported period types")
   void testAllPeriodTypes_E2E() {
     // Given: Account with multiple period types (excluding MINUTE to avoid timing issues in tests)
@@ -280,13 +258,13 @@ class CreateAccountWithLimitsE2ETest {
     limitService.handleCreateLimits(createLimitsCmd);
 
     // Then: All limits should be created and active
-    List<AccountLimit> savedLimits = limitRepository.findActiveByAccountId(accountId);
+    List<AccountLimit> savedLimits = accountLimitRepository.findActiveByAccountId(accountId);
     assertThat(savedLimits).hasSize(4);
 
     // Verify we can query by each period type
     for (PeriodType periodType : limits.keySet()) {
       List<AccountLimit> limitsForPeriod =
-          limitRepository.findByAccountIdAndPeriodType(accountId, periodType);
+          accountLimitRepository.findByAccountIdAndPeriodType(accountId, periodType);
       assertThat(limitsForPeriod).hasSize(1);
 
       AccountLimit limit = limitsForPeriod.get(0);
@@ -296,7 +274,6 @@ class CreateAccountWithLimitsE2ETest {
   }
 
   @Test
-  @Transactional
   @DisplayName("E2E: Command serialization should preserve limit data")
   void testCommandSerialization_E2E() {
     // Given: InitiateCreateAccountProcess command with limits
