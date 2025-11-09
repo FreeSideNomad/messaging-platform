@@ -130,7 +130,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
   private void insertPayment(Connection conn, Payment payment) throws SQLException {
     String sql =
         """
-            INSERT INTO payment (payment_id, debit_account_id, debit_transaction_id, fx_contract_id,
+            INSERT INTO payments.payment (payment_id, debit_account_id, debit_transaction_id, fx_contract_id,
                                debit_amount, debit_currency_code,
                                credit_amount, credit_currency_code,
                                value_date, status,
@@ -164,7 +164,7 @@ public class JdbcPaymentRepository implements PaymentRepository {
   private void updatePayment(Connection conn, Payment payment) throws SQLException {
     String sql =
         """
-            UPDATE payment
+            UPDATE payments.payment
             SET debit_transaction_id = ?, fx_contract_id = ?, status = ?
             WHERE payment_id = ?
             """;

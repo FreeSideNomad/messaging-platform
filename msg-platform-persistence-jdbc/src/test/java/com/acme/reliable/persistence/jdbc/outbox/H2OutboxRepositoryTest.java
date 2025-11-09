@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -507,6 +508,101 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
       // Then: createdAt should be present
       assertThat(outbox).isPresent();
       assertThat(outbox.get().getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("mapResultSetToOutbox with all nullable fields as null - 100% branch coverage")
+    void testMapResultSetAllNullFields() throws Exception {
+      // Given: Entry with ALL nullable fields explicitly NULL (except headers which can't be null)
+      try (Connection conn = dataSource.getConnection();
+          PreparedStatement ps = conn.prepareStatement(
+              "INSERT INTO outbox (id, category, topic, \"key\", \"type\", payload, headers, "
+                  + "status, attempts, created_at, next_at, claimed_by, published_at, last_error) "
+                  + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+        ps.setLong(1, 1L);
+        ps.setString(2, "events");
+        ps.setString(3, "test-topic");
+        ps.setString(4, "test-key");
+        ps.setString(5, "TestEvent");
+        ps.setString(6, "{\"test\":\"data\"}");
+        ps.setString(7, "{}"); // headers = empty JSON (cannot be null in schema)
+        ps.setString(8, "NEW");
+        ps.setInt(9, 0);
+        ps.setTimestamp(10, Timestamp.from(Instant.now()));
+        ps.setTimestamp(11, null); // next_at = NULL
+        ps.setString(12, null); // claimed_by = NULL
+        ps.setTimestamp(13, null); // published_at = NULL
+        ps.setString(14, null); // last_error = NULL
+        ps.executeUpdate();
+      }
+
+      // When: Retrieve using claimIfNew
+      Optional<Outbox> result = repository.claimIfNew(1L);
+
+      // Then: All nullable fields should be null or empty
+      assertThat(result).isPresent();
+      Outbox outbox = result.get();
+      assertThat(outbox.getHeaders()).isEmpty(); // empty JSON headers becomes empty map (branch: false on line 260)
+      assertThat(outbox.getNextAt()).isNull(); // (branch: false on line 272)
+      assertThat(outbox.getClaimedBy()).isNull(); // (branch: false on line 277)
+      assertThat(outbox.getPublishedAt()).isNull(); // (branch: false on line 287)
+      assertThat(outbox.getLastError()).isNull(); // (branch: false on line 292)
+      assertThat(outbox.getCreatedAt()).isNotNull(); // created_at is always set (branch: true on line 282)
+    }
+
+    @Test
+    @DisplayName("mapResultSetToOutbox with all fields populated - 100% branch coverage")
+    void testMapResultSetAllFieldsPopulated() throws Exception {
+      // Given: Entry with ALL fields populated
+      Instant now = Instant.now();
+      try (Connection conn = dataSource.getConnection();
+          PreparedStatement ps = conn.prepareStatement(
+              "INSERT INTO outbox (id, category, topic, \"key\", \"type\", payload, headers, "
+                  + "status, attempts, created_at, next_at, claimed_by, published_at, last_error) "
+                  + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+        ps.setLong(1, 2L);
+        ps.setString(2, "commands");
+        ps.setString(3, "orders");
+        ps.setString(4, "order-123");
+        ps.setString(5, "OrderProcessed");
+        ps.setString(6, "{\"orderId\":\"123\"}");
+        ps.setString(7, "{\"version\":\"1\",\"source\":\"api\"}"); // Non-empty headers
+        ps.setString(8, "NEW");
+        ps.setInt(9, 0);
+        ps.setTimestamp(10, Timestamp.from(now));
+        ps.setTimestamp(11, Timestamp.from(now.plusSeconds(300))); // next_at populated
+        ps.setString(12, "worker-service-1"); // claimed_by populated
+        ps.setTimestamp(13, Timestamp.from(now.plusSeconds(60))); // published_at populated
+        ps.setString(14, "Temporary network failure"); // last_error populated
+        ps.executeUpdate();
+      }
+
+      // When: Retrieve using claimIfNew
+      Optional<Outbox> result = repository.claimIfNew(2L);
+
+      // Then: All fields should be populated
+      assertThat(result).isPresent();
+      Outbox outbox = result.get();
+      assertThat(outbox.getId()).isEqualTo(2L);
+      assertThat(outbox.getCategory()).isEqualTo("commands");
+      assertThat(outbox.getTopic()).isEqualTo("orders");
+      assertThat(outbox.getKey()).isEqualTo("order-123");
+      assertThat(outbox.getType()).isEqualTo("OrderProcessed");
+      assertThat(outbox.getPayload()).isEqualTo("{\"orderId\":\"123\"}");
+
+      // Headers populated
+      assertThat(outbox.getHeaders()).isNotEmpty();
+      assertThat(outbox.getHeaders()).containsEntry("version", "1");
+      assertThat(outbox.getHeaders()).containsEntry("source", "api");
+
+      // All timestamps populated
+      assertThat(outbox.getCreatedAt()).isNotNull();
+      assertThat(outbox.getNextAt()).isNotNull();
+      assertThat(outbox.getPublishedAt()).isNotNull();
+
+      // String fields populated
+      assertThat(outbox.getClaimedBy()).isEqualTo("worker-service-1");
+      assertThat(outbox.getLastError()).isEqualTo("Temporary network failure");
     }
   }
 
