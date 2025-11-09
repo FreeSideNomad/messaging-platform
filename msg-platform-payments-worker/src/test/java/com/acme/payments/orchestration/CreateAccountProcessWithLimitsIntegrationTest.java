@@ -9,6 +9,7 @@ import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
 import com.acme.payments.integration.PaymentsIntegrationTestBase;
 import com.acme.reliable.core.Jsons;
+import io.micronaut.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -23,7 +24,10 @@ import org.junit.jupiter.api.Test;
  * This test class extends PaymentsIntegrationTestBase which provides:
  * - H2 in-memory database with Flyway migrations
  * - Hardwired service and repository instances (no @MicronautTest DI required)
+ *
+ * @Transactional is used to ensure each test method runs within a database transaction.
  */
+@Transactional
 class CreateAccountProcessWithLimitsIntegrationTest extends PaymentsIntegrationTestBase {
 
   private CreateAccountProcessDefinition processDefinition;

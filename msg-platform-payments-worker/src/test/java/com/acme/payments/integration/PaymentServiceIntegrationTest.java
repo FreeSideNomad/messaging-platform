@@ -18,6 +18,7 @@ import com.acme.payments.domain.model.TransactionType;
 import com.acme.payments.domain.service.AccountService;
 import com.acme.payments.domain.service.PaymentService;
 import com.acme.payments.integration.testdata.PaymentTestData;
+import io.micronaut.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -39,8 +40,12 @@ import org.junit.jupiter.api.Test;
  * This test class extends PaymentsIntegrationTestBase which provides:
  * - H2 in-memory database with Flyway migrations
  * - Hardwired service and repository instances (no @MicronautTest DI required)
+ *
+ * @Transactional is used to ensure each test method runs within a database transaction,
+ * which is required by Micronaut Data's repository operations.
  */
 @DisplayName("Payment Service Integration Tests")
+@Transactional
 class PaymentServiceIntegrationTest extends PaymentsIntegrationTestBase {
 
   private UUID customerId;

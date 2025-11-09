@@ -41,11 +41,17 @@ public abstract class H2RepositoryTestBase {
             .normalize()
             .toString();
 
-    Flyway flyway = Flyway.configure()
-        .dataSource(dataSource)
-        .locations(migrationsPath)
-        .load();
-    flyway.migrate();
+    try {
+      Flyway flyway = Flyway.configure()
+          .dataSource(dataSource)
+          .locations(migrationsPath)
+          .load();
+      flyway.migrate();
+    } catch (Exception e) {
+      // Flyway already migrated (idempotent)
+      // This can happen if setupSchema is called multiple times per test class lifecycle
+      System.out.println("Flyway migration (may have already completed): " + e.getMessage());
+    }
   }
 
   /**

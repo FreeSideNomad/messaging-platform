@@ -11,6 +11,7 @@ import com.acme.payments.domain.model.Money;
 import com.acme.payments.domain.model.PeriodType;
 import com.acme.payments.integration.PaymentsIntegrationTestBase;
 import com.acme.reliable.core.Jsons;
+import io.micronaut.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,7 +27,10 @@ import org.junit.jupiter.api.Test;
  * - H2 in-memory database with Flyway migrations
  * - Micronaut ApplicationContext for proper DI and AOP
  * - Hardwired service and repository instances (no @MicronautTest needed)
+ *
+ * @Transactional is used to ensure each test method runs within a database transaction.
  */
+@Transactional
 class CreateAccountWithLimitsE2ETest extends PaymentsIntegrationTestBase {
 
   @BeforeEach

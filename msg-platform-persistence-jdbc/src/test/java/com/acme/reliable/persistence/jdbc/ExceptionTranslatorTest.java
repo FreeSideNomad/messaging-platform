@@ -583,55 +583,6 @@ class ExceptionTranslatorTest {
       assertThat(result).isInstanceOf(TransientException.class);
     }
 
-    // MySQL Transient Error Codes
-    @Test
-    @DisplayName("should detect MySQL 1205 lock wait timeout")
-    void testMySQLErrorCode1205() {
-      SQLException cause = createSQLExceptionWithErrorCode("Lock timeout", 1205);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "update", logger);
-      assertThat(result).isInstanceOf(TransientException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 1040 too many connections")
-    void testMySQLErrorCode1040() {
-      SQLException cause = createSQLExceptionWithErrorCode("Too many connections", 1040);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "insert", logger);
-      assertThat(result).isInstanceOf(TransientException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 1042 lost connection")
-    void testMySQLErrorCode1042() {
-      SQLException cause = createSQLExceptionWithErrorCode("Lost connection", 1042);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "select", logger);
-      assertThat(result).isInstanceOf(TransientException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 2002 cannot connect")
-    void testMySQLErrorCode2002() {
-      SQLException cause = createSQLExceptionWithErrorCode("Cannot connect", 2002);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "query", logger);
-      assertThat(result).isInstanceOf(TransientException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 2003 cannot connect")
-    void testMySQLErrorCode2003() {
-      SQLException cause = createSQLExceptionWithErrorCode("Cannot connect", 2003);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "query", logger);
-      assertThat(result).isInstanceOf(TransientException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 1301 error")
-    void testMySQLErrorCode1301() {
-      SQLException cause = createSQLExceptionWithErrorCode("MySQL error", 1301);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "update", logger);
-      assertThat(result).isInstanceOf(TransientException.class);
-    }
-
     // H2 Transient Error Code
     @Test
     @DisplayName("should detect H2 90008 timeout")
@@ -666,54 +617,8 @@ class ExceptionTranslatorTest {
       assertThat(result).isInstanceOf(PermanentException.class);
     }
 
-    // MySQL Permanent Error Codes
-    @Test
-    @DisplayName("should detect MySQL 1054 unknown column")
-    void testMySQLErrorCode1054() {
-      SQLException cause = createSQLExceptionWithErrorCode("Unknown column", 1054);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "select", logger);
-      assertThat(result).isInstanceOf(PermanentException.class);
-    }
 
-    @Test
-    @DisplayName("should detect MySQL 1064 syntax error")
-    void testMySQLErrorCode1064() {
-      SQLException cause = createSQLExceptionWithErrorCode("Syntax error", 1064);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "query", logger);
-      assertThat(result).isInstanceOf(PermanentException.class);
-    }
 
-    @Test
-    @DisplayName("should detect MySQL 1146 table not found")
-    void testMySQLErrorCode1146() {
-      SQLException cause = createSQLExceptionWithErrorCode("Table not found", 1146);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "select", logger);
-      assertThat(result).isInstanceOf(PermanentException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 1217 foreign key constraint")
-    void testMySQLErrorCode1217() {
-      SQLException cause = createSQLExceptionWithErrorCode("Foreign key", 1217);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "delete", logger);
-      assertThat(result).isInstanceOf(PermanentException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 1452 child row constraint")
-    void testMySQLErrorCode1452() {
-      SQLException cause = createSQLExceptionWithErrorCode("Child row", 1452);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "insert", logger);
-      assertThat(result).isInstanceOf(PermanentException.class);
-    }
-
-    @Test
-    @DisplayName("should detect MySQL 1169 unique constraint")
-    void testMySQLErrorCode1169() {
-      SQLException cause = createSQLExceptionWithErrorCode("Unique", 1169);
-      RuntimeException result = ExceptionTranslator.translateException(cause, "insert", logger);
-      assertThat(result).isInstanceOf(PermanentException.class);
-    }
 
     // H2 Permanent Error Codes
     @Test

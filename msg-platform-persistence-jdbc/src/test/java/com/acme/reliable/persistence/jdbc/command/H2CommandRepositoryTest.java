@@ -756,4 +756,66 @@ class H2CommandRepositoryTest {
       assertThat(failed.getLastError()).isEqualTo("Maximum retries exceeded - permanent failure");
     }
   }
+
+  @Nested
+  @DisplayName("Zero Rows Updated Branch Coverage Tests")
+  class ZeroRowsUpdatedTests {
+
+    @Test
+    @DisplayName("updateToSucceeded should log warning when updating non-existent command (0 rows updated)")
+    void testUpdateToSucceededZeroRowsUpdated() {
+      // Given - A command ID that doesn't exist in the database
+      UUID nonExistentId = UUID.randomUUID();
+
+      // When - Try to update a command that doesn't exist
+      repository.updateToSucceeded(nonExistentId);
+
+      // Then - Command should not exist (verifying 0 rows were updated)
+      Optional<Command> result = repository.findById(nonExistentId);
+      assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("updateToFailed should log warning when updating non-existent command (0 rows updated)")
+    void testUpdateToFailedZeroRowsUpdated() {
+      // Given - A command ID that doesn't exist in the database
+      UUID nonExistentId = UUID.randomUUID();
+
+      // When - Try to update a command that doesn't exist
+      repository.updateToFailed(nonExistentId, "Some error message");
+
+      // Then - Command should not exist (verifying 0 rows were updated)
+      Optional<Command> result = repository.findById(nonExistentId);
+      assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("updateToRunning should log warning when updating non-existent command (0 rows updated)")
+    void testUpdateToRunningZeroRowsUpdated() {
+      // Given - A command ID that doesn't exist in the database
+      UUID nonExistentId = UUID.randomUUID();
+      Timestamp lease = Timestamp.from(Instant.now().plus(5, ChronoUnit.MINUTES));
+
+      // When - Try to update a command that doesn't exist
+      repository.updateToRunning(nonExistentId, lease);
+
+      // Then - Command should not exist (verifying 0 rows were updated)
+      Optional<Command> result = repository.findById(nonExistentId);
+      assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("incrementRetries should log warning when updating non-existent command (0 rows updated)")
+    void testIncrementRetriesZeroRowsUpdated() {
+      // Given - A command ID that doesn't exist in the database
+      UUID nonExistentId = UUID.randomUUID();
+
+      // When - Try to increment retries for a command that doesn't exist
+      repository.incrementRetries(nonExistentId, "Retry error message");
+
+      // Then - Command should not exist (verifying 0 rows were updated)
+      Optional<Command> result = repository.findById(nonExistentId);
+      assertThat(result).isEmpty();
+    }
+  }
 }

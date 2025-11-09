@@ -72,18 +72,16 @@ public abstract class PaymentsIntegrationTestBase extends H2RepositoryTestBase {
 
   /**
    * Override setupSchema to run @BeforeEach instead of @BeforeAll.
-   * This ensures a fresh database for each test.
+   * Since we're using ApplicationContext with Flyway for test setup, we skip the
+   * parent class's database initialization which creates a separate datasource.
    *
    * @throws Exception if schema setup fails
    */
   @BeforeEach
   public void setupDatabaseForTest() throws Exception {
-    // Only call setupSchema() if datasource isn't already initialized
-    // (on first test, H2RepositoryTestBase.setupSchema() may have been called)
-    if (getDataSource() == null) {
-      super.setupSchema();
-    }
-    // For subsequent tests, we could reset the database here if needed
+    // The ApplicationContext.run() in setupContext() will handle Flyway migrations.
+    // We don't call super.setupSchema() here because it creates a separate HikariCP pool
+    // and H2 in-memory database instance that doesn't share with ApplicationContext's database.
   }
 
   // ============================================================================
@@ -152,8 +150,9 @@ public abstract class PaymentsIntegrationTestBase extends H2RepositoryTestBase {
     // Disable automatic schema creation (we use Flyway)
     configuration.put("jpa.default.properties.hibernate.hbm2ddl.auto", "none");
 
-    // Disable Flyway auto-migration at startup (already done in setupSchema)
-    configuration.put("flyway.enabled", "false");
+    // Enable Flyway auto-migration at startup
+    // This ensures the ApplicationContext's database has migrations applied
+    configuration.put("flyway.enabled", "true");
 
     // Create ApplicationContext with test environment
     // "test" environment activates TestMqFactoryProvider for embedded ActiveMQ

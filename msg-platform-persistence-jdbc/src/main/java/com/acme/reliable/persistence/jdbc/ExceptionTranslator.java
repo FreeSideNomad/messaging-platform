@@ -181,17 +181,6 @@ public class ExceptionTranslator {
       return true;
     }
 
-    // MySQL-specific transient errors
-    // 1205 - Lock wait timeout exceeded
-    // 1040 - Too many connections
-    // 1042 - Lost connection to database
-    // 2002 - Cannot connect to server
-    // 2003 - Cannot connect to server
-    if (errorCode == 1205 || errorCode == 1040 || errorCode == 1042 || errorCode == 2002 ||
-        errorCode == 2003 || errorCode == 1301) {
-      return true;
-    }
-
     // H2-specific transient errors
     // 90008 - General error / timeout
     if (errorCode == 90008) {
@@ -220,17 +209,6 @@ public class ExceptionTranslator {
     // 23505 - Unique violation
     // 23503 - Foreign key violation
     if (errorCode == 42703 || errorCode == 23505 || errorCode == 23503) {
-      return true;
-    }
-
-    // MySQL-specific permanent errors
-    // 1054 - Unknown column
-    // 1064 - Syntax error
-    // 1146 - Table doesn't exist
-    // 1217 - Cannot delete or update parent row
-    // 1452 - Cannot add or update child row
-    if (errorCode == 1054 || errorCode == 1064 || errorCode == 1146 || errorCode == 1217 ||
-        errorCode == 1452 || errorCode == 1169) {
       return true;
     }
 

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.acme.payments.application.command.CreateLimitsCommand;
 import com.acme.payments.application.command.CreatePaymentCommand;
 import com.acme.payments.integration.testdata.PaymentTestData;
+import io.micronaut.transaction.annotation.Transactional;
 import jakarta.jms.JMSException;
 import jakarta.jms.Queue;
 import jakarta.jms.Session;
@@ -35,8 +36,11 @@ import org.junit.jupiter.api.Test;
  * - H2 in-memory database with Flyway migrations
  * - Embedded ActiveMQ broker with VM transport
  * - Hardwired service and repository instances (no @MicronautTest DI required)
+ *
+ * @Transactional is used to ensure each test method runs within a database transaction.
  */
 @DisplayName("Payment Workflow Integration Tests")
+@Transactional
 class PaymentWorkflowIntegrationTest extends PaymentsIntegrationTestBase {
 
   private static final String CREATE_ACCOUNT_QUEUE = "APP.CMD.CREATEACCOUNT.Q";

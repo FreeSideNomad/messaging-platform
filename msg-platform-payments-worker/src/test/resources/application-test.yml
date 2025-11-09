@@ -9,13 +9,18 @@ micronaut:
 
 datasources:
   default:
-    url: jdbc:h2:mem:paymentdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password: ''
     dialect: POSTGRES
     schema-generate: NONE
     maximum-pool-size: 10
+
+flyway:
+  enabled: true
+  locations:
+    - filesystem:../migrations/payments/h2
 
 jms:
   consumers:
