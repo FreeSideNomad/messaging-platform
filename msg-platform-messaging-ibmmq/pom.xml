@@ -73,7 +73,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- ActiveMQ Embedded for Testing (Jakarta-compatible) -->
+    <!-- ActiveMQ 6.1.7 Embedded for Testing (natively Jakarta-based) -->
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-broker</artifactId>
@@ -81,7 +81,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-client-jakarta</artifactId>
+      <artifactId>activemq-client</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

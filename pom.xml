@@ -38,7 +38,7 @@
     <micronaut.aot.enabled>false</micronaut.aot.enabled>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <ibmmq.version>9.4.3.1</ibmmq.version>
-    <activemq.version>5.18.3</activemq.version>
+    <activemq.version>6.1.7</activemq.version>
     <flyway.version>11.1.0</flyway.version>
     <snakeyaml.version>2.5</snakeyaml.version>
     <junit.excludeTags>e2e</junit.excludeTags>

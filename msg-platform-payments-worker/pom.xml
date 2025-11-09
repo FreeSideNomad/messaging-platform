@@ -141,7 +141,7 @@
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- ActiveMQ for JMS integration tests - use classic client with javax API -->
+    <!-- ActiveMQ 6.1.7 for JMS integration tests (natively Jakarta-based) -->
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-client</artifactId>
@@ -158,13 +158,6 @@
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-openwire-legacy</artifactId>
       <version>${activemq.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <!-- javax.jms API for ActiveMQ (classic API) -->
-    <dependency>
-      <groupId>javax.jms</groupId>
-      <artifactId>javax.jms-api</artifactId>
-      <version>2.0.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>

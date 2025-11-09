@@ -11,7 +11,7 @@ import com.acme.payments.infrastructure.persistence.H2RepositoryTestBase;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.data.connection.jdbc.advice.DelegatingDataSource;
 import io.micronaut.transaction.TransactionOperations;
-import javax.jms.ConnectionFactory;
+import jakarta.jms.ConnectionFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;

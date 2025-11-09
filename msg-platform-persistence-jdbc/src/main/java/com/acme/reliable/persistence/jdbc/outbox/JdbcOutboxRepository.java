@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  * Abstract JDBC implementation of OutboxRepository using Template Method pattern.
  * Subclasses override database-specific SQL methods.
  */
-public abstract class JdbcOutboxRepository {
+public abstract class JdbcOutboxRepository implements OutboxRepository {
 
   private static final Logger LOG = LoggerFactory.getLogger(JdbcOutboxRepository.class);
 
