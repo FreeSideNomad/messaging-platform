@@ -77,14 +77,14 @@ class SimpleRedisQueueTest {
 
     // This is what test code does: add messages to a List
     var list = redisson.getList(queueName);
-    list.addAsync("async1");
-    list.addAsync("async2");
+    var add1 = list.addAsync("async1").toCompletableFuture();
+    var add2 = list.addAsync("async2").toCompletableFuture();
+
+    // Wait for both async operations to complete before reading
+    CompletableFuture.allOf(add1, add2).get(5, TimeUnit.SECONDS);
 
     // This is what NotifyPublisher does: take from BlockingQueue
     var queue = redisson.getBlockingQueue(queueName);
-
-    // Give async adds time to complete
-    Thread.sleep(100);
 
     CompletableFuture<Object> future = queue.takeAsync().toCompletableFuture();
     Object result = future.get(5, TimeUnit.SECONDS);
