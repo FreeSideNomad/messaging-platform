@@ -74,17 +74,14 @@ public class TransactionalExecutor implements CommandExecutor {
             }
 
             commands.markSucceeded(env.commandId());
-            var replyId =
-                    outboxStore.addReturningId(Outbox.newMqReply(env, "CommandCompleted", resultJson, messagingConfig));
-            var eventId =
-                    outboxStore.addReturningId(
-                            Outbox.newKafkaEvent(
-                                    messagingConfig.getTopicNaming().buildEventTopic(env.name()),
-                                    env.key(),
-                                    "CommandCompleted",
-                                    Aggregates.snapshot(env.key())));
-            // fastPath.registerAfterCommit(replyId); // DISABLED: causing transaction leak
-            // fastPath.registerAfterCommit(eventId); // DISABLED: causing transaction leak
+            outboxStore.addReturningId(Outbox.newMqReply(env, "CommandCompleted", resultJson, messagingConfig));
+            outboxStore.addReturningId(
+                    Outbox.newKafkaEvent(
+                            messagingConfig.getTopicNaming().buildEventTopic(env.name()),
+                            env.key(),
+                            "CommandCompleted",
+                            Aggregates.snapshot(env.key())));
+            // Note: fastPath.registerAfterCommit() calls are disabled to prevent transaction leak
         } catch (PermanentException e) {
             commands.markFailed(env.commandId(), e.getMessage());
             dlq.park(
