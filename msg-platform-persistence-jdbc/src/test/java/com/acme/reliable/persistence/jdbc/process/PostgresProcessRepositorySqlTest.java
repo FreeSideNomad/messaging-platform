@@ -46,11 +46,11 @@ class PostgresProcessRepositorySqlTest {
     String sql = invokeProtectedMethod("getInsertSql");
 
     assertThat(sql)
+        .as("Should use PostgreSQL JSONB cast")
         .contains("INSERT INTO process")
         .contains("(process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at)")
         .contains("VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)")
-        .contains("?::jsonb")
-        .as("Should use PostgreSQL JSONB cast");
+        .contains("?::jsonb");
   }
 
   @Test

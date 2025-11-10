@@ -46,13 +46,13 @@ class PostgresInboxRepositorySqlTest {
     String sql = invokeProtectedMethod("getInsertIfAbsentSql");
 
     assertThat(sql)
+        .as("Should use PostgreSQL ON CONFLICT DO NOTHING clause for idempotent inserts")
         .isNotNull()
         .isNotEmpty()
         .contains("INSERT INTO inbox")
         .contains("(message_id, handler, processed_at)")
         .contains("VALUES (?, ?, ?)")
-        .contains("ON CONFLICT DO NOTHING")
-        .as("Should use PostgreSQL ON CONFLICT DO NOTHING clause for idempotent inserts");
+        .contains("ON CONFLICT DO NOTHING");
   }
 
   /**
@@ -64,12 +64,12 @@ class PostgresInboxRepositorySqlTest {
     String sql = invokeProtectedMethod("getInsertIfAbsentSql");
 
     assertThat(sql)
+        .as("Should not contain H2 or other dialect-specific syntax")
         .isNotNull()
         .isNotEmpty()
         .doesNotContain("IGNORE")
         .doesNotContain("MERGE")
-        .doesNotContain("PRAGMA")
-        .as("Should not contain H2 or other dialect-specific syntax");
+        .doesNotContain("PRAGMA");
   }
 
   /**
