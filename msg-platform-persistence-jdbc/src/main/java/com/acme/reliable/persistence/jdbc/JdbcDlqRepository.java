@@ -22,7 +22,7 @@ public abstract class JdbcDlqRepository implements DlqRepository {
 
     protected final DataSource dataSource;
 
-    public JdbcDlqRepository(DataSource dataSource) {
+    protected JdbcDlqRepository(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

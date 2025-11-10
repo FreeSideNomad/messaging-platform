@@ -21,7 +21,7 @@ public abstract class JdbcInboxRepository implements InboxRepository {
 
     protected final DataSource dataSource;
 
-    public JdbcInboxRepository(DataSource dataSource) {
+    protected JdbcInboxRepository(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

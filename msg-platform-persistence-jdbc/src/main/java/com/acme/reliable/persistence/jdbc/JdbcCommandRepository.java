@@ -21,7 +21,7 @@ public abstract class JdbcCommandRepository implements CommandRepository {
 
     protected final DataSource dataSource;
 
-    public JdbcCommandRepository(DataSource dataSource) {
+    protected JdbcCommandRepository(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

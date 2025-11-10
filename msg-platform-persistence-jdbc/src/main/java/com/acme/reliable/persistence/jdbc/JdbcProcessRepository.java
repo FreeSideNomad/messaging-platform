@@ -25,7 +25,7 @@ public abstract class JdbcProcessRepository implements ProcessRepository {
 
     protected final DataSource dataSource;
 
-    public JdbcProcessRepository(DataSource dataSource) {
+    protected JdbcProcessRepository(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

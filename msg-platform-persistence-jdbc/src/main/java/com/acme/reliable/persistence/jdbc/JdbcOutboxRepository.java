@@ -23,7 +23,7 @@ public abstract class JdbcOutboxRepository implements OutboxRepository {
 
     protected final DataSource dataSource;
 
-    public JdbcOutboxRepository(DataSource dataSource) {
+    protected JdbcOutboxRepository(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
