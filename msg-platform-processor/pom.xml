@@ -237,14 +237,6 @@
                       <minimum>0.80</minimum>
                     </limit>
                   </limits>
-                  <excludes>
-                    <!-- Exclude command package (contains AutoCommandHandlerRegistry - infrastructure/bootstrapping) -->
-                    <exclude>com.acme.reliable.processor.command</exclude>
-                    <!-- Exclude config package (contains configuration logging utilities) -->
-                    <exclude>com.acme.reliable.processor.config</exclude>
-                    <!-- Exclude root processor package (contains outbox relay, response registry, fast path publisher - infrastructure) -->
-                    <exclude>com.acme.reliable.processor</exclude>
-                  </excludes>
                 </rule>
               </rules>
             </configuration>

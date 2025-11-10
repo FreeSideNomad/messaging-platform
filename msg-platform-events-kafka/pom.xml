@@ -119,10 +119,6 @@
                   </limits>
                 </rule>
               </rules>
-              <excludes>
-                <exclude>com/acme/reliable/kafka/KafkaProducerFactory.class</exclude>
-                <exclude>com/acme/reliable/kafka/KafkaTopicInitializer.class</exclude>
-              </excludes>
             </configuration>
           </execution>
         </executions>
