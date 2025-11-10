@@ -267,7 +267,7 @@ class ResponseRegistryTest {
             assertThat(future.isDone()).isTrue();
             assertThat(future.isCompletedExceptionally()).isTrue();
 
-            assertThatThrownBy(() -> future.get())
+            assertThatThrownBy(future::get)
                     .isInstanceOf(ExecutionException.class)
                     .hasCauseInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Command execution failed");
@@ -285,7 +285,7 @@ class ResponseRegistryTest {
             registry.fail(commandId, errorMessage);
 
             // Assert
-            assertThatThrownBy(() -> future.get())
+            assertThatThrownBy(future::get)
                     .isInstanceOf(ExecutionException.class)
                     .cause()
                     .hasMessage(errorMessage);
@@ -302,7 +302,7 @@ class ResponseRegistryTest {
             registry.fail(commandId, "");
 
             // Assert
-            assertThatThrownBy(() -> future.get())
+            assertThatThrownBy(future::get)
                     .isInstanceOf(ExecutionException.class)
                     .hasCauseInstanceOf(RuntimeException.class);
         }
@@ -347,7 +347,7 @@ class ResponseRegistryTest {
             registry.fail(commandId, "second error");
 
             // Assert - Still has original error
-            assertThatThrownBy(() -> future.get())
+            assertThatThrownBy(future::get)
                     .cause()
                     .hasMessage("first error");
         }
@@ -425,7 +425,7 @@ class ResponseRegistryTest {
             registry.fail(commandId, "quick failure");
 
             // Assert - Should fail with error, not timeout
-            assertThatThrownBy(() -> future.get())
+            assertThatThrownBy(future::get)
                     .isInstanceOf(ExecutionException.class)
                     .cause()
                     .hasMessage("quick failure");
@@ -535,7 +535,7 @@ class ResponseRegistryTest {
             // Assert - All futures should be failed
             for (int i = 0; i < count; i++) {
                 final int index = i;
-                assertThatThrownBy(() -> futures.get(index).get())
+                assertThatThrownBy(futures.get(index)::get)
                         .isInstanceOf(ExecutionException.class)
                         .cause()
                         .hasMessage("error-" + index);
@@ -652,7 +652,7 @@ class ResponseRegistryTest {
             registry.fail(commandId, null);
 
             // Assert
-            assertThatThrownBy(() -> future.get())
+            assertThatThrownBy(future::get)
                     .isInstanceOf(ExecutionException.class)
                     .hasCauseInstanceOf(RuntimeException.class);
         }
@@ -767,7 +767,7 @@ class ResponseRegistryTest {
             // Assert - All futures should still have original errors
             for (int i = 0; i < 100; i++) {
                 final int index = i;
-                assertThatThrownBy(() -> futures.get(index).get())
+                assertThatThrownBy(futures.get(index)::get)
                         .cause()
                         .hasMessage("error-" + index);
             }
