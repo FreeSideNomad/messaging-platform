@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <!-- Suppress all DEBUG logs and below for verbose libraries during tests -->
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Suppress DEBUG logs from verbose libraries -->
+  <logger name="org.springframework" level="WARN"/>
+  <logger name="org.hibernate" level="WARN"/>
+  <logger name="org.apache.commons" level="WARN"/>
+  <logger name="io.micronaut" level="WARN"/>
+  <logger name="io.micronaut.context" level="WARN"/>
+  <logger name="io.micronaut.transaction" level="WARN"/>
+  <logger name="io.micronaut.data" level="WARN"/>
+  <logger name="io.micronaut.web" level="WARN"/>
+  <logger name="com.github.dockerjava" level="WARN"/>
+  <logger name="org.testcontainers" level="WARN"/>
+  <logger name="com.zaxxer.hikari" level="WARN"/>
+  <logger name="org.flywaydb" level="WARN"/>
+  <logger name="org.postgresql" level="WARN"/>
+  <logger name="org.h2" level="WARN"/>
+  <logger name="org.apache.kafka" level="WARN"/>
+  <logger name="org.redisson" level="WARN"/>
+  <logger name="org.apache.activemq" level="WARN"/>
+
+  <!-- Root logger - only show INFO and above -->
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>
