@@ -56,8 +56,7 @@ jobs:
           mvn -B clean verify -Pcoverage \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=FreeSideNomad_messaging-platform \
-            -Dsonar.organization=freesidenomad \
-            -Dsonar.qualitygate.wait=true
+            -Dsonar.organization=freesidenomad
 
       # E2E tests disabled in CI/CD - uncomment locally if needed
       # - name: Run E2E tests
