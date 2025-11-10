@@ -87,9 +87,9 @@ class MnKafkaPublisherIntegrationTest {
         var records = consumer.poll(Duration.ofSeconds(10));
         assertThat(records).hasSizeGreaterThanOrEqualTo(1);
 
-        ConsumerRecord<String, String> record = records.iterator().next();
-        assertThat(record.key()).isEqualTo(key);
-        assertThat(record.value()).isEqualTo(value);
+        ConsumerRecord<String, String> consumerRecord = records.iterator().next();
+        assertThat(consumerRecord.key()).isEqualTo(key);
+        assertThat(consumerRecord.value()).isEqualTo(value);
     }
 
     @Test
@@ -113,14 +113,14 @@ class MnKafkaPublisherIntegrationTest {
         var records = consumer.poll(Duration.ofSeconds(10));
         assertThat(records).hasSizeGreaterThanOrEqualTo(1);
 
-        ConsumerRecord<String, String> record = records.iterator().next();
-        assertThat(record.headers()).isNotNull();
+        ConsumerRecord<String, String> consumerRecord = records.iterator().next();
+        assertThat(consumerRecord.headers()).isNotNull();
 
-        Header correlationHeader = record.headers().lastHeader("correlation-id");
+        Header correlationHeader = consumerRecord.headers().lastHeader("correlation-id");
         assertThat(correlationHeader).isNotNull();
         assertThat(new String(correlationHeader.value())).isEqualTo("corr-123");
 
-        Header traceHeader = record.headers().lastHeader("trace-id");
+        Header traceHeader = consumerRecord.headers().lastHeader("trace-id");
         assertThat(traceHeader).isNotNull();
         assertThat(new String(traceHeader.value())).isEqualTo("trace-456");
     }
@@ -164,9 +164,9 @@ class MnKafkaPublisherIntegrationTest {
         var records = consumer.poll(Duration.ofSeconds(10));
         assertThat(records).hasSizeGreaterThanOrEqualTo(1);
 
-        ConsumerRecord<String, String> record = records.iterator().next();
-        assertThat(record.key()).isNull();
-        assertThat(record.value()).isEqualTo(value);
+        ConsumerRecord<String, String> consumerRecord = records.iterator().next();
+        assertThat(consumerRecord.key()).isNull();
+        assertThat(consumerRecord.value()).isEqualTo(value);
     }
 
     @Test
@@ -187,8 +187,8 @@ class MnKafkaPublisherIntegrationTest {
         var records = consumer.poll(Duration.ofSeconds(10));
         assertThat(records).hasSizeGreaterThanOrEqualTo(1);
 
-        ConsumerRecord<String, String> record = records.iterator().next();
-        assertThat(record.value()).hasSize(100 * 1024);
+        ConsumerRecord<String, String> consumerRecord = records.iterator().next();
+        assertThat(consumerRecord.value()).hasSize(100 * 1024);
     }
 
     @Test
@@ -208,8 +208,8 @@ class MnKafkaPublisherIntegrationTest {
         var records = consumer.poll(Duration.ofSeconds(10));
         assertThat(records).hasSizeGreaterThanOrEqualTo(1);
 
-        ConsumerRecord<String, String> record = records.iterator().next();
-        assertThat(record.value()).isEmpty();
+        ConsumerRecord<String, String> consumerRecord = records.iterator().next();
+        assertThat(consumerRecord.value()).isEmpty();
     }
 
     @Test
@@ -262,8 +262,8 @@ class MnKafkaPublisherIntegrationTest {
         var records = consumer.poll(Duration.ofSeconds(10));
         assertThat(records).hasSizeGreaterThanOrEqualTo(1);
 
-        ConsumerRecord<String, String> record = records.iterator().next();
-        assertThat(record.value()).isEqualTo(value);
+        ConsumerRecord<String, String> consumerRecord = records.iterator().next();
+        assertThat(consumerRecord.value()).isEqualTo(value);
     }
 
     @Test
@@ -283,8 +283,8 @@ class MnKafkaPublisherIntegrationTest {
         var records = consumer.poll(Duration.ofSeconds(10));
         assertThat(records).hasSizeGreaterThanOrEqualTo(1);
 
-        ConsumerRecord<String, String> record = records.iterator().next();
-        assertThat(record.value()).isEqualTo(value);
+        ConsumerRecord<String, String> consumerRecord = records.iterator().next();
+        assertThat(consumerRecord.value()).isEqualTo(value);
     }
 
     private KafkaConsumer<String, String> createConsumer() {
