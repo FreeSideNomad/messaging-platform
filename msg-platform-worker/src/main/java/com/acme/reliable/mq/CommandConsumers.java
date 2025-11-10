@@ -12,27 +12,27 @@ import io.micronaut.messaging.annotation.MessageBody;
 @Requires(property = "jms.consumers.enabled", value = "true", defaultValue = "false")
 @JMSListener("mqConnectionFactory")
 public class CommandConsumers {
-  private final CommandExecutor exec;
-  private final ResponseRegistry responses;
+    private final CommandExecutor exec;
+    private final ResponseRegistry responses;
 
-  public CommandConsumers(CommandExecutor e, ResponseRegistry r) {
-    this.exec = e;
-    this.responses = r;
-  }
-
-  @Queue("APP.CMD.CREATEUSER.Q")
-  public void onCreateUser(@MessageBody String body, @Message jakarta.jms.Message m)
-      throws jakarta.jms.JMSException {
-    var env = Mappers.toEnvelope(body, m);
-    exec.process(env);
-  }
-
-  @Queue("APP.CMD.REPLY.Q")
-  public void onReply(@MessageBody String body, @Message jakarta.jms.Message m)
-      throws jakarta.jms.JMSException {
-    var commandId = m.getStringProperty("commandId");
-    if (commandId != null) {
-      responses.complete(java.util.UUID.fromString(commandId), body);
+    public CommandConsumers(CommandExecutor e, ResponseRegistry r) {
+        this.exec = e;
+        this.responses = r;
     }
-  }
+
+    @Queue("APP.CMD.CREATEUSER.Q")
+    public void onCreateUser(@MessageBody String body, @Message jakarta.jms.Message m)
+            throws jakarta.jms.JMSException {
+        var env = Mappers.toEnvelope(body, m);
+        exec.process(env);
+    }
+
+    @Queue("APP.CMD.REPLY.Q")
+    public void onReply(@MessageBody String body, @Message jakarta.jms.Message m)
+            throws jakarta.jms.JMSException {
+        var commandId = m.getStringProperty("commandId");
+        if (commandId != null) {
+            responses.complete(java.util.UUID.fromString(commandId), body);
+        }
+    }
 }

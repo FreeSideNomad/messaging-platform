@@ -7,7 +7,7 @@ import io.micronaut.runtime.Micronaut;
  * handlers, publishes replies/events. Can run multiple instances for horizontal scaling.
  */
 public class WorkerApplication {
-  public static void main(String[] args) {
-    Micronaut.run(WorkerApplication.class, args);
-  }
+    public static void main(String[] args) {
+        Micronaut.run(WorkerApplication.class, args);
+    }
 }

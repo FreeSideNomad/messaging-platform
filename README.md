@@ -20,12 +20,14 @@ High-performance messaging platform with saga orchestration, transactional outbo
 ## 📦 Modules
 
 ### Core Modules
+
 - **msg-platform-core**: Framework-agnostic domain models and interfaces
 - **msg-platform-processor**: Transactional command processing and saga orchestration
 - **msg-platform-persistence-jdbc**: JDBC-based repository implementations
 - **msg-platform-messaging-ibmmq**: IBM MQ integration for reliable messaging
 
 ### Services
+
 - **msg-platform-api**: REST API for command submission
 - **msg-platform-worker**: Generic command processing workers
 - **msg-platform-payments-worker**: Payments domain microservice
@@ -35,15 +37,18 @@ High-performance messaging platform with saga orchestration, transactional outbo
 **55 tests passing** across all test suites:
 
 ### Unit Tests (33 tests)
+
 - AccountService: 8 tests
 - PaymentService: 8 tests
 - SimplePaymentProcessDefinition: 17 tests
 
 ### Integration Tests (17 tests)
+
 - JdbcAccountRepository: 11 tests with Testcontainers
 - JdbcPaymentRepository: 6 tests with Testcontainers
 
 ### E2E Tests (5 tests)
+
 - Complete payment flows
 - Account creation and management
 - FX payment processing
@@ -52,6 +57,7 @@ High-performance messaging platform with saga orchestration, transactional outbo
 ## 🏗️ Architecture
 
 ### Domain Model (Payments)
+
 ```
 Account
 ├── Transactions (credit/debit)
@@ -66,6 +72,7 @@ Payment
 ```
 
 ### Saga Orchestration
+
 ```
 Process Manager
 ├── Process Graph (DSL)
@@ -75,6 +82,7 @@ Process Manager
 ```
 
 ### Infrastructure Patterns
+
 - Transactional Outbox
 - Inbox for idempotency
 - Dead Letter Queue
@@ -83,6 +91,7 @@ Process Manager
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Java 17+
 - Maven 3.8+
 - Docker & Docker Compose
@@ -90,6 +99,7 @@ Process Manager
 - IBM MQ 9.4
 
 ### Run Tests
+
 ```bash
 # Unit tests
 mvn test -pl msg-platform-payments-worker -Dtest=*Test
@@ -105,11 +115,13 @@ mvn test
 ```
 
 ### Run Infrastructure
+
 ```bash
 docker-compose up -d
 ```
 
 ### Build
+
 ```bash
 mvn clean install
 ```
@@ -147,6 +159,7 @@ mvn clean install
 See `application.yml` in each module for configuration options.
 
 Key configurations:
+
 - Database connection pooling
 - Message queue settings
 - Process manager tuning

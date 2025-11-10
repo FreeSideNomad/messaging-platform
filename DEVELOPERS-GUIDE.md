@@ -56,6 +56,7 @@ This is a **distributed messaging platform framework** for building reliable, ev
 ### 1.3 Reference Implementation
 
 The **payments-worker** module serves as a complete reference implementation demonstrating:
+
 - Account management with transactions
 - Limit-based controls
 - FX contract booking
@@ -69,12 +70,14 @@ The **payments-worker** module serves as a complete reference implementation dem
 ### 2.1 Commands
 
 **Commands** represent the intention to perform an action. They are:
+
 - **Immutable** - Typically Java records
 - **Serializable** - Converted to/from JSON
 - **Self-validating** - Validation logic in constructors
 - **Type-safe** - Compile-time checking
 
 **Example:**
+
 ```java
 public record CreateAccountCommand(
     UUID customerId,
@@ -96,12 +99,14 @@ public record CreateAccountCommand(
 ### 2.2 Command Handlers
 
 **Command Handlers** are service methods that:
+
 - Accept a single `DomainCommand` parameter
 - Are **auto-discovered** by the framework
 - Execute within `@Transactional` boundaries
 - Return results that become `CommandReply.data`
 
 **Example:**
+
 ```java
 @Singleton
 @RequiredArgsConstructor
@@ -130,6 +135,7 @@ public class AccountService {
 ### 2.3 Process Definitions
 
 **Process Definitions** orchestrate multi-step workflows:
+
 - Define process graphs using fluent DSL
 - Coordinate multiple commands
 - Handle conditional branching
@@ -137,6 +143,7 @@ public class AccountService {
 - Execute compensations on failure
 
 **Example:**
+
 ```java
 @Singleton
 public class SimplePaymentProcessDefinition implements ProcessConfiguration {
@@ -165,6 +172,7 @@ public class SimplePaymentProcessDefinition implements ProcessConfiguration {
 ### 2.4 Process Manager
 
 The **Process Manager** is the orchestration engine that:
+
 - Starts process instances
 - Executes steps sequentially or in parallel
 - Handles command replies (success/failure/timeout)
@@ -173,6 +181,7 @@ The **Process Manager** is the orchestration engine that:
 - Tracks process state in the database
 
 **Key behavior:**
+
 - Each step executes in its own transaction
 - State is persisted before and after each step
 - Process auto-completes when reaching terminal step (`.end()`)
@@ -181,18 +190,21 @@ The **Process Manager** is the orchestration engine that:
 ### 2.5 Outbox/Inbox Pattern
 
 **Outbox Pattern** ensures reliable message delivery:
+
 1. Command written to `outbox` table in same transaction as business data
 2. Separate `OutboxRelay` process sweeps outbox every second
 3. Messages published to IBM MQ or Kafka
 4. Outbox entries marked as DISPATCHED after successful publish
 
 **Inbox Pattern** ensures idempotent message processing:
+
 1. Incoming message ID recorded in `inbox` table
 2. If already processed, message is ignored
 3. Database constraint prevents duplicate processing
 4. Works across service restarts
 
 **Why this matters:**
+
 - Database commit = message commit (exactly-once semantics)
 - No lost messages on failure
 - No duplicate processing
@@ -257,6 +269,7 @@ msg-platform-myapp-worker/
 ### 3.3 Essential Configuration
 
 **application.yml:**
+
 ```yaml
 micronaut:
   application:
@@ -299,12 +312,14 @@ messaging:
 The framework automatically discovers command handlers using **convention over configuration**:
 
 **Convention Rules:**
+
 1. Command class must implement `DomainCommand`
 2. Command class name must end with "Command"
 3. Service method must have exactly one parameter of command type
 4. Method will be registered as handler for derived command type
 
 **Example:**
+
 ```java
 // 1. Define command
 public record CreateOrderCommand(
@@ -324,6 +339,7 @@ public class OrderService {
 ```
 
 **Command Type Derivation:**
+
 - `CreateOrderCommand` → `"CreateOrder"`
 - `UpdateInventoryCommand` → `"UpdateInventory"`
 - `CancelPaymentCommand` → `"CancelPayment"`
@@ -331,6 +347,7 @@ public class OrderService {
 ### 4.2 Handler Registration Process
 
 **Phase 1: Discovery (at startup)**
+
 ```
 1. Scan all beans in application context
 2. For each bean, scan all methods
@@ -339,6 +356,7 @@ public class OrderService {
 ```
 
 **Phase 2: Consolidation**
+
 ```
 1. Group candidates by command type
 2. Prefer proxy beans (for @Transactional support)
@@ -346,7 +364,8 @@ public class OrderService {
 4. Register selected handler
 ```
 
-**Important:** The framework prefers **proxy beans** created by Micronaut's AOP (e.g., for `@Transactional`) over plain beans. This ensures transactional behavior is preserved.
+**Important:** The framework prefers **proxy beans** created by Micronaut's AOP (e.g., for `@Transactional`) over plain
+beans. This ensures transactional behavior is preserved.
 
 ### 4.3 Command Reply
 
@@ -361,11 +380,13 @@ public sealed interface CommandReply {
 ```
 
 **Return Value Handling:**
+
 - `void` methods → Empty data map
 - Non-void methods → Serialized to `Map<String, Object>` via JSON
 - Exceptions → Wrapped in `Failed` reply
 
 **Example:**
+
 ```java
 // Handler returns domain object
 public Payment createPayment(CreatePaymentCommand cmd) {
@@ -404,6 +425,7 @@ UUID commandId = commandBus.accept(
 ```
 
 **Key Patterns:**
+
 - Process step: `processId + ":" + stepName`
 - API request: `requestId`
 - Message: `messageId + ":" + handlerName`
@@ -434,12 +456,14 @@ public Order createOrder(CreateOrderCommand cmd) {
 ```
 
 **What's Included in Transaction:**
+
 - Command record insertion
 - Handler execution (business logic + repository calls)
 - Outbox entries for replies/events
 - Process state updates (if part of process)
 
 **What's NOT in Transaction:**
+
 - Message publishing to IBM MQ/Kafka (handled by OutboxRelay)
 - Subsequent process steps (each step has own transaction)
 
@@ -450,6 +474,7 @@ public Order createOrder(CreateOrderCommand cmd) {
 ### 5.1 When to Use Process Orchestration
 
 **Use Process Manager when:**
+
 - Multiple steps that must execute in order
 - Steps span multiple aggregates or services
 - Compensation/rollback needed on failure
@@ -457,19 +482,20 @@ public Order createOrder(CreateOrderCommand cmd) {
 - Complex conditional branching
 
 **Use Simple Command Handler when:**
+
 - Single aggregate operation
 - No compensation needed
 - Synchronous execution acceptable
 
 **Examples:**
 
-| Scenario | Solution |
-|----------|----------|
-| Create account + set limits | ✅ Process (2 aggregates) |
-| Update account balance | ❌ Simple handler (1 aggregate) |
-| Payment: debit + credit + notify | ✅ Process (3+ steps) |
-| Query account by ID | ❌ Simple handler (read-only) |
-| Parallel FX + limits booking | ✅ Process (parallel execution) |
+| Scenario                         | Solution                       |
+|----------------------------------|--------------------------------|
+| Create account + set limits      | ✅ Process (2 aggregates)       |
+| Update account balance           | ❌ Simple handler (1 aggregate) |
+| Payment: debit + credit + notify | ✅ Process (3+ steps)           |
+| Query account by ID              | ❌ Simple handler (read-only)   |
+| Parallel FX + limits booking     | ✅ Process (parallel execution) |
 
 ### 5.2 Process Graph DSL
 
@@ -486,6 +512,7 @@ return process()
 ```
 
 **Execution:**
+
 ```
 Step1 → Step2 → Step3 → [COMPLETED]
 ```
@@ -493,6 +520,7 @@ Step1 → Step2 → Step3 → [COMPLETED]
 #### 5.2.2 Conditional Branching
 
 **Optional Branch (if-then):**
+
 ```java
 return process()
     .startWith(BookLimitsCommand.class)
@@ -503,12 +531,14 @@ return process()
 ```
 
 **Execution:**
+
 ```
 BookLimits → [if requiresFx] → BookFx → CreateTransaction → [COMPLETED]
            → [else] ────────────────────→
 ```
 
 **Full If-Else:**
+
 ```java
 return process()
     .startWith(ValidateCommand.class)
@@ -534,6 +564,7 @@ return process()
 ```
 
 **Execution:**
+
 ```
 Initiate → ┬─ BookFx ──────────────┬─→ CreatePayment → [COMPLETED]
            ├─ BookLimits ──────────┤
@@ -541,6 +572,7 @@ Initiate → ┬─ BookFx ──────────────┬─→ C
 ```
 
 **Key behavior:**
+
 - All branches execute concurrently
 - `joinAt` waits for all branches to complete
 - Any branch failure fails entire process
@@ -561,11 +593,13 @@ return process()
 ```
 
 **Normal execution:**
+
 ```
 BookLimits → BookFx → CreateTransaction → CreatePayment → [COMPLETED]
 ```
 
 **Failure at CreateTransaction:**
+
 ```
 BookLimits → BookFx → CreateTransaction [FAILED]
                     ↓
@@ -573,6 +607,7 @@ UnwindFx ← ReverseLimits ← [COMPENSATING] → [COMPENSATED]
 ```
 
 **Compensation Rules:**
+
 1. Executes in **reverse order** of completion
 2. Only compensates **completed steps**
 3. Compensation must be **idempotent**
@@ -612,6 +647,7 @@ UnwindFx ← ReverseLimits ← [COMPENSATING] → [COMPENSATED]
 ### 5.4 Process State Management
 
 **ProcessInstance** holds current state:
+
 ```java
 public record ProcessInstance(
     UUID processId,
@@ -627,6 +663,7 @@ public record ProcessInstance(
 ```
 
 **State Evolution:**
+
 ```java
 // Initial state
 Map<String, Object> initialData = Map.of(
@@ -653,6 +690,7 @@ data = {
 ```
 
 **Key Behaviors:**
+
 - Reply data is **merged** into process data
 - Each step can access all previous step results
 - Data is serialized to JSON in database
@@ -739,12 +777,14 @@ if (nextStep.isPresent()) {
 ```
 
 **Key Points:**
+
 - `.end()` creates a terminal step that returns `Optional.empty()`
 - No explicit completion command needed
 - Terminal command handlers can be no-ops
 - Useful as convergence points for conditional branches
 
 **Example:**
+
 ```java
 // CompleteAccountCreationCommand serves as convergence point
 return process()
@@ -768,6 +808,7 @@ public Map<String, Object> handleCompleteAccountCreation(CompleteAccountCreation
 ### 6.1 Aggregates and Entities
 
 **Aggregate Root Example:**
+
 ```java
 @Getter
 public class Account {
@@ -804,6 +845,7 @@ public class Account {
 ```
 
 **Aggregate Design Principles:**
+
 1. **Single aggregate per transaction** - Avoid loading multiple aggregates
 2. **Consistency boundary** - All invariants enforced within aggregate
 3. **Identity-based references** - Reference other aggregates by ID only
@@ -812,6 +854,7 @@ public class Account {
 ### 6.2 Value Objects
 
 **Immutable with Business Logic:**
+
 ```java
 public record Money(BigDecimal amount, String currencyCode) {
     public Money {
@@ -844,6 +887,7 @@ public record Money(BigDecimal amount, String currencyCode) {
 ```
 
 **Benefits:**
+
 - Encapsulates domain logic
 - Prevents invalid states
 - Type safety (can't add Money to BigDecimal)
@@ -852,11 +896,13 @@ public record Money(BigDecimal amount, String currencyCode) {
 ### 6.3 Domain Services
 
 **When to Use:**
+
 - Operations spanning multiple aggregates
 - Complex calculations
 - External service coordination
 
 **Example:**
+
 ```java
 @Singleton
 @RequiredArgsConstructor
@@ -886,6 +932,7 @@ public class LimitService {
 ### 6.4 Repository Pattern
 
 **Interface (Domain Layer):**
+
 ```java
 public interface AccountRepository {
     void save(Account account);
@@ -896,6 +943,7 @@ public interface AccountRepository {
 ```
 
 **Implementation (Infrastructure Layer):**
+
 ```java
 @Singleton
 @RequiredArgsConstructor
@@ -942,6 +990,7 @@ public class JdbcAccountRepository implements AccountRepository {
 ```
 
 **Key Patterns:**
+
 - Repositories hide persistence details
 - Aggregate loaded/saved as a whole
 - Transactions managed by framework
@@ -968,6 +1017,7 @@ public class JdbcAccountRepository implements AccountRepository {
 ### 7.2 Unit Tests
 
 **Domain Model:**
+
 ```java
 @Test
 void shouldCreateTransactionAndUpdateBalance() {
@@ -1002,6 +1052,7 @@ void shouldThrowInsufficientFundsException() {
 ```
 
 **Value Objects:**
+
 ```java
 @Test
 void shouldAddMoneyWithSameCurrency() {
@@ -1025,6 +1076,7 @@ void shouldThrowWhenAddingDifferentCurrencies() {
 ### 7.3 Integration Tests
 
 **Setup with Testcontainers:**
+
 ```java
 @MicronautTest(environments = "test", startApplication = false)
 @Testcontainers
@@ -1066,6 +1118,7 @@ class JdbcAccountRepositoryIntegrationTest implements TestPropertyProvider {
 ```
 
 **Mock Framework Beans:**
+
 ```java
 @MockBean(AutoCommandHandlerRegistry.class)
 AutoCommandHandlerRegistry autoCommandHandlerRegistry() {
@@ -1081,6 +1134,7 @@ ProcessManager processManager() {
 ### 7.4 E2E Tests
 
 **Full Process Execution:**
+
 ```java
 @MicronautTest
 @Testcontainers
@@ -1134,6 +1188,7 @@ class SimplePaymentE2ETest {
 ### 7.5 Testing Process Graphs
 
 **Verify Structure:**
+
 ```java
 @Test
 void shouldDefineCorrectProcessFlow() {
@@ -1161,6 +1216,7 @@ void shouldDefineCorrectProcessFlow() {
 ### 8.1 Database Schema Management
 
 **Flyway Migrations:**
+
 ```
 resources/db/migration/
 ├── V1__baseline.sql              # Framework tables (command, inbox, outbox)
@@ -1169,6 +1225,7 @@ resources/db/migration/
 ```
 
 **V3__myapp_schema.sql:**
+
 ```sql
 -- Domain table
 CREATE TABLE account (
@@ -1203,6 +1260,7 @@ CREATE INDEX idx_transaction_time ON transaction(transaction_time);
 ### 8.2 Application Configuration
 
 **Environment Variables:**
+
 ```yaml
 # application.yml
 micronaut:
@@ -1230,6 +1288,7 @@ messaging:
 ```
 
 **Docker Compose:**
+
 ```yaml
 services:
   myapp-worker:
@@ -1256,6 +1315,7 @@ services:
 ### 8.3 Queue Configuration
 
 **Required Queues:**
+
 ```yaml
 mq:
   required-queues: >-
@@ -1266,6 +1326,7 @@ mq:
 ```
 
 **Queue Naming Convention:**
+
 ```
 {PREFIX}.{COMMAND_TYPE}.{SUFFIX}
 
@@ -1276,6 +1337,7 @@ Examples:
 ```
 
 **Queue Setup (IBM MQ):**
+
 ```bash
 # Connect to MQ container
 docker exec -it messaging-ibmmq bash
@@ -1291,6 +1353,7 @@ EOF
 ### 8.4 Monitoring and Health Checks
 
 **Health Endpoint:**
+
 ```java
 @Controller("/health")
 public class HealthController {
@@ -1316,6 +1379,7 @@ public class HealthController {
 ```
 
 **Metrics to Monitor:**
+
 - Outbox backlog size
 - Process success/failure rates
 - Command retry counts
@@ -1331,6 +1395,7 @@ public class HealthController {
 #### ✅ DO: Keep Steps Idempotent
 
 **Good:**
+
 ```java
 @Transactional
 public AccountLimit bookLimits(BookLimitsCommand cmd) {
@@ -1355,6 +1420,7 @@ public AccountLimit bookLimits(BookLimitsCommand cmd) {
 #### ❌ DON'T: Create Side Effects in Non-Idempotent Way
 
 **Bad:**
+
 ```java
 @Transactional
 public void bookLimits(BookLimitsCommand cmd) {
@@ -1370,6 +1436,7 @@ public void bookLimits(BookLimitsCommand cmd) {
 #### ✅ DO: Design Proper Compensation
 
 **Good:**
+
 ```java
 @Transactional
 public void reverseLimits(ReverseLimitsCommand cmd) {
@@ -1387,6 +1454,7 @@ public void reverseLimits(ReverseLimitsCommand cmd) {
 #### ❌ DON'T: Assume Compensation Won't Be Retried
 
 **Bad:**
+
 ```java
 @Transactional
 public void reverseLimits(ReverseLimitsCommand cmd) {
@@ -1404,6 +1472,7 @@ public void reverseLimits(ReverseLimitsCommand cmd) {
 #### ✅ DO: Make Commands Self-Contained
 
 **Good:**
+
 ```java
 public record CreatePaymentCommand(
     UUID debitAccountId,
@@ -1419,6 +1488,7 @@ public record CreatePaymentCommand(
 #### ❌ DON'T: Require External Context
 
 **Bad:**
+
 ```java
 public record CreatePaymentCommand(
     UUID accountId,
@@ -1431,6 +1501,7 @@ public record CreatePaymentCommand(
 #### ✅ DO: Validate in Constructor
 
 **Good:**
+
 ```java
 public record CreatePaymentCommand(
     UUID accountId,
@@ -1452,6 +1523,7 @@ public record CreatePaymentCommand(
 #### ✅ DO: Keep Transactions Short
 
 **Good:**
+
 ```java
 @Transactional
 public Account createAccount(CreateAccountCommand cmd) {
@@ -1475,6 +1547,7 @@ public void createLimits(CreateLimitsCommand cmd) {
 #### ❌ DON'T: Create Long-Running Transactions
 
 **Bad:**
+
 ```java
 @Transactional
 public void createAccountWithLimits(CreateAccountCommand cmd) {
@@ -1497,6 +1570,7 @@ public void createAccountWithLimits(CreateAccountCommand cmd) {
 #### ✅ DO: Use Process State for Coordination
 
 **Good:**
+
 ```java
 @Override
 public ProcessGraph defineProcess() {
@@ -1516,6 +1590,7 @@ public Transaction createTransaction(CreateTransactionCommand cmd) {
 #### ❌ DON'T: Store Large Objects in Process State
 
 **Bad:**
+
 ```java
 // Command reply includes entire account object
 return Map.of(
@@ -1525,6 +1600,7 @@ return Map.of(
 ```
 
 **Better:**
+
 ```java
 // Store only IDs and essential data
 return Map.of(
@@ -1538,6 +1614,7 @@ return Map.of(
 #### ✅ DO: Distinguish Transient from Permanent Errors
 
 **Good:**
+
 ```java
 @Override
 public boolean isRetryable(String step, String error) {
@@ -1559,6 +1636,7 @@ public boolean isRetryable(String step, String error) {
 #### ❌ DON'T: Retry Business Rule Violations
 
 **Bad:**
+
 ```java
 @Override
 public boolean isRetryable(String step, String error) {
@@ -1566,13 +1644,15 @@ public boolean isRetryable(String step, String error) {
 }
 ```
 
-**Why:** Business rule violations (insufficient funds, invalid data) won't be fixed by retrying. Go straight to compensation.
+**Why:** Business rule violations (insufficient funds, invalid data) won't be fixed by retrying. Go straight to
+compensation.
 
 ### 9.6 Handler Registration
 
 #### ✅ DO: One Handler Per Command Type
 
 **Good:**
+
 ```java
 @Singleton
 public class AccountService {
@@ -1588,6 +1668,7 @@ public class PaymentService {
 #### ❌ DON'T: Multiple Handlers for Same Command
 
 **Bad:**
+
 ```java
 @Singleton
 public class AccountService {
@@ -1602,13 +1683,15 @@ public class AccountProcessDefinition {
 // ERROR: Ambiguous handler registration for 'CreateAccount'
 ```
 
-**Solution:** If process needs to handle command, don't also create service method with same signature. Process should coordinate, service should implement.
+**Solution:** If process needs to handle command, don't also create service method with same signature. Process should
+coordinate, service should implement.
 
 ### 9.7 Testing Anti-Patterns
 
 #### ❌ DON'T: Test Framework Behavior
 
 **Bad:**
+
 ```java
 @Test
 void shouldAutoDiscoverHandler() {
@@ -1620,6 +1703,7 @@ void shouldAutoDiscoverHandler() {
 #### ✅ DO: Test Your Domain Logic
 
 **Good:**
+
 ```java
 @Test
 void shouldPreventOverdraftOnNonLimitBasedAccount() {
@@ -1640,11 +1724,13 @@ void shouldPreventOverdraftOnNonLimitBasedAccount() {
 #### Issue: Handler Not Discovered
 
 **Symptoms:**
+
 ```
 ERROR c.a.r.p.c.AutoCommandHandlerRegistry - Unknown command type: CreateOrder
 ```
 
 **Checklist:**
+
 1. ✓ Command class implements `DomainCommand`
 2. ✓ Command class name ends with "Command"
 3. ✓ Handler method has exactly one parameter of command type
@@ -1652,6 +1738,7 @@ ERROR c.a.r.p.c.AutoCommandHandlerRegistry - Unknown command type: CreateOrder
 5. ✓ Check startup logs for discovery errors
 
 **Debug:**
+
 ```java
 // Enable debug logging in application.yml
 logger:
@@ -1662,12 +1749,14 @@ logger:
 #### Issue: Duplicate Handler Registration
 
 **Error:**
+
 ```
 IllegalStateException: Ambiguous handler registration for command type 'CreateAccount':
 Found 2 different implementations: [AccountService, CreateAccountProcessDefinition]
 ```
 
 **Solution:**
+
 - If process handles command, don't create service method with same signature
 - Rename service method to not match command pattern
 - Or make service method internal (pass individual parameters, not command object)
@@ -1675,10 +1764,12 @@ Found 2 different implementations: [AccountService, CreateAccountProcessDefiniti
 #### Issue: Process Stuck in RUNNING State
 
 **Symptoms:**
+
 - Process never completes
 - No errors in logs
 
 **Checklist:**
+
 1. ✓ Check outbox table for PENDING messages
 2. ✓ Verify OutboxRelay is running
 3. ✓ Check MQ connection
@@ -1686,6 +1777,7 @@ Found 2 different implementations: [AccountService, CreateAccountProcessDefiniti
 5. ✓ Check for unhandled exceptions in handlers
 
 **Query:**
+
 ```sql
 -- Find stuck processes
 SELECT process_id, process_type, business_key, current_step, created_at
@@ -1702,16 +1794,19 @@ GROUP BY category, status;
 #### Issue: Compensation Not Executing
 
 **Symptoms:**
+
 - Process marked as FAILED instead of COMPENSATED
 - Compensation steps not visible in logs
 
 **Checklist:**
+
 1. ✓ Compensation step defined in process graph
 2. ✓ Compensation handler exists and is registered
 3. ✓ Step actually completed before failure (compensation only runs for completed steps)
 4. ✓ Check `graph.requiresCompensation(step)` returns true
 
 **Debug:**
+
 ```java
 ProcessConfiguration config = getConfiguration(processType);
 ProcessGraph graph = config.defineProcess();
@@ -1724,16 +1819,19 @@ Optional<String> compensationStep = graph.getCompensationStep("BookLimits");
 #### Issue: Idempotency Key Collision
 
 **Error:**
+
 ```
 IllegalStateException: Duplicate idempotency key: process-123:CreateAccount
 ```
 
 **Causes:**
+
 1. Process retrying same step (expected behavior)
 2. Duplicate process start request
 3. Manual command submission with wrong key
 
 **Solution:**
+
 - Ensure business key uniqueness for process
 - Check for duplicate API requests
 - Use proper idempotency key format: `processId:stepName`
@@ -1743,6 +1841,7 @@ IllegalStateException: Duplicate idempotency key: process-123:CreateAccount
 #### Database Queries
 
 **Process Status:**
+
 ```sql
 -- Current process states
 SELECT status, COUNT(*)
@@ -1758,6 +1857,7 @@ LIMIT 10;
 ```
 
 **Process Event Log:**
+
 ```sql
 -- Full event history for a process
 SELECT event_type, step_name, event_data, created_at
@@ -1767,6 +1867,7 @@ ORDER BY created_at;
 ```
 
 **Outbox Backlog:**
+
 ```sql
 -- Messages pending dispatch
 SELECT category, destination, COUNT(*), MIN(created_at) as oldest
@@ -1781,6 +1882,7 @@ ORDER BY retry_count DESC;
 ```
 
 **Command Status:**
+
 ```sql
 -- Command processing states
 SELECT type, status, COUNT(*)
@@ -1834,6 +1936,7 @@ datasources:
 ```
 
 **Guidelines:**
+
 - Start with `pool_size = available_cores * 2`
 - Monitor connection usage
 - Increase if seeing connection wait times
@@ -1847,6 +1950,7 @@ outbox:
 ```
 
 **Trade-offs:**
+
 - Shorter interval = lower latency, more database queries
 - Larger batch = better throughput, higher memory usage
 
@@ -1859,6 +1963,7 @@ messaging:
 ```
 
 **Guidelines:**
+
 - `concurrency = pool_size / 2` (leave room for outbox relay)
 - Monitor queue depth
 - Increase if backlog growing
@@ -1886,66 +1991,71 @@ WHERE idx_scan = 0;
 ## Appendix A: Framework Tables Reference
 
 ### command
+
 Tracks all commands submitted to the system.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| command_id | UUID | Primary key |
-| type | VARCHAR | Command type (e.g., "CreateAccount") |
-| idempotency_key | VARCHAR | Unique key for deduplication |
-| business_key | VARCHAR | Domain identifier |
-| payload | TEXT | JSON command data |
-| status | VARCHAR | PENDING, PROCESSING, COMPLETED, FAILED |
-| created_at | TIMESTAMP | Submission time |
+| Column          | Type      | Description                            |
+|-----------------|-----------|----------------------------------------|
+| command_id      | UUID      | Primary key                            |
+| type            | VARCHAR   | Command type (e.g., "CreateAccount")   |
+| idempotency_key | VARCHAR   | Unique key for deduplication           |
+| business_key    | VARCHAR   | Domain identifier                      |
+| payload         | TEXT      | JSON command data                      |
+| status          | VARCHAR   | PENDING, PROCESSING, COMPLETED, FAILED |
+| created_at      | TIMESTAMP | Submission time                        |
 
 ### process_instance
+
 Current state of each process.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| process_id | UUID | Primary key |
-| process_type | VARCHAR | Type of process |
-| business_key | VARCHAR | Domain identifier |
-| status | VARCHAR | NEW, RUNNING, SUCCEEDED, FAILED, etc. |
-| current_step | VARCHAR | Current command being executed |
-| data | TEXT | JSON process state |
-| retries | INT | Retry attempt count |
-| created_at | TIMESTAMP | Process start time |
-| updated_at | TIMESTAMP | Last update time |
+| Column       | Type      | Description                           |
+|--------------|-----------|---------------------------------------|
+| process_id   | UUID      | Primary key                           |
+| process_type | VARCHAR   | Type of process                       |
+| business_key | VARCHAR   | Domain identifier                     |
+| status       | VARCHAR   | NEW, RUNNING, SUCCEEDED, FAILED, etc. |
+| current_step | VARCHAR   | Current command being executed        |
+| data         | TEXT      | JSON process state                    |
+| retries      | INT       | Retry attempt count                   |
+| created_at   | TIMESTAMP | Process start time                    |
+| updated_at   | TIMESTAMP | Last update time                      |
 
 ### process_log
+
 Event-sourced audit trail.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| log_id | UUID | Primary key |
-| process_id | UUID | Foreign key to process_instance |
-| event_type | VARCHAR | ProcessStarted, StepCompleted, etc. |
-| step_name | VARCHAR | Step that triggered event |
-| event_data | TEXT | JSON event details |
-| created_at | TIMESTAMP | Event time |
+| Column     | Type      | Description                         |
+|------------|-----------|-------------------------------------|
+| log_id     | UUID      | Primary key                         |
+| process_id | UUID      | Foreign key to process_instance     |
+| event_type | VARCHAR   | ProcessStarted, StepCompleted, etc. |
+| step_name  | VARCHAR   | Step that triggered event           |
+| event_data | TEXT      | JSON event details                  |
+| created_at | TIMESTAMP | Event time                          |
 
 ### outbox
+
 Reliable message publishing.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| outbox_id | UUID | Primary key |
-| category | VARCHAR | "command", "reply", "event" |
-| destination | VARCHAR | Queue/topic name |
-| payload | TEXT | Message body |
-| status | VARCHAR | PENDING, DISPATCHED, FAILED |
-| retry_count | INT | Number of dispatch attempts |
-| created_at | TIMESTAMP | Creation time |
+| Column      | Type      | Description                 |
+|-------------|-----------|-----------------------------|
+| outbox_id   | UUID      | Primary key                 |
+| category    | VARCHAR   | "command", "reply", "event" |
+| destination | VARCHAR   | Queue/topic name            |
+| payload     | TEXT      | Message body                |
+| status      | VARCHAR   | PENDING, DISPATCHED, FAILED |
+| retry_count | INT       | Number of dispatch attempts |
+| created_at  | TIMESTAMP | Creation time               |
 
 ### inbox
+
 Idempotent message processing.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| message_id | VARCHAR | JMS message ID |
-| handler | VARCHAR | Handler that processed message |
-| processed_at | TIMESTAMP | Processing time |
+| Column       | Type      | Description                    |
+|--------------|-----------|--------------------------------|
+| message_id   | VARCHAR   | JMS message ID                 |
+| handler      | VARCHAR   | Handler that processed message |
+| processed_at | TIMESTAMP | Processing time                |
 
 Primary key: (message_id, handler)
 
@@ -1986,17 +2096,20 @@ Primary key: (message_id, handler)
 ## Appendix C: Further Reading
 
 **Internal Documentation:**
+
 - `README.md` - Project overview and setup
 - `docs/ARCHITECTURE.md` - Detailed architecture documentation
 - `docs/TESTING.md` - Testing guidelines
 
 **External Resources:**
+
 - [Saga Pattern](https://microservices.io/patterns/data/saga.html)
 - [Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html)
 - [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
 - [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)
 
 **Reference Implementations:**
+
 - `msg-platform-payments-worker` - Complete payment processing example
 - `msg-platform-processor` - Process manager implementation
 - `msg-platform-core` - Framework core abstractions

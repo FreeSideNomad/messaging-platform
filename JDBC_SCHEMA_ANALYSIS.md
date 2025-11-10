@@ -3,6 +3,7 @@
 ## Executive Summary
 
 The messaging platform currently uses a **multi-database approach** with separate PostgreSQL databases:
+
 - **reliable**: Contains messaging/command framework tables (command, inbox, outbox, process)
 - **payments**: Contains domain-specific tables (account, transaction, payment, etc.)
 
@@ -19,39 +20,47 @@ Both databases are in the **same PostgreSQL server**, managed by Flyway migratio
 All entities use **Micronaut Data JDBC annotations** (no JPA):
 
 #### OutboxEntity
+
 ```java
 @MappedEntity("outbox")  // Maps to 'outbox' table in 'reliable' DB
 @JdbcRepository(dialect = Dialect.POSTGRES)
 public interface JdbcOutboxRepository extends OutboxRepository, GenericRepository<OutboxEntity, Long>
 ```
+
 - **Schema**: reliable
 - **Table**: outbox
 - **Uses**: UUID for event IDs, JSONB for payload/headers
 - **Key Pattern**: Direct table name mapping via @MappedEntity("outbox")
 
 #### InboxEntity
+
 ```java
 @MappedEntity("inbox")  // Maps to 'inbox' table in 'reliable' DB
 public interface JdbcInboxRepository extends InboxRepository, GenericRepository<InboxEntity, InboxEntity.InboxId>
 ```
+
 - **Schema**: reliable
 - **Table**: inbox
 - **Uses**: Embedded composite key (messageId, handler)
 
 #### CommandEntity
+
 ```java
 @MappedEntity("command")  // Maps to 'command' table in 'reliable' DB
 public interface JdbcCommandRepository extends CommandRepository, GenericRepository<CommandEntity, UUID>
 ```
+
 - **Schema**: reliable
 - **Table**: command
 - **Uses**: UUID primary key, JSONB payload
 
 #### DlqEntity
+
 ```java
 @MappedEntity("command_dlq")  // Maps to 'command_dlq' table in 'reliable' DB
 public interface JdbcDlqRepository extends DlqRepository, GenericRepository<DlqEntity, UUID>
 ```
+
 - **Schema**: reliable
 - **Table**: command_dlq
 
@@ -66,7 +75,8 @@ public interface JdbcDlqRepository extends DlqRepository, GenericRepository<DlqE
 - JdbcAccountLimitRepository - uses javax.sql.DataSource directly
 - JdbcFxContractRepository - uses javax.sql.DataSource directly
 
-**Why?** The payment domain uses more complex aggregate operations with domain models (Account, Payment) that don't map cleanly to simple CRUD repositories. Custom JDBC mapping is more suitable.
+**Why?** The payment domain uses more complex aggregate operations with domain models (Account, Payment) that don't map
+cleanly to simple CRUD repositories. Custom JDBC mapping is more suitable.
 
 ### 1.3 Entity Scan / Component Discovery
 
@@ -105,18 +115,21 @@ msg-platform-payments-worker/src/main/resources/db/migration/
 #### Reliable Database (V1, V2, V4)
 
 **V1__baseline.sql** (~60 lines):
+
 - Creates command_status ENUM
 - Creates: command, inbox, outbox, command_dlq tables
 - Uses UUID primary keys, JSONB for JSON data
 - Creates indexes on outbox for dispatch queries
 
 **V2__process_manager.sql** (~48 lines):
+
 - Creates: process_instance, process_log tables
 - Supports immutable event sourcing pattern
 - process_instance: mutable current state
 - process_log: immutable audit trail
 
 **V4__redis_fastpublish_outbox.sql** (~35 lines):
+
 - Adds claimed_at and claimed_by columns to outbox
 - Creates conditional indexes for SENDING status
 - Uses idempotent ALTER TABLE IF NOT EXISTS
@@ -124,6 +137,7 @@ msg-platform-payments-worker/src/main/resources/db/migration/
 #### Payments Database (V3, V4)
 
 **V3__payments_schema.sql** (~121 lines):
+
 - Creates: account, transaction, account_limit, fx_contract, payment
 - Creates: inbox_bc, outbox_bc (domain-specific inbox/outbox)
 - Uses UUID primary keys where possible
@@ -131,6 +145,7 @@ msg-platform-payments-worker/src/main/resources/db/migration/
 - Creates business indexes (account_number, customer_id, etc.)
 
 **V4__add_claimed_at_column.sql** (~35 lines):
+
 - Mirrors changes from reliable DB's V4
 - Adds claimed_at and claimed_by to outbox_bc
 
@@ -158,6 +173,7 @@ flyway.locations=filesystem:/flyway/sql/payments
 ```
 
 **Key Points**:
+
 - **Manual orchestration** via shell scripts in Docker compose
 - **Separate Flyway invocations** per database
 - **Separate locations** for migration files
@@ -167,6 +183,7 @@ flyway.locations=filesystem:/flyway/sql/payments
 ### 2.4 Micronaut Flyway Integration
 
 Both applications include Micronaut Flyway dependency:
+
 ```xml
 <dependency>
   <groupId>io.micronaut.flyway</groupId>
@@ -175,6 +192,7 @@ Both applications include Micronaut Flyway dependency:
 ```
 
 **Configuration in application.yml**:
+
 ```yaml
 flyway:
   datasources:
@@ -183,6 +201,7 @@ flyway:
 ```
 
 This runs Flyway on application startup for the **default datasource only**:
+
 - API: connects to "reliable" database (via application.yml datasources.default)
 - Payments-Worker: connects to "payments" database (via application.yml datasources.default)
 
@@ -193,11 +212,13 @@ This runs Flyway on application startup for the **default datasource only**:
 ### 3.1 Database Configuration
 
 **Datasource Configuration**:
+
 - **No multiple datasources** in application config
 - **Single "default" datasource per application**
 - Each application connects to different database via POSTGRES_DB env var
 
 #### API (msg-platform-api/application.yml)
+
 ```yaml
 datasources:
   default:
@@ -206,6 +227,7 @@ datasources:
 ```
 
 #### Payments Worker (msg-platform-payments-worker/application.yml)
+
 ```yaml
 datasources:
   default:
@@ -214,6 +236,7 @@ datasources:
 ```
 
 #### General Worker (msg-platform-worker/application.yml)
+
 ```yaml
 datasources:
   default:
@@ -268,6 +291,7 @@ msg-platform-core/
 ### 3.3 Docker Initialization
 
 **docker-compose.yml**:
+
 ```yaml
 postgres:
   image: postgres:16-alpine
@@ -298,6 +322,7 @@ payments-worker:
 ### 4.1 Messaging Framework Repositories (JdbcRepository Pattern)
 
 **Architecture**:
+
 ```
 Domain Interface (core module)
     ↓
@@ -307,6 +332,7 @@ Generated Implementation (compile-time by Micronaut Data)
 ```
 
 **Example - OutboxRepository**:
+
 ```java
 // Core Interface
 public interface OutboxRepository {
@@ -330,6 +356,7 @@ public interface JdbcOutboxRepository
 ```
 
 **Key Features**:
+
 - Query methods use **native SQL** (nativeQuery = true)
 - Mix of declarative (@Query) and dynamic (CRUD)
 - Direct injection into services/controllers via Singleton pattern
@@ -337,6 +364,7 @@ public interface JdbcOutboxRepository
 ### 4.2 Payments Domain Repositories (Raw JDBC Pattern)
 
 **Architecture**:
+
 ```
 Domain Interface (payments-worker module)
     ↓
@@ -344,6 +372,7 @@ Raw JDBC Implementation (DataSource injection)
 ```
 
 **Example - AccountRepository**:
+
 ```java
 public interface AccountRepository {
   void save(Account account);
@@ -366,6 +395,7 @@ public class JdbcAccountRepository implements AccountRepository {
 ```
 
 **Key Differences**:
+
 - **Direct DataSource injection** instead of repository generation
 - **Connection management** via try-with-resources
 - **Custom mapping** from domain models to ResultSet
@@ -377,19 +407,19 @@ public class JdbcAccountRepository implements AccountRepository {
 **Current implementation uses application-level database selection**:
 
 1. **Environment-based selection**:
-   - API container: POSTGRES_DB=reliable
-   - Payments-Worker container: POSTGRES_DB=payments
-   - General Worker: POSTGRES_DB=reliable
+    - API container: POSTGRES_DB=reliable
+    - Payments-Worker container: POSTGRES_DB=payments
+    - General Worker: POSTGRES_DB=reliable
 
 2. **Single DataSource per application**:
-   - Each app has `datasources.default` pointing to one database
-   - No multi-tenant or runtime database switching
-   - Clean code separation at deployment level
+    - Each app has `datasources.default` pointing to one database
+    - No multi-tenant or runtime database switching
+    - Clean code separation at deployment level
 
 3. **No multi-datasource configuration**:
-   - No Micronaut `@HibernateProperties` or similar
-   - No routing logic in repositories
-   - Physical databases keep concerns separate
+    - No Micronaut `@HibernateProperties` or similar
+    - No routing logic in repositories
+    - Physical databases keep concerns separate
 
 ---
 
@@ -448,11 +478,13 @@ Docker Compose:
 ### 5.3 Transaction Management
 
 **Messaging Framework**:
+
 - Uses Micronaut Data transaction support
 - No explicit transaction management in repositories
 - Declarative via repository method returns
 
 **Payments Domain**:
+
 - Uses @Transactional annotation on methods
 - Manual transaction scope management
 - Ambient transaction support in tests
@@ -464,10 +496,12 @@ Docker Compose:
 ### 6.1 Schema Design Changes
 
 **Current**:
+
 - Platform schema: command, inbox, outbox, command_dlq, process_instance, process_log
 - Payment schema: account, transaction, payment, fx_contract, account_limit, inbox_bc, outbox_bc
 
 **Proposed Single-Schema**:
+
 ```sql
 -- Option A: Same database, separate schema namespaces
 CREATE SCHEMA platform;   -- command, inbox, outbox, process_instance, etc.
@@ -485,6 +519,7 @@ CREATE TABLE pmt_payment (...)
 ### 6.2 Repository Configuration Changes
 
 **Current Micronaut Data Mapping**:
+
 ```java
 @MappedEntity("outbox")  // Works because "outbox" table exists in connected DB
 public interface JdbcOutboxRepository extends OutboxRepository ...
@@ -493,42 +528,51 @@ public interface JdbcOutboxRepository extends OutboxRepository ...
 **To support single schema/database**:
 
 **Option A - Schema-aware mapping**:
+
 ```java
 @MappedEntity(value = "outbox", schema = "platform")
 public interface JdbcOutboxRepository extends OutboxRepository ...
 ```
+
 ⚠️ **Problem**: Micronaut Data JDBC doesn't support schema specification in @MappedEntity
 
 **Option B - Table name prefixes**:
+
 ```java
 @MappedEntity("cmd_outbox")  // Explicit prefix
 public interface JdbcOutboxRepository extends OutboxRepository ...
 ```
+
 ✅ Works but loses schema-level isolation
 
 **Option C - Multiple datasources with routing**:
+
 ```yaml
 datasources:
   default:     # Point to single database
   platform:    # Alternative datasource
   payments:    # Alternative datasource
 ```
+
 Then use @DataSource("platform") or @DataSource("payments") on repositories
 ⚠️ **Problem**: Not directly supported by Micronaut Data JDBC
 
 ### 6.3 Flyway Configuration Changes
 
 **Current**:
+
 - Separate migration directories: `/db/migration/V1...` and `/db/migration/V3...`
 - Separate flyway invocations per database
 - baselineOnMigrate allows independent migrations
 
 **For single database**:
+
 - Merge migration files with proper sequencing
 - Single Flyway configuration
 - Need to handle migration ordering across domains
 
 Example merged sequence:
+
 ```
 V1__baseline.sql                    (platform schema)
 V2__process_manager.sql             (platform schema)
@@ -540,6 +584,7 @@ V5__add_new_feature.sql
 ### 6.4 Application Configuration Changes
 
 **Current application.yml**:
+
 ```yaml
 datasources:
   default:
@@ -549,6 +594,7 @@ datasources:
 ```
 
 **For single database with schemas**:
+
 ```yaml
 datasources:
   default:
@@ -561,6 +607,7 @@ datasources:
 ### 6.5 Code-Level Changes
 
 #### Option 1: Keep separate repositories, change datasource routing
+
 ```java
 // All repositories still use @JdbcRepository(dialect = POSTGRES)
 // But runtime determines which schema via:
@@ -577,6 +624,7 @@ public class DatasourceRouter {
 ```
 
 #### Option 2: Prefix all payment tables, keep same database
+
 ```java
 @MappedEntity("pmt_account")     // Changed from "account"
 public class AccountEntity { }
@@ -589,44 +637,50 @@ public class PaymentEntity { }
 ```
 
 #### Option 3: Use custom @Query to specify schema (workaround)
+
 ```java
 @Query(value = "SELECT * FROM payments.account WHERE id = ?", nativeQuery = true)
 Optional<Account> findById(UUID id);
 ```
+
 But this defeats the purpose of ORM/repository abstraction.
 
 ---
 
 ## 7. Summary Table
 
-| Aspect | Current Implementation | Change Required? |
-|--------|----------------------|------------------|
-| **Multiple Databases** | Yes (reliable, payments) | No if consolidating |
-| **Multiple Schemas** | No (uses default public schema) | Yes, to keep separate |
-| **Repository Pattern** | Micronaut Data JDBC (messaging), Raw JDBC (payments) | Unify to one approach |
-| **Datasource Routing** | Environment-based per deployment | Runtime routing if single DB |
-| **Flyway Configuration** | Separate per database | Merge or use callbacks |
-| **Table Naming** | Implicit via @MappedEntity("table") | Prefix-based or schema-qualified |
-| **Entity Classes** | Platform: Yes, Payments: No | Create Payment entities or keep POJO mapping |
-| **Transaction Management** | Mixed (@Transactional vs implicit) | Standardize approach |
-| **Code Separation** | Module-based (domain, infrastructure) | Keep; only DB connection changes |
+| Aspect                     | Current Implementation                               | Change Required?                             |
+|----------------------------|------------------------------------------------------|----------------------------------------------|
+| **Multiple Databases**     | Yes (reliable, payments)                             | No if consolidating                          |
+| **Multiple Schemas**       | No (uses default public schema)                      | Yes, to keep separate                        |
+| **Repository Pattern**     | Micronaut Data JDBC (messaging), Raw JDBC (payments) | Unify to one approach                        |
+| **Datasource Routing**     | Environment-based per deployment                     | Runtime routing if single DB                 |
+| **Flyway Configuration**   | Separate per database                                | Merge or use callbacks                       |
+| **Table Naming**           | Implicit via @MappedEntity("table")                  | Prefix-based or schema-qualified             |
+| **Entity Classes**         | Platform: Yes, Payments: No                          | Create Payment entities or keep POJO mapping |
+| **Transaction Management** | Mixed (@Transactional vs implicit)                   | Standardize approach                         |
+| **Code Separation**        | Module-based (domain, infrastructure)                | Keep; only DB connection changes             |
 
 ---
 
 ## 8. Recommendations for Clean Schema Separation
 
 ### Option A: PostgreSQL Schemas (Recommended)
+
 **Pros**:
+
 - Logical separation at database level
 - Different permission models per schema
 - Cleaner namespace isolation
 - Tables can have same names in different schemas
 
 **Cons**:
+
 - Requires custom datasource routing (not built-in to Micronaut Data)
 - Query syntax needs schema qualification
 
 **Implementation**:
+
 ```sql
 -- Migration file
 CREATE SCHEMA IF NOT EXISTS platform;
@@ -638,22 +692,27 @@ CREATE TABLE payments.account (...);
 ```
 
 Then in code, either:
+
 1. Use schema-qualified table names in @Query methods (for complex queries)
 2. Create a DatasourceRouter that sets `search_path` per request
 3. Wrap repositories with schema-aware proxy
 
 ### Option B: Table Prefix Convention (Simpler)
+
 **Pros**:
+
 - No custom routing logic needed
 - Works with existing Micronaut Data JDBC
 - Easy to understand naming
 
 **Cons**:
+
 - Less isolation; all tables in same namespace
 - Slightly longer table names
 - Still in same schema
 
 **Implementation**:
+
 ```java
 @MappedEntity("cmd_command")
 @MappedEntity("cmd_inbox")
@@ -664,12 +723,15 @@ Then in code, either:
 ```
 
 ### Option C: Keep Current Multi-Database Approach
+
 **Pros**:
+
 - Zero code changes required
 - Clear separation at infrastructure level
 - Different backup/replication strategies per DB
 
 **Cons**:
+
 - Requires multiple PostgreSQL databases
 - More operational complexity
 - Transactions can't span domains (good for isolation, bad for consistency)
@@ -681,17 +743,23 @@ Then in code, either:
 ## Key Files Reference
 
 ### Entity/Repository Definitions
+
 - `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/model/*.java` - Messaging entities
-- `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/JdbcCommandRepository.java` - Command repository
-- `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/JdbcOutboxRepository.java` - Outbox repository  
-- `/msg-platform-payments-worker/src/main/java/com/acme/payments/infrastructure/persistence/Jdbc*Repository.java` - Payment repositories
+- `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/JdbcCommandRepository.java` - Command
+  repository
+- `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/JdbcOutboxRepository.java` - Outbox
+  repository
+- `/msg-platform-payments-worker/src/main/java/com/acme/payments/infrastructure/persistence/Jdbc*Repository.java` -
+  Payment repositories
 
 ### Configuration
+
 - `/msg-platform-api/src/main/resources/application.yml` - API datasource config
 - `/msg-platform-payments-worker/src/main/resources/application.yml` - Payments worker datasource config
 - `/msg-platform-persistence-jdbc/pom.xml` - Micronaut Data processor configuration
 
 ### Migrations
+
 - `/msg-platform-persistence-jdbc/src/main/resources/db/migration/V1__baseline.sql` - Platform schema baseline
 - `/msg-platform-persistence-jdbc/src/main/resources/db/migration/V2__process_manager.sql` - Process tables
 - `/msg-platform-payments-worker/src/main/resources/db/migration/V3__payments_schema.sql` - Payment schema
@@ -700,5 +768,7 @@ Then in code, either:
 - `/scripts/flyway-config/flyway-*.conf` - Flyway per-database config
 
 ### Process Repository (Unified Raw JDBC)
-- `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/process/JdbcProcessRepository.java` - Process CRUD with direct DataSource usage
+
+- `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/process/JdbcProcessRepository.java` -
+  Process CRUD with direct DataSource usage
 

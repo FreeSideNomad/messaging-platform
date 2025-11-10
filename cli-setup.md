@@ -1,17 +1,21 @@
 # CLI Setup for Messaging Platform Management Tool
 
 ## Overview
-Create a Java-based command-line interface (CLI) application for managing and monitoring the messaging platform. The application should support both interactive menu mode and direct CLI commands with JSON output.
+
+Create a Java-based command-line interface (CLI) application for managing and monitoring the messaging platform. The
+application should support both interactive menu mode and direct CLI commands with JSON output.
 
 ## Core Features
 
 ### 1. Database Query Tool
+
 - **View Tables**: Query any database table and display top 20 records
 - **Pagination**: Support for next/previous page navigation
 - **Format**: Display in formatted table view (interactive) or JSON (CLI mode)
 - **Connection**: Use existing database connection configuration from the platform
 
 **Example Commands:**
+
 ```bash
 # Interactive mode
 java -jar cli.jar db query --table commands
@@ -24,12 +28,14 @@ java -jar cli.jar db query --table commands --page 2 --format json
 ```
 
 ### 2. API Command Execution
+
 - **Process Commands**: Execute existing process commands via API
 - **Payload Loading**: Load payloads from JSON files
 - **Idempotency Keys**: Auto-generate idempotency keys with timestamp suffix
 - **Response Handling**: Display API response with status
 
 **Example Commands:**
+
 ```bash
 # Execute command with payload file
 java -jar cli.jar api exec --command CreateAccount --payload account-payload.json
@@ -39,6 +45,7 @@ java -jar cli.jar api exec --command ProcessPayment --payload payment.json --ide
 ```
 
 **Payload File Format:**
+
 ```json
 {
   "accountId": "ACC001",
@@ -48,17 +55,20 @@ java -jar cli.jar api exec --command ProcessPayment --payload payment.json --ide
 ```
 
 **Generated Idempotency Key Format:**
+
 ```
 {prefix}-{timestamp-millis}
 Example: test-run-1699123456789
 ```
 
 ### 3. Message Queue Monitoring
+
 - **List Queues**: Show all MQ queues with their current status
 - **Queue Stats**: Display message count, consumers, state
 - **Health Check**: Indicate if queue is healthy/unhealthy
 
 **Example Commands:**
+
 ```bash
 # List all queues
 java -jar cli.jar mq list
@@ -71,12 +81,14 @@ java -jar cli.jar mq list --format json
 ```
 
 ### 4. Kafka Topic Monitoring
+
 - **List Topics**: Show all Kafka topics
 - **Event Count**: Display number of events in each topic
 - **Partition Info**: Show partition distribution
 - **Consumer Lag**: Display consumer group lag if applicable
 
 **Example Commands:**
+
 ```bash
 # List all topics with event counts
 java -jar cli.jar kafka topics
@@ -89,12 +101,14 @@ java -jar cli.jar kafka lag --group payment-processor
 ```
 
 ### 5. Docker Container Management
+
 - **List Containers**: Show all containers related to the platform
 - **Execute Commands**: Run commands inside specific containers
 - **Logs**: Retrieve container logs
 - **Stats**: Display container resource usage
 
 **Example Commands:**
+
 ```bash
 # List all containers
 java -jar cli.jar docker list
@@ -112,6 +126,7 @@ java -jar cli.jar docker stats --format json
 ## Application Modes
 
 ### Interactive Menu Mode
+
 When run without parameters, display an interactive menu:
 
 ```
@@ -129,11 +144,13 @@ Select option:
 Sub-menus for each option with guided prompts.
 
 ### CLI Mode
+
 Direct command execution with optional `--format json` for programmatic use.
 
 ## Technical Requirements
 
 ### Technology Stack
+
 - **Language**: Java 17+
 - **CLI Framework**: Picocli (annotation-based CLI framework)
 - **Database**: JDBC with HikariCP connection pool
@@ -146,6 +163,7 @@ Direct command execution with optional `--format json` for programmatic use.
 - **Interactive UI**: JLine3 for menu navigation
 
 ### Project Structure
+
 ```
 cli-tool/
 ├── pom.xml
@@ -178,7 +196,9 @@ cli-tool/
 ```
 
 ### Configuration
+
 Use `application.properties` or environment variables for:
+
 - Database connection (host, port, username, password, database name)
 - API endpoint base URL
 - Kafka bootstrap servers
@@ -186,6 +206,7 @@ Use `application.properties` or environment variables for:
 - Docker daemon socket/host
 
 ### Maven Dependencies
+
 ```xml
 <dependencies>
     <!-- CLI Framework -->
@@ -276,12 +297,14 @@ Use `application.properties` or environment variables for:
 ## Implementation Details
 
 ### Database Pagination
+
 - Use SQL `OFFSET` and `LIMIT` for pagination
 - Store page size as configurable (default 20)
 - Calculate total pages from COUNT query
 - Cache connection metadata for table validation
 
 ### Idempotency Key Generation
+
 ```java
 String generateIdempotencyKey(String prefix) {
     return String.format("%s-%d", prefix, System.currentTimeMillis());
@@ -289,7 +312,9 @@ String generateIdempotencyKey(String prefix) {
 ```
 
 ### Output Formats
+
 **Table Format (Interactive):**
+
 ```
 +--------+----------+--------+
 | ID     | Status   | Amount |
@@ -300,6 +325,7 @@ String generateIdempotencyKey(String prefix) {
 ```
 
 **JSON Format (CLI):**
+
 ```json
 {
   "data": [
@@ -318,6 +344,7 @@ String generateIdempotencyKey(String prefix) {
 ## Usage Examples
 
 ### Complete Workflow Example
+
 ```bash
 # 1. Check database state
 java -jar cli.jar db query --table commands --format json | jq '.data[] | select(.status=="PENDING")'
@@ -336,6 +363,7 @@ java -jar cli.jar docker logs --container payments-worker --tail 50
 ```
 
 ### Interactive Mode Example
+
 ```
 $ java -jar cli.jar
 
@@ -362,12 +390,14 @@ b - Back to main menu
 ```
 
 ## Testing Strategy
+
 - Unit tests for each service class
 - Integration tests with Testcontainers for database, Kafka, RabbitMQ
 - Mock API endpoints for API command tests
 - CLI command tests using Picocli testing utilities
 
 ## Error Handling
+
 - Connection failures: Retry with exponential backoff
 - Invalid table names: List available tables
 - API errors: Display error message and status code
@@ -375,6 +405,7 @@ b - Back to main menu
 - Graceful fallback for missing configuration
 
 ## Security Considerations
+
 - Store credentials in environment variables or encrypted config
 - Validate SQL table names to prevent injection
 - Sanitize Docker command inputs
@@ -382,6 +413,7 @@ b - Back to main menu
 - Log sensitive operations for audit trail
 
 ## Future Enhancements
+
 - Export query results to CSV/Excel
 - Scheduled monitoring with alerts
 - Batch API command execution

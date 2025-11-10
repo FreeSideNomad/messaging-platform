@@ -1,189 +1,190 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>com.acme</groupId>
-    <artifactId>messaging-platform</artifactId>
-    <version>2.0.0</version>
-  </parent>
+    <parent>
+        <groupId>com.acme</groupId>
+        <artifactId>messaging-platform</artifactId>
+        <version>2.0.0</version>
+    </parent>
 
-  <artifactId>msg-platform-api</artifactId>
-  <packaging>jar</packaging>
+    <artifactId>msg-platform-api</artifactId>
+    <packaging>jar</packaging>
 
-  <name>Messaging Platform API</name>
-  <description>REST API for accepting commands and publishing to MQ</description>
+    <name>Messaging Platform API</name>
+    <description>REST API for accepting commands and publishing to MQ</description>
 
-  <properties>
-    <exec.mainClass>com.acme.reliable.ApiApplication</exec.mainClass>
-    <micronaut.aot.packageName>com.acme.reliable.api.aot.generated</micronaut.aot.packageName>
-  </properties>
+    <properties>
+        <exec.mainClass>com.acme.reliable.ApiApplication</exec.mainClass>
+        <micronaut.aot.packageName>com.acme.reliable.api.aot.generated</micronaut.aot.packageName>
+    </properties>
 
-  <dependencies>
-    <!-- Core module (domain + business logic) -->
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-core</artifactId>
-    </dependency>
+    <dependencies>
+        <!-- Core module (domain + business logic) -->
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-core</artifactId>
+        </dependency>
 
-    <!-- Persistence (database access) -->
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-persistence-jdbc</artifactId>
-    </dependency>
+        <!-- Persistence (database access) -->
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-persistence-jdbc</artifactId>
+        </dependency>
 
-    <!-- Processor (workflow orchestration - includes messaging and events) -->
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-processor</artifactId>
-    </dependency>
+        <!-- Processor (workflow orchestration - includes messaging and events) -->
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-processor</artifactId>
+        </dependency>
 
-    <!-- HTTP server -->
-    <dependency>
-      <groupId>io.micronaut</groupId>
-      <artifactId>micronaut-http-server-netty</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- HTTP server -->
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-http-server-netty</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- YAML Configuration -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+        <!-- YAML Configuration -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- PostgreSQL Driver (required at runtime) -->
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+        <!-- PostgreSQL Driver (required at runtime) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- Testing -->
-    <dependency>
-      <groupId>io.micronaut</groupId>
-      <artifactId>micronaut-http-client</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- Test Resources -->
-    <dependency>
-      <groupId>io.micronaut.testresources</groupId>
-      <artifactId>micronaut-test-resources-client</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <!-- AssertJ for fluent assertions -->
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- JUnit 5 -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.micronaut.test</groupId>
-      <artifactId>micronaut-test-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+        <!-- Testing -->
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-http-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Test Resources -->
+        <dependency>
+            <groupId>io.micronaut.testresources</groupId>
+            <artifactId>micronaut-test-resources-client</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- AssertJ for fluent assertions -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.test</groupId>
+            <artifactId>micronaut-test-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>io.micronaut.maven</groupId>
-        <artifactId>micronaut-maven-plugin</artifactId>
-        <configuration>
-          <configFile>aot-${packaging}.properties</configFile>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <arg>-Amicronaut.processing.group=com.acme</arg>
-            <arg>-Amicronaut.processing.module=msg-platform-api</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- Exclude E2E tests by default (they require full Docker stack) -->
-          <excludedGroups>e2e</excludedGroups>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.11</version>
-        <executions>
-          <execution>
-            <id>prepare-agent</id>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <goals>
-              <goal>report</goal>
-            </goals>
-            <phase>test</phase>
-            <configuration>
-              <excludes>
-                <exclude>com/acme/reliable/ApiApplication.class</exclude>
-              </excludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>check</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <rule>
-                  <element>PACKAGE</element>
-                  <limits>
-                    <limit>
-                      <counter>LINE</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                    <limit>
-                      <counter>BRANCH</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                  </limits>
-                </rule>
-              </rules>
-              <excludes>
-                <exclude>com/acme/reliable/ApiApplication.class</exclude>
-                <exclude>com/acme/reliable/web/**</exclude>
-              </excludes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.micronaut.maven</groupId>
+                <artifactId>micronaut-maven-plugin</artifactId>
+                <configuration>
+                    <configFile>aot-${packaging}.properties</configFile>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Amicronaut.processing.group=com.acme</arg>
+                        <arg>-Amicronaut.processing.module=msg-platform-api</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Exclude E2E tests by default (they require full Docker stack) -->
+                    <excludedGroups>e2e</excludedGroups>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/acme/reliable/ApiApplication.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <excludes>
+                                <exclude>com/acme/reliable/ApiApplication.class</exclude>
+                                <exclude>com/acme/reliable/web/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

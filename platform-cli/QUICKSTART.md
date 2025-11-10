@@ -21,6 +21,7 @@ vi .env
 ```
 
 Minimal configuration for local development:
+
 ```properties
 DB_HOST=localhost
 DB_PORT=5432
@@ -45,26 +46,31 @@ java -jar target/platform-cli.jar
 ### Quick Commands
 
 **List database tables:**
+
 ```bash
 java -jar target/platform-cli.jar db list
 ```
 
 **Query a table:**
+
 ```bash
 java -jar target/platform-cli.jar db query command
 ```
 
 **List Docker containers:**
+
 ```bash
 java -jar target/platform-cli.jar docker list
 ```
 
 **List Kafka topics:**
+
 ```bash
 java -jar target/platform-cli.jar kafka topics
 ```
 
 **List RabbitMQ queues:**
+
 ```bash
 java -jar target/platform-cli.jar mq list
 ```
@@ -72,6 +78,7 @@ java -jar target/platform-cli.jar mq list
 ## 4. Execute an API Command
 
 Create a payload file (`examples/payment-payload.json`):
+
 ```json
 {
   "accountId": "ACC001",
@@ -82,6 +89,7 @@ Create a payload file (`examples/payment-payload.json`):
 ```
 
 Execute the command:
+
 ```bash
 java -jar target/platform-cli.jar api exec ProcessPayment examples/payment-payload.json
 ```
@@ -104,6 +112,7 @@ java -jar target/platform-cli.jar docker stats payments-worker --format json
 ## 6. Common Workflows
 
 ### Monitor System
+
 ```bash
 # Check queues
 java -jar target/platform-cli.jar mq list
@@ -116,6 +125,7 @@ java -jar target/platform-cli.jar docker list
 ```
 
 ### Database Operations
+
 ```bash
 # List tables
 java -jar target/platform-cli.jar db list
@@ -129,6 +139,7 @@ java -jar target/platform-cli.jar db info command
 ```
 
 ### Docker Operations
+
 ```bash
 # Execute SQL in database container
 java -jar target/platform-cli.jar docker exec messaging-postgres "psql -U postgres -d reliable -c 'SELECT COUNT(*) FROM command;'"
@@ -154,16 +165,19 @@ java -jar target/platform-cli.jar db query --help
 ## Troubleshooting
 
 **Connection refused errors:**
+
 - Ensure services (PostgreSQL, Kafka, RabbitMQ, Docker) are running
 - Verify hostnames and ports in `.env`
 - Check firewall settings
 
 **Permission denied (Docker):**
+
 - Ensure your user has Docker access
 - On Mac/Linux: Add user to `docker` group
 - On Windows: Ensure Docker Desktop is running
 
 **Table not found:**
+
 - Verify database name in `.env`
 - Check if you're connected to the right database
 - Use `java -jar target/platform-cli.jar db list` to see available tables

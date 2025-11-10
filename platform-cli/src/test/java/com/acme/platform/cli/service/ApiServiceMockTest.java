@@ -21,21 +21,16 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ApiServiceMockTest {
 
-    @Mock
-    private OkHttpClient client;
-
-    @Mock
-    private Call call;
-
-    @Mock
-    private Response response;
-
-    @Mock
-    private ResponseBody responseBody;
-
     @TempDir
     Path tempDir;
-
+    @Mock
+    private OkHttpClient client;
+    @Mock
+    private Call call;
+    @Mock
+    private Response response;
+    @Mock
+    private ResponseBody responseBody;
     private ApiService apiService;
 
     @BeforeEach

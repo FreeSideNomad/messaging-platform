@@ -7,7 +7,7 @@ import io.micronaut.runtime.Micronaut;
  * queue. Does NOT process commands - that's done by Workers.
  */
 public class ApiApplication {
-  public static void main(String[] args) {
-    Micronaut.run(ApiApplication.class, args);
-  }
+    public static void main(String[] args) {
+        Micronaut.run(ApiApplication.class, args);
+    }
 }

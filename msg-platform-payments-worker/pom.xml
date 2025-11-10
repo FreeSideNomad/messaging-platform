@@ -1,269 +1,270 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>com.acme</groupId>
-    <artifactId>messaging-platform</artifactId>
-    <version>2.0.0</version>
-  </parent>
+    <parent>
+        <groupId>com.acme</groupId>
+        <artifactId>messaging-platform</artifactId>
+        <version>2.0.0</version>
+    </parent>
 
-  <artifactId>msg-platform-payments-worker</artifactId>
-  <packaging>jar</packaging>
+    <artifactId>msg-platform-payments-worker</artifactId>
+    <packaging>jar</packaging>
 
-  <name>Payments Worker</name>
-  <description>Payment processing worker with Process Manager orchestration</description>
+    <name>Payments Worker</name>
+    <description>Payment processing worker with Process Manager orchestration</description>
 
-  <properties>
-    <exec.mainClass>com.acme.payments.PaymentsApplication</exec.mainClass>
-    <micronaut.aot.packageName>com.acme.payments.aot.generated</micronaut.aot.packageName>
-  </properties>
+    <properties>
+        <exec.mainClass>com.acme.payments.PaymentsApplication</exec.mainClass>
+        <micronaut.aot.packageName>com.acme.payments.aot.generated</micronaut.aot.packageName>
+    </properties>
 
-  <dependencies>
-    <!-- Internal Dependencies -->
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-persistence-jdbc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-processor</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-messaging-ibmmq</artifactId>
-    </dependency>
+    <dependencies>
+        <!-- Internal Dependencies -->
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-persistence-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-processor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-messaging-ibmmq</artifactId>
+        </dependency>
 
-    <!-- Lombok -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <scope>provided</scope>
-    </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-    <!-- Micronaut Runtime -->
-    <dependency>
-      <groupId>io.micronaut</groupId>
-      <artifactId>micronaut-http-server-netty</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+        <!-- Micronaut Runtime -->
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-http-server-netty</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- JMS for Command Consumer -->
-    <dependency>
-      <groupId>io.micronaut.jms</groupId>
-      <artifactId>micronaut-jms-core</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <!-- Jakarta JMS API -->
-    <dependency>
-      <groupId>jakarta.jms</groupId>
-      <artifactId>jakarta.jms-api</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- JMS for Command Consumer -->
+        <dependency>
+            <groupId>io.micronaut.jms</groupId>
+            <artifactId>micronaut-jms-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Jakarta JMS API -->
+        <dependency>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- Configuration -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+        <!-- Configuration -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- Database -->
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+        <!-- Database -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- Flyway for test migrations -->
-    <dependency>
-      <groupId>io.micronaut.flyway</groupId>
-      <artifactId>micronaut-flyway</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
-      <scope>test</scope>
-    </dependency>
+        <!-- Flyway for test migrations -->
+        <dependency>
+            <groupId>io.micronaut.flyway</groupId>
+            <artifactId>micronaut-flyway</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-    <!-- Testing -->
-    <!-- Testing dependencies -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.javafaker</groupId>
-      <artifactId>javafaker</artifactId>
-      <version>1.0.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.micronaut.test</groupId>
-      <artifactId>micronaut-test-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- H2 for in-memory testing -->
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- Awaitility for async testing -->
-    <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- ActiveMQ 6.1.7 for JMS integration tests (natively Jakarta-based) -->
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-client</artifactId>
-      <version>${activemq.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-broker</artifactId>
-      <version>${activemq.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-openwire-legacy</artifactId>
-      <version>${activemq.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>kafka</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.micronaut.testresources</groupId>
-      <artifactId>micronaut-test-resources-client</artifactId>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
+        <!-- Testing -->
+        <!-- Testing dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>1.0.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.test</groupId>
+            <artifactId>micronaut-test-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- H2 for in-memory testing -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Awaitility for async testing -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- ActiveMQ 6.1.7 for JMS integration tests (natively Jakarta-based) -->
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-client</artifactId>
+            <version>${activemq.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-broker</artifactId>
+            <version>${activemq.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-openwire-legacy</artifactId>
+            <version>${activemq.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.testresources</groupId>
+            <artifactId>micronaut-test-resources-client</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>io.micronaut.maven</groupId>
-        <artifactId>micronaut-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths combine.children="append">
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-              <version>${lombok.version}</version>
-            </path>
-            <path>
-              <groupId>io.micronaut</groupId>
-              <artifactId>micronaut-inject-java</artifactId>
-              <version>${micronaut.core.version}</version>
-            </path>
-            <path>
-              <groupId>io.micronaut.data</groupId>
-              <artifactId>micronaut-data-processor</artifactId>
-              <version>${micronaut.data.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.11</version>
-        <executions>
-          <execution>
-            <id>prepare-agent</id>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <goals>
-              <goal>report</goal>
-            </goals>
-            <phase>test</phase>
-          </execution>
-          <execution>
-            <id>check</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <rule>
-                  <element>PACKAGE</element>
-                  <limits>
-                    <limit>
-                      <counter>LINE</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                    <limit>
-                      <counter>BRANCH</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                  </limits>
-                  <excludes>
-                    <!-- Exclude main application class -->
-                    <exclude>com.acme.payments</exclude>
-                    <!-- Exclude messaging infrastructure (MQ consumer bootstrap) -->
-                    <exclude>com.acme.payments.infrastructure.messaging</exclude>
-                    <!-- Exclude web controllers (health check endpoint) -->
-                    <exclude>com.acme.payments.web</exclude>
-                  </excludes>
-                </rule>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.micronaut.maven</groupId>
+                <artifactId>micronaut-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths combine.children="append">
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut</groupId>
+                            <artifactId>micronaut-inject-java</artifactId>
+                            <version>${micronaut.core.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut.data</groupId>
+                            <artifactId>micronaut-data-processor</artifactId>
+                            <version>${micronaut.data.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <phase>test</phase>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                    <excludes>
+                                        <!-- Exclude main application class -->
+                                        <exclude>com.acme.payments</exclude>
+                                        <!-- Exclude messaging infrastructure (MQ consumer bootstrap) -->
+                                        <exclude>com.acme.payments.infrastructure.messaging</exclude>
+                                        <!-- Exclude web controllers (health check endpoint) -->
+                                        <exclude>com.acme.payments.web</exclude>
+                                    </excludes>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

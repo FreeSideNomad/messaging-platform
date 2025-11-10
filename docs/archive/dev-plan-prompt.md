@@ -1,4 +1,5 @@
 # Development Plan: Docker-Based Testing Infrastructure
+
 ## Messaging Platform v2.0 - Performance & E2E Testing Strategy
 
 **Project**: messaging-platform
@@ -9,9 +10,12 @@
 
 ## Executive Summary
 
-This plan outlines the implementation of a comprehensive Docker-based testing infrastructure for the messaging platform. The focus is on containerizing all components (API, Worker, PostgreSQL, IBM MQ, Kafka), adding nginx as a load balancer, and implementing e2e test scenarios that validate the entire system under load.
+This plan outlines the implementation of a comprehensive Docker-based testing infrastructure for the messaging platform.
+The focus is on containerizing all components (API, Worker, PostgreSQL, IBM MQ, Kafka), adding nginx as a load balancer,
+and implementing e2e test scenarios that validate the entire system under load.
 
 **Key Deliverables**:
+
 1. Dockerfiles for API and Worker services
 2. Docker Compose orchestration for entire platform
 3. Nginx load balancer configuration
@@ -24,11 +28,13 @@ This plan outlines the implementation of a comprehensive Docker-based testing in
 ## Phase 1: Dockerization of Services
 
 ### Objective
+
 Create production-ready Docker images for API and Worker services.
 
 ### Tasks
 
 #### 1.1 Create Dockerfile for msg-platform-api
+
 **Location**: `msg-platform-api/Dockerfile`
 
 ```dockerfile
@@ -72,11 +78,13 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
 **Build Command**:
+
 ```bash
 docker build -f msg-platform-api/Dockerfile -t messaging-platform-api:latest .
 ```
 
 #### 1.2 Create Dockerfile for msg-platform-worker
+
 **Location**: `msg-platform-worker/Dockerfile`
 
 ```dockerfile
@@ -122,11 +130,13 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
 **Build Command**:
+
 ```bash
 docker build -f msg-platform-worker/Dockerfile -t messaging-platform-worker:latest .
 ```
 
 #### 1.3 Create .dockerignore
+
 **Location**: `.dockerignore`
 
 ```
@@ -143,6 +153,7 @@ target/
 ```
 
 **Deliverables**:
+
 - [ ] API Dockerfile created and tested
 - [ ] Worker Dockerfile created and tested
 - [ ] .dockerignore file created
@@ -154,11 +165,13 @@ target/
 ## Phase 2: Nginx Load Balancer Configuration
 
 ### Objective
+
 Add nginx as a lightweight load balancer in front of the API to distribute traffic across multiple API instances.
 
 ### Tasks
 
 #### 2.1 Create nginx Configuration
+
 **Location**: `nginx/nginx.conf`
 
 ```nginx
@@ -234,6 +247,7 @@ http {
 ```
 
 #### 2.2 Create nginx Dockerfile
+
 **Location**: `nginx/Dockerfile`
 
 ```dockerfile
@@ -251,6 +265,7 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
 ```
 
 **Deliverables**:
+
 - [ ] nginx.conf created with load balancing config
 - [ ] nginx Dockerfile created
 - [ ] Health check endpoint configured
@@ -261,11 +276,14 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
 ## Phase 3: Docker Compose Orchestration
 
 ### Objective
-Create a complete Docker Compose setup that orchestrates all services: PostgreSQL, IBM MQ, Kafka, 3x API instances, 3x Worker instances, and nginx load balancer.
+
+Create a complete Docker Compose setup that orchestrates all services: PostgreSQL, IBM MQ, Kafka, 3x API instances, 3x
+Worker instances, and nginx load balancer.
 
 ### Tasks
 
 #### 3.1 Create Main Docker Compose File
+
 **Location**: `docker-compose.yml`
 
 ```yaml
@@ -599,6 +617,7 @@ volumes:
 ```
 
 #### 3.2 Create Docker Compose Commands Script
+
 **Location**: `scripts/docker-commands.sh`
 
 ```bash
@@ -643,6 +662,7 @@ esac
 ```
 
 **Deliverables**:
+
 - [ ] docker-compose.yml created with all services
 - [ ] Health checks configured for all services
 - [ ] Environment variables properly configured
@@ -655,11 +675,13 @@ esac
 ## Phase 4: E2E Test Framework
 
 ### Objective
+
 Build comprehensive E2E test suite that validates API → Worker → Database flow with proof-of-work verification.
 
 ### Tasks
 
 #### 4.1 Create E2E Test Base Class
+
 **Location**: `msg-platform-api/src/test/java/com/acme/reliable/e2e/E2ETestBase.java`
 
 ```java
@@ -763,6 +785,7 @@ public abstract class E2ETestBase {
 ```
 
 #### 4.2 Create E2E Functional Tests
+
 **Location**: `msg-platform-api/src/test/java/com/acme/reliable/e2e/FunctionalE2ETest.java`
 
 ```java
@@ -954,6 +977,7 @@ class FunctionalE2ETest extends E2ETestBase {
 ```
 
 **Deliverables**:
+
 - [ ] E2ETestBase class created
 - [ ] Functional E2E tests implemented
 - [ ] Database verification included
@@ -966,11 +990,13 @@ class FunctionalE2ETest extends E2ETestBase {
 ## Phase 5: Performance Testing Framework
 
 ### Objective
+
 Build performance testing framework to measure throughput, latency, and endurance under sustained load.
 
 ### Tasks
 
 #### 5.1 Create Performance Test Base Class
+
 **Location**: `msg-platform-api/src/test/java/com/acme/reliable/performance/PerformanceTestBase.java`
 
 ```java
@@ -1082,6 +1108,7 @@ public abstract class PerformanceTestBase extends E2ETestBase {
 ```
 
 #### 5.2 Create Throughput Performance Tests
+
 **Location**: `msg-platform-api/src/test/java/com/acme/reliable/performance/ThroughputTest.java`
 
 ```java
@@ -1161,6 +1188,7 @@ class ThroughputTest extends PerformanceTestBase {
 ```
 
 #### 5.3 Create Endurance Test
+
 **Location**: `msg-platform-api/src/test/java/com/acme/reliable/performance/EnduranceTest.java`
 
 ```java
@@ -1275,6 +1303,7 @@ class EnduranceTest extends PerformanceTestBase {
 ```
 
 **Deliverables**:
+
 - [ ] PerformanceTestBase class created
 - [ ] Throughput tests (500 TPS, 1000 TPS)
 - [ ] Endurance test (10 min sustained load)
@@ -1287,6 +1316,7 @@ class EnduranceTest extends PerformanceTestBase {
 ## Phase 6: Test Automation & Execution Scripts
 
 ### Objective
+
 Create automated scripts for running different test suites and generating reports.
 
 ### Tasks
@@ -1480,11 +1510,13 @@ Add to `pom.xml`:
 ```
 
 ### Performance Tests
+
 ```bash
 ./scripts/run-performance-tests.sh
 ```
 
 ### Endurance Tests
+
 ```bash
 ./scripts/run-endurance-tests.sh
 ```
@@ -1492,6 +1524,7 @@ Add to `pom.xml`:
 ## Manual Execution
 
 ### Start Infrastructure
+
 ```bash
 docker-compose up -d
 sleep 120  # Wait for services
@@ -1499,6 +1532,7 @@ docker-compose ps  # Check health
 ```
 
 ### Run Tests
+
 ```bash
 # E2E tests
 mvn test -Pe2e
@@ -1511,6 +1545,7 @@ mvn test -Pendurance
 ```
 
 ### Stop Infrastructure
+
 ```bash
 docker-compose down
 ```
@@ -1518,6 +1553,7 @@ docker-compose down
 ## Test Categories
 
 ### Functional E2E Tests
+
 - API → Worker → Database flow
 - Idempotency verification
 - Load balancing validation
@@ -1525,11 +1561,13 @@ docker-compose down
 - Outbox pattern reliability
 
 ### Performance Tests
+
 - 500 TPS with 50 concurrent clients
 - 1000 TPS with 100 concurrent clients
 - End-to-end processing verification
 
 ### Endurance Tests
+
 - Sustained 200 TPS for 10 minutes
 - System stability under prolonged load
 - Memory and resource leak detection
@@ -1537,12 +1575,14 @@ docker-compose down
 ## Metrics
 
 ### Success Criteria
+
 - **Success Rate**: >98%
 - **Throughput**: >400 TPS (for 500 TPS test)
 - **Latency P95**: <200ms
 - **Latency P99**: <500ms
 
 ### Monitoring During Tests
+
 ```bash
 # Watch Docker stats
 docker stats
@@ -1559,19 +1599,23 @@ docker exec messaging-postgres psql -U postgres -d reliable -c \
 ## Troubleshooting
 
 ### Tests Failing to Connect
+
 - Check all services are healthy: `docker-compose ps`
 - Check logs: `docker-compose logs [service]`
 - Increase wait time in scripts
 
 ### Performance Degradation
+
 - Check resource usage: `docker stats`
 - Check database connections
 - Review worker logs for errors
 
 ### Endurance Test Timeout
+
 - Increase Maven timeout
 - Check for memory leaks
 - Review database query performance
+
 ```
 
 **Deliverables**:
@@ -1683,6 +1727,7 @@ jobs:
 ```
 
 **Deliverables**:
+
 - [ ] GitHub Actions workflow created
 - [ ] E2E tests running in CI
 - [ ] Performance tests running on main branch
@@ -1693,41 +1738,48 @@ jobs:
 ## Summary: Sequence of Activities
 
 ### Phase 1: Dockerization (Week 1)
+
 1. Create Dockerfile for API
 2. Create Dockerfile for Worker
 3. Test Docker builds locally
 4. Create .dockerignore
 
 ### Phase 2: Load Balancer (Week 1)
+
 1. Create nginx configuration
 2. Create nginx Dockerfile
 3. Test load balancing locally
 
 ### Phase 3: Docker Compose (Week 2)
+
 1. Create docker-compose.yml with all services
 2. Configure environment variables
 3. Test full stack startup
 4. Create helper scripts
 
 ### Phase 4: E2E Tests (Week 2-3)
+
 1. Create E2ETestBase class
 2. Implement functional E2E tests
 3. Add database verification
 4. Validate load balancing and worker distribution
 
 ### Phase 5: Performance Tests (Week 3-4)
+
 1. Create PerformanceTestBase class
 2. Implement throughput tests (500 TPS, 1000 TPS)
 3. Implement endurance test (10 min)
 4. Add metrics collection and reporting
 
 ### Phase 6: Automation (Week 4)
+
 1. Create test execution scripts
 2. Add Maven profiles
 3. Create TESTING.md documentation
 4. Validate all scripts
 
 ### Phase 7: CI/CD (Week 5 - Optional)
+
 1. Create GitHub Actions workflow
 2. Test CI/CD pipeline
 3. Configure artifact uploads
@@ -1737,6 +1789,7 @@ jobs:
 ## Success Criteria
 
 ### Functional
+
 - [ ] All services containerized
 - [ ] nginx load balancer operational
 - [ ] Full stack starts with single command
@@ -1744,6 +1797,7 @@ jobs:
 - [ ] Database verification working
 
 ### Performance
+
 - [ ] Throughput: >400 TPS achieved
 - [ ] Success rate: >98%
 - [ ] Latency P95: <200ms
@@ -1751,6 +1805,7 @@ jobs:
 - [ ] Endurance test: 10 min sustained load passes
 
 ### Operational
+
 - [ ] Docker images build successfully
 - [ ] Health checks configured for all services
 - [ ] Test automation scripts working

@@ -1,7 +1,5 @@
 package com.acme.payments.orchestration;
 
-import static com.acme.reliable.process.ProcessGraphBuilder.process;
-
 import com.acme.payments.application.command.CompleteAccountCreationCommand;
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateLimitsCommand;
@@ -10,8 +8,11 @@ import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.ProcessConfiguration;
 import com.acme.reliable.process.ProcessGraph;
 import jakarta.inject.Singleton;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
+
+import static com.acme.reliable.process.ProcessGraphBuilder.process;
 
 /**
  * Account creation process definition with optional limit creation.
@@ -27,72 +28,72 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CreateAccountProcessDefinition implements ProcessConfiguration {
 
-  @Override
-  public String getProcessType() {
-    return "InitiateCreateAccountProcess";
-  }
+    @Override
+    public String getProcessType() {
+        return "InitiateCreateAccountProcess";
+    }
 
-  /**
-   * Initializes process state from InitiateCreateAccountProcess command. This method builds the
-   * initial process state from the command when the process starts. Note: This is NOT a command
-   * handler - it's called by the process manager.
-   *
-   * @param cmd the process initiation command
-   * @return initial process state as a map
-   */
-  public Map<String, Object> initializeProcessState(InitiateCreateAccountProcess cmd) {
-    log.info(
-        "Initializing CreateAccount process for customer {} with currency {} limitBased={}",
-        cmd.customerId(),
-        cmd.currencyCode(),
-        cmd.limitBased());
+    /**
+     * Initializes process state from InitiateCreateAccountProcess command. This method builds the
+     * initial process state from the command when the process starts. Note: This is NOT a command
+     * handler - it's called by the process manager.
+     *
+     * @param cmd the process initiation command
+     * @return initial process state as a map
+     */
+    public Map<String, Object> initializeProcessState(InitiateCreateAccountProcess cmd) {
+        log.info(
+                "Initializing CreateAccount process for customer {} with currency {} limitBased={}",
+                cmd.customerId(),
+                cmd.currencyCode(),
+                cmd.limitBased());
 
-    // Serialize the entire command to a map for process state
-    Map<String, Object> processState = Jsons.toMap(cmd);
+        // Serialize the entire command to a map for process state
+        Map<String, Object> processState = Jsons.toMap(cmd);
 
-    log.info(
-        "CreateAccount process state initialized for customer {} with account type {}",
-        cmd.customerId(),
-        cmd.accountType());
+        log.info(
+                "CreateAccount process state initialized for customer {} with account type {}",
+                cmd.customerId(),
+                cmd.accountType());
 
-    return processState;
-  }
+        return processState;
+    }
 
-  @Override
-  public ProcessGraph defineProcess() {
-    // Conditional flow: InitiateCreateAccountProcess -> CreateAccount -> (if limitBased)
-    // CreateLimits -> Complete
-    // If limitBased=false, skip CreateLimits and go directly to Complete
-    return process()
-        .startWith(InitiateCreateAccountProcess.class)
-        .then(CreateAccountCommand.class)
-        .thenIf(
-            data -> {
-              // Check if limitBased is true and limits exist
-              Object limitBased = data.get("limitBased");
-              Object limits = data.get("limits");
-              return Boolean.TRUE.equals(limitBased) && limits != null;
-            })
-        .whenTrue(CreateLimitsCommand.class)
-        .then(CompleteAccountCreationCommand.class)
-        .then(CompleteAccountCreationCommand.class) // Continue after optional branch
-        .end();
-  }
+    @Override
+    public ProcessGraph defineProcess() {
+        // Conditional flow: InitiateCreateAccountProcess -> CreateAccount -> (if limitBased)
+        // CreateLimits -> Complete
+        // If limitBased=false, skip CreateLimits and go directly to Complete
+        return process()
+                .startWith(InitiateCreateAccountProcess.class)
+                .then(CreateAccountCommand.class)
+                .thenIf(
+                        data -> {
+                            // Check if limitBased is true and limits exist
+                            Object limitBased = data.get("limitBased");
+                            Object limits = data.get("limits");
+                            return Boolean.TRUE.equals(limitBased) && limits != null;
+                        })
+                .whenTrue(CreateLimitsCommand.class)
+                .then(CompleteAccountCreationCommand.class)
+                .then(CompleteAccountCreationCommand.class) // Continue after optional branch
+                .end();
+    }
 
-  @Override
-  public boolean isRetryable(String step, String error) {
-    // Retry on transient errors (database connection issues, etc.)
-    // Account creation is idempotent, so retrying is safe
-    return error != null
-        && (error.contains("timeout")
-            || error.contains("connection")
-            || error.contains("temporary")
-            || error.contains("deadlock"));
-  }
+    @Override
+    public boolean isRetryable(String step, String error) {
+        // Retry on transient errors (database connection issues, etc.)
+        // Account creation is idempotent, so retrying is safe
+        return error != null
+                && (error.contains("timeout")
+                || error.contains("connection")
+                || error.contains("temporary")
+                || error.contains("deadlock"));
+    }
 
-  @Override
-  public int getMaxRetries(String step) {
-    // Allow up to 3 retries for transient failures
-    return 3;
-  }
+    @Override
+    public int getMaxRetries(String step) {
+        // Allow up to 3 retries for transient failures
+        return 3;
+    }
 }

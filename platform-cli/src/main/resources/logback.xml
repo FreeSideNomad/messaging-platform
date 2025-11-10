@@ -18,8 +18,8 @@
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
     </root>
 
     <!-- Set specific loggers to WARN to reduce noise -->

@@ -3,44 +3,47 @@
 ## Quick Reference: Module Responsibilities
 
 ### msg-platform-processor (1120 test lines)
+
 **Core:** Message publishing, process orchestration, command routing
 
-| Class | Responsibility | Test Coverage | Gap |
-|-------|-----------------|----------------|-----|
-| TransactionalCommandBus | Entry point, idempotency check | Unit ✓ | Integration ✗ |
-| OutboxRelay | Scheduled polling, batch publishing | Unit ✓ | Failure scenarios ✗ |
-| NotifyPublisher | Redis-based fast publishing | Unit ✓ | Backpressure ✗ |
-| ProcessManager | Auto-discovery, step execution | Integration ✓ | Cross-worker ✗ |
-| ProcessReplyConsumer | Reply routing (STUB) | NONE ✗ | Implementation needed |
-| ResponseRegistry | Future-based response tracking | Unit ✓ | Timeout ✗ |
-| FastPathPublisher | Post-commit publishing (DISABLED) | NONE ✗ | Fix leak, then test |
+| Class                   | Responsibility                      | Test Coverage | Gap                   |
+|-------------------------|-------------------------------------|---------------|-----------------------|
+| TransactionalCommandBus | Entry point, idempotency check      | Unit ✓        | Integration ✗         |
+| OutboxRelay             | Scheduled polling, batch publishing | Unit ✓        | Failure scenarios ✗   |
+| NotifyPublisher         | Redis-based fast publishing         | Unit ✓        | Backpressure ✗        |
+| ProcessManager          | Auto-discovery, step execution      | Integration ✓ | Cross-worker ✗        |
+| ProcessReplyConsumer    | Reply routing (STUB)                | NONE ✗        | Implementation needed |
+| ResponseRegistry        | Future-based response tracking      | Unit ✓        | Timeout ✗             |
+| FastPathPublisher       | Post-commit publishing (DISABLED)   | NONE ✗        | Fix leak, then test   |
 
 ---
 
 ### msg-platform-payments-worker (8911 test lines)
+
 **Domain:** Payment processing, limits, FX operations
 
-| Class | Responsibility | Test Coverage | Gap |
-|-------|-----------------|----------------|-----|
-| AccountService | Account CRUD, transactions | Unit ✓, Integration ✓ | Process flow ✗ |
-| PaymentService | Payment CRUD | Unit ✓, Integration ✓ | Process flow ✗ |
-| FxService | FX contracts, unwinding | Unit ✓, Integration ✓ | Process flow ✗ |
-| LimitService | Limits, booking, reversal | Unit ✓, Integration ✓ | Expiration ✗, Concurrent ✗ |
-| CreateAccountProcessDefinition | Account creation flow | Unit ✓ | E2E with Processor ✗ |
-| SimplePaymentProcessDefinition | Payment flow with compensation | Unit ✓ | Compensation ✗, E2E ✗ |
-| PaymentCommandConsumer | JMS entry point | Config only | Full test ✗ |
+| Class                          | Responsibility                 | Test Coverage         | Gap                        |
+|--------------------------------|--------------------------------|-----------------------|----------------------------|
+| AccountService                 | Account CRUD, transactions     | Unit ✓, Integration ✓ | Process flow ✗             |
+| PaymentService                 | Payment CRUD                   | Unit ✓, Integration ✓ | Process flow ✗             |
+| FxService                      | FX contracts, unwinding        | Unit ✓, Integration ✓ | Process flow ✗             |
+| LimitService                   | Limits, booking, reversal      | Unit ✓, Integration ✓ | Expiration ✗, Concurrent ✗ |
+| CreateAccountProcessDefinition | Account creation flow          | Unit ✓                | E2E with Processor ✗       |
+| SimplePaymentProcessDefinition | Payment flow with compensation | Unit ✓                | Compensation ✗, E2E ✗      |
+| PaymentCommandConsumer         | JMS entry point                | Config only           | Full test ✗                |
 
 ---
 
 ### msg-platform-worker (257 test lines)
+
 **Framework:** Generic command processing, user service example
 
-| Class | Responsibility | Test Coverage | Gap |
-|-------|-----------------|----------------|-----|
-| CommandConsumers | JMS listeners (generic + reply) | Config only | Full test ✗ |
-| UserService | Example handler | Config only | Handler test ✗ |
-| WorkerE2ETestBase | E2E infrastructure | Base ✓ | Usage ✗ |
-| SingleCommandE2ETest | Single command E2E | E2E ✓ | Saga ✗ |
+| Class                | Responsibility                  | Test Coverage | Gap            |
+|----------------------|---------------------------------|---------------|----------------|
+| CommandConsumers     | JMS listeners (generic + reply) | Config only   | Full test ✗    |
+| UserService          | Example handler                 | Config only   | Handler test ✗ |
+| WorkerE2ETestBase    | E2E infrastructure              | Base ✓        | Usage ✗        |
+| SingleCommandE2ETest | Single command E2E              | E2E ✓         | Saga ✗         |
 
 ---
 
@@ -72,11 +75,13 @@
 ## Five High-Priority Integration Tests to Implement
 
 ### Test 1: Single Command Submission E2E (Worker Module)
+
 **Status:** PARTIAL - SingleCommandE2ETest exists, incomplete  
 **Duration:** 1 day to complete  
 **Scope:** API → Database only (no async processing)
 
 **Test steps:**
+
 1. Submit CreateUser command via API
 2. Verify 202 Accepted response
 3. Query database - verify PENDING status
@@ -84,6 +89,7 @@
 5. Query outbox - verify message queued
 
 **Assertions:**
+
 ```java
 // Command persisted with correct state
 command.status == PENDING
@@ -101,11 +107,13 @@ outbox.status == PENDING
 ---
 
 ### Test 2: Processor → MQ Publishing Integration (Processor Module)
+
 **Status:** NONE  
 **Duration:** 2-3 days  
 **Scope:** Outbox relay publishing, failure recovery
 
 **Test scenario:**
+
 1. Create outbox entries in PENDING state
 2. Trigger OutboxRelay sweep
 3. Verify messages published to IBM MQ
@@ -113,6 +121,7 @@ outbox.status == PENDING
 5. Simulate publish failure → verify backoff/retry
 
 **Assertions:**
+
 ```java
 // Claim and publish
 outbox.status == PENDING → outbox.status == PUBLISHED
@@ -127,6 +136,7 @@ error message logged
 ```
 
 **Architecture:**
+
 ```java
 @MicronautTest(transactional=false, environments="test")
 @Testcontainers
@@ -150,11 +160,13 @@ class OutboxRelayPublishingIntegrationTest {
 ---
 
 ### Test 3: Payment Account Creation with Limits (Payments-Worker Integration)
+
 **Status:** PARTIAL - CreateAccountWithLimitsE2ETest exists (unit domain only)  
 **Duration:** 3-4 days  
 **Scope:** Full process orchestration with real ProcessManager
 
 **Test scenario:**
+
 1. Submit InitiateCreateAccountProcess command
 2. ProcessManager receives and begins orchestration
 3. Step 1: Execute CreateAccountCommand → accountService.handleCreateAccount()
@@ -163,6 +175,7 @@ class OutboxRelayPublishingIntegrationTest {
 6. Process completes, verify all aggregates created
 
 **Assertions:**
+
 ```java
 // Account created
 Account account = accountRepository.findById(accountId);
@@ -180,6 +193,7 @@ process.currentStep == "COMPLETE"
 ```
 
 **Architecture:**
+
 ```java
 @MicronautTest(transactional=false, environments="test")
 @Testcontainers
@@ -204,11 +218,13 @@ class CreateAccountProcessIntegrationTest {
 ---
 
 ### Test 4: Simple Payment with FX and Compensation (Payments-Worker Integration)
+
 **Status:** NONE  
 **Duration:** 4-5 days  
 **Scope:** Complete saga with failure and compensation
 
 **Test scenario - Happy path:**
+
 1. Submit InitiateSimplePaymentCommand with requiresFx=true
 2. Step 1: BookLimitsCommand
 3. Step 2: BookFxCommand (conditional)
@@ -217,15 +233,17 @@ class CreateAccountProcessIntegrationTest {
 6. Verify all aggregates created, process completed
 
 **Test scenario - Compensation:**
+
 1. Same setup, but mock CreateTransactionCommand to fail
 2. ProcessManager catches failure
 3. Executes compensation in reverse:
-   - UnwindFxCommand
-   - ReverseLimitsCommand
+    - UnwindFxCommand
+    - ReverseLimitsCommand
 4. Verify compensation executed, process marked FAILED
 5. Verify FX contract unwound, limits reversed
 
 **Assertions (Happy Path):**
+
 ```java
 // All steps executed
 Payment payment = paymentRepository.findById(paymentId);
@@ -244,6 +262,7 @@ process.status == COMPLETED
 ```
 
 **Assertions (Compensation):**
+
 ```java
 // Compensation executed
 FxContract fx = fxContractRepository.findById(fxContractId);
@@ -261,6 +280,7 @@ process.error contains "CreateTransaction failed"
 ```
 
 **Architecture:**
+
 ```java
 @MicronautTest(transactional=false, environments="test")
 @Testcontainers
@@ -302,6 +322,7 @@ class SimplePaymentProcessIntegrationTest {
 ---
 
 ### Test 5: ProcessReplyConsumer Route-Back Integration (Processor Module)
+
 **Status:** STUB - NOT IMPLEMENTED  
 **Duration:** 2-3 days  
 **Scope:** Reply reception and ProcessManager update
@@ -309,6 +330,7 @@ class SimplePaymentProcessIntegrationTest {
 **Prerequisite:** Implement ProcessReplyConsumer (uncomment JMS listener, wire properly)
 
 **Test scenario:**
+
 1. Start a payment process
 2. Process waits for BookFxCommand reply
 3. Worker sends reply to APP.CMD.REPLY.Q
@@ -318,6 +340,7 @@ class SimplePaymentProcessIntegrationTest {
 7. Next command emitted
 
 **Assertions:**
+
 ```java
 // Reply received and routed
 ProcessInstance before = processRepository.findById(processId);
@@ -334,6 +357,7 @@ nextCommands[1].type == "CreateTransactionCommand"
 ```
 
 **Architecture:**
+
 ```java
 @MicronautTest(transactional=false, environments="test")
 @Testcontainers
@@ -362,29 +386,34 @@ class ProcessReplyConsumerIntegrationTest {
 ## Test Implementation Checklist
 
 ### Phase 1: Foundation (Week 1-2)
+
 - [ ] Fix FastPathPublisher transaction leak
 - [ ] Implement ProcessReplyConsumer (uncomment, wire JMS listener)
 - [ ] Setup shared test infrastructure (Testcontainers orchestration)
 - [ ] Create test fixtures and data builders
 
 ### Phase 2: Component Integration (Week 2-3)
+
 - [ ] Test 1: Expand SingleCommandE2ETest
 - [ ] Test 2: Implement OutboxRelay publishing integration
 - [ ] Add mock factories for IBM MQ, Kafka
 - [ ] Database assertions helpers
 
 ### Phase 3: Domain Integration (Week 3-4)
+
 - [ ] Test 3: Expand CreateAccountWithLimitsE2ETest with ProcessManager
 - [ ] Test 4: Implement SimplePaymentProcessIntegrationTest (happy path)
 - [ ] Test 4: Add compensation path variant
 
 ### Phase 4: Cross-Module (Week 4-5)
+
 - [ ] Test 2: Add failure scenarios (publish errors)
 - [ ] Test 4: Add timeout/retry scenarios
 - [ ] Test 5: ProcessReplyConsumer integration
 - [ ] Multi-worker orchestration test
 
 ### Phase 5: Polish (Week 5+)
+
 - [ ] Concurrent command tests
 - [ ] Idempotency validation tests
 - [ ] Message corruption handling tests
@@ -395,6 +424,7 @@ class ProcessReplyConsumerIntegrationTest {
 ## Test Data Builders
 
 ### Example: PaymentCommandBuilder
+
 ```java
 public class PaymentCommandBuilder {
   public InitiateSimplePaymentCommand buildWithFx(UUID debitAccountId) {
@@ -422,6 +452,7 @@ public class PaymentCommandBuilder {
 ## Database State Validators
 
 ### Example: PaymentStateValidator
+
 ```java
 public class PaymentStateValidator {
   private final PaymentRepository paymentRepository;
@@ -459,6 +490,7 @@ public class PaymentStateValidator {
 ## Mock Factory Pattern
 
 ### Example: MqMockFactory
+
 ```java
 @Singleton
 public class MqMockFactory {
@@ -490,6 +522,7 @@ public class MqMockFactory {
 ## Continuous Integration Setup
 
 ### GitHub Actions Test Configuration
+
 ```yaml
 name: Integration Tests
 
@@ -539,17 +572,17 @@ jobs:
 
 ## Estimated Test LOC & Timeline
 
-| Phase | Component | Tests | Est. LOC | Effort |
-|-------|-----------|-------|----------|--------|
-| 1 | Fixes (FastPath, ReplyConsumer) | 2 | 200 | 3 days |
-| 2 | OutboxRelay publishing | 3 | 400 | 2 days |
-| 2 | SingleCommand E2E | 2 | 300 | 1 day |
-| 3 | Account creation process | 3 | 500 | 2 days |
-| 3 | Payment process (happy) | 4 | 600 | 3 days |
-| 4 | Payment process (compensation) | 3 | 400 | 2 days |
-| 4 | Reply consumer integration | 3 | 400 | 2 days |
-| 5 | Scenarios & Polish | 6 | 600 | 3 days |
-| **TOTAL** | | **26** | **3400** | **18 days** |
+| Phase     | Component                       | Tests  | Est. LOC | Effort      |
+|-----------|---------------------------------|--------|----------|-------------|
+| 1         | Fixes (FastPath, ReplyConsumer) | 2      | 200      | 3 days      |
+| 2         | OutboxRelay publishing          | 3      | 400      | 2 days      |
+| 2         | SingleCommand E2E               | 2      | 300      | 1 day       |
+| 3         | Account creation process        | 3      | 500      | 2 days      |
+| 3         | Payment process (happy)         | 4      | 600      | 3 days      |
+| 4         | Payment process (compensation)  | 3      | 400      | 2 days      |
+| 4         | Reply consumer integration      | 3      | 400      | 2 days      |
+| 5         | Scenarios & Polish              | 6      | 600      | 3 days      |
+| **TOTAL** |                                 | **26** | **3400** | **18 days** |
 
 ---
 
@@ -562,7 +595,7 @@ jobs:
 ✓ Message publishing with failure recovery  
 ✓ Database state validation for all operations  
 ✓ Idempotency enforcement verified  
-✓ E2E tests runnable in CI/CD pipeline  
+✓ E2E tests runnable in CI/CD pipeline
 
 ---
 

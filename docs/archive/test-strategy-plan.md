@@ -3,6 +3,7 @@
 ## Executive Summary
 
 Comprehensive testing strategy for the multi-module messaging platform ensuring:
+
 - **Unit Testing**: >90% code and branch coverage
 - **Integration Testing**: Database, JMS, Kafka integration
 - **E2E Testing**: Full flow from API → Worker → Database/MQ/Kafka
@@ -31,6 +32,7 @@ Comprehensive testing strategy for the multi-module messaging platform ensuring:
 **Target**: >90% code coverage, >90% branch coverage
 
 **Tools**:
+
 - JaCoCo for coverage measurement
 - Maven Surefire for test execution
 - Coverage reports in HTML + XML (for SonarQube)
@@ -40,6 +42,7 @@ Comprehensive testing strategy for the multi-module messaging platform ensuring:
 #### Domain Layer Tests
 
 **CommandRepository Tests** (`CommandRepositoryTest.java`)
+
 ```java
 @MicronautTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -87,6 +90,7 @@ class CommandRepositoryTest {
 **Coverage Target**: 100% (all repository methods tested)
 
 **InboxRepository Tests** (`InboxRepositoryTest.java`)
+
 ```java
 @Test
 void insertIfAbsent_shouldInsertNewEntry() {
@@ -115,6 +119,7 @@ void insertIfAbsent_shouldNotInsertDuplicate() {
 ```
 
 **OutboxRepository Tests** (`OutboxRepositoryTest.java`)
+
 ```java
 @Test
 void insert_shouldCreateOutboxEntry() { /* ... */ }
@@ -130,6 +135,7 @@ void claimBatch_shouldReturnUnpublishedEntries() { /* ... */ }
 ```
 
 **DlqRepository Tests** (`DlqRepositoryTest.java`)
+
 ```java
 @Test
 void insertDlqEntry_shouldStoreFailedCommand() { /* ... */ }
@@ -138,6 +144,7 @@ void insertDlqEntry_shouldStoreFailedCommand() { /* ... */ }
 #### Service Layer Tests
 
 **CommandService Tests** (`CommandServiceTest.java`)
+
 ```java
 @MicronautTest
 class CommandServiceTest {
@@ -181,6 +188,7 @@ class CommandServiceTest {
 **Coverage Target**: 100% (all service methods tested)
 
 **OutboxService Tests** (`OutboxServiceTest.java`)
+
 ```java
 @Test
 void addReturningId_shouldInsertOutboxEntryAndReturnId() { /* ... */ }
@@ -204,6 +212,7 @@ void reschedule_shouldSetRetryTime() { /* ... */ }
 #### Core Logic Tests
 
 **CommandBus Tests** (`CommandBusTest.java`)
+
 ```java
 @MicronautTest
 class CommandBusTest {
@@ -254,6 +263,7 @@ class CommandBusTest {
 **Coverage Target**: >90% (all paths tested including error cases)
 
 **Executor Tests** (`ExecutorTest.java`)
+
 ```java
 @Test
 void process_shouldCheckInboxForDuplicates() {
@@ -311,6 +321,7 @@ void process_shouldRetryOnTransientFailure() { /* ... */ }
 **Coverage Target**: >90% (all execution paths including error cases)
 
 **Outbox Tests** (`OutboxTest.java`)
+
 ```java
 @Test
 void publishCommand_shouldAddCommandToOutbox() { /* ... */ }
@@ -323,6 +334,7 @@ void publishEvent_shouldAddEventToOutbox() { /* ... */ }
 ```
 
 **OutboxRelay Tests** (`OutboxRelayTest.java`)
+
 ```java
 @Test
 void sweepOnce_shouldClaimAndPublishBatch() {
@@ -358,6 +370,7 @@ void sweepOnce_shouldRescheduleOnFailure() {
 ### 1.3 msg-platform-api Unit Tests
 
 **CommandController Tests** (`CommandControllerTest.java`)
+
 ```java
 @MicronautTest
 class CommandControllerTest {
@@ -401,6 +414,7 @@ class CommandControllerTest {
 ### 1.4 msg-platform-worker Unit Tests
 
 **CommandConsumers Tests** (`CommandConsumersTest.java`)
+
 ```java
 @MicronautTest
 class CommandConsumersTest {
@@ -430,6 +444,7 @@ class CommandConsumersTest {
 ```
 
 **Handler Tests** (`CreateUserHandlerTest.java`)
+
 ```java
 @MicronautTest
 class CreateUserHandlerTest {
@@ -508,6 +523,7 @@ class CreateUserHandlerTest {
 ```
 
 **Run Unit Tests**:
+
 ```bash
 # Run all unit tests with coverage
 mvn clean test
@@ -527,6 +543,7 @@ open msg-platform-core/target/site/jacoco/index.html
 ### 2.1 Database Integration Tests
 
 **CommandStoreIntegrationTest.java**
+
 ```java
 @MicronautTest
 @Testcontainers
@@ -591,6 +608,7 @@ class CommandStoreIntegrationTest {
 ```
 
 **OutboxStoreIntegrationTest.java**
+
 ```java
 @Test
 void claim_shouldReturnUnpublishedEntriesOnly() {
@@ -636,6 +654,7 @@ void claimOne_shouldUseForUpdateSkipLocked() {
 ```
 
 **InboxStoreIntegrationTest.java**
+
 ```java
 @Test
 void deduplication_shouldPreventDuplicateProcessing() {
@@ -654,6 +673,7 @@ void deduplication_shouldPreventDuplicateProcessing() {
 ### 2.2 JMS Integration Tests
 
 **JmsIntegrationTest.java**
+
 ```java
 @MicronautTest
 @Testcontainers
@@ -686,6 +706,7 @@ class JmsIntegrationTest {
 ### 2.3 Kafka Integration Tests
 
 **KafkaIntegrationTest.java**
+
 ```java
 @MicronautTest
 @Testcontainers
@@ -717,6 +738,7 @@ class KafkaIntegrationTest {
 ### 2.4 End-to-End Integration Test
 
 **EndToEndTest.java**
+
 ```java
 @MicronautTest
 @Testcontainers
@@ -781,6 +803,7 @@ class EndToEndTest {
 ```
 
 **Run Integration Tests**:
+
 ```bash
 # Run integration tests (includes Testcontainers)
 mvn verify -Pintegration
@@ -794,6 +817,7 @@ mvn test -Dtest=EndToEndTest
 ### 3.1 E2E Test Setup
 
 **E2E tests run against real infrastructure** (Docker Compose):
+
 - PostgreSQL
 - IBM MQ
 - Kafka
@@ -801,6 +825,7 @@ mvn test -Dtest=EndToEndTest
 - Worker (port 9090)
 
 **ReliableMessagingE2ETest.java**
+
 ```java
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Tag("e2e")
@@ -975,6 +1000,7 @@ class ReliableMessagingE2ETest {
 ```
 
 **Run E2E Tests**:
+
 ```bash
 # Start infrastructure
 cd /Users/igormusic/code/ref-app/reliable-messaging
@@ -1035,6 +1061,7 @@ volumes:
 ```
 
 **Start SonarQube**:
+
 ```bash
 docker-compose -f sonarqube-docker-compose.yml up -d
 
@@ -1053,6 +1080,7 @@ sleep 60
 Name: **Messaging Platform Quality Gate**
 
 Conditions:
+
 - **Coverage**: > 90%
 - **Duplicated Lines**: < 3%
 - **Maintainability Rating**: A
@@ -1229,6 +1257,7 @@ open target/site/surefire-report.html
 ### 6.1 Load Tests with Assertions
 
 **LoadTest.java**
+
 ```java
 @Tag("performance")
 class LoadTest {
@@ -1291,6 +1320,7 @@ class LoadTest {
 ## Summary Checklist
 
 ### Unit Testing
+
 - [ ] CommandRepository tests (100% coverage)
 - [ ] InboxRepository tests (100% coverage)
 - [ ] OutboxRepository tests (100% coverage)
@@ -1309,6 +1339,7 @@ class LoadTest {
 - [ ] JaCoCo coverage >90% code, >90% branch
 
 ### Integration Testing
+
 - [ ] Database integration tests
 - [ ] JMS integration tests
 - [ ] Kafka integration tests
@@ -1316,6 +1347,7 @@ class LoadTest {
 - [ ] Testcontainers setup
 
 ### E2E Testing
+
 - [ ] API submission test
 - [ ] Worker processing test
 - [ ] Outbox publishing test
@@ -1325,6 +1357,7 @@ class LoadTest {
 - [ ] Infrastructure setup script
 
 ### Static Analysis
+
 - [ ] SonarQube running
 - [ ] Quality gate configured
 - [ ] Coverage integrated
@@ -1332,12 +1365,14 @@ class LoadTest {
 - [ ] Zero critical issues
 
 ### Performance Testing
+
 - [ ] Load tests (1000+ TPS)
 - [ ] Latency tests (P95/P99)
 - [ ] Throughput assertions
 - [ ] Resource utilization tests
 
 ### CI/CD
+
 - [ ] Pipeline configured
 - [ ] All tests running
 - [ ] Coverage reporting

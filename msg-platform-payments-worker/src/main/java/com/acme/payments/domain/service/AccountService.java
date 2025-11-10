@@ -4,170 +4,171 @@ import com.acme.payments.application.command.CompleteAccountCreationCommand;
 import com.acme.payments.application.command.CreateAccountCommand;
 import com.acme.payments.application.command.CreateTransactionCommand;
 import com.acme.payments.application.command.ReverseTransactionCommand;
-import com.acme.payments.domain.model.Account;
-import com.acme.payments.domain.model.AccountType;
-import com.acme.payments.domain.model.Money;
-import com.acme.payments.domain.model.Transaction;
-import com.acme.payments.domain.model.TransactionType;
+import com.acme.payments.domain.model.*;
 import com.acme.payments.domain.repository.AccountRepository;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Domain service for Account operations */
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Domain service for Account operations
+ */
 @Singleton
 @RequiredArgsConstructor
 @Slf4j
 public class AccountService {
-  private final AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
-  /**
-   * Command handler for CreateAccountCommand. Auto-discovered by AutoCommandHandlerRegistry. This
-   * is executed as a step within the CreateAccount process.
-   */
-  @Transactional
-  public Map<String, Object> handleCreateAccount(CreateAccountCommand cmd) {
-    log.info(
-        "Handling CreateAccountCommand for customer {} with currency {}",
-        cmd.customerId(),
-        cmd.currencyCode());
+    /**
+     * Command handler for CreateAccountCommand. Auto-discovered by AutoCommandHandlerRegistry. This
+     * is executed as a step within the CreateAccount process.
+     */
+    @Transactional
+    public Map<String, Object> handleCreateAccount(CreateAccountCommand cmd) {
+        log.info(
+                "Handling CreateAccountCommand for customer {} with currency {}",
+                cmd.customerId(),
+                cmd.currencyCode());
 
-    return createAccount(
-        cmd.customerId(),
-        cmd.currencyCode(),
-        cmd.accountType(),
-        cmd.transitNumber(),
-        cmd.limitBased());
-  }
-
-  /** Creates an account. Called internally by command handler. */
-  @Transactional
-  public Map<String, Object> createAccount(
-      UUID customerId,
-      String currencyCode,
-      AccountType accountType,
-      String transitNumber,
-      boolean limitBased) {
-    log.info("Creating account for customer {} with currency {}", customerId, currencyCode);
-
-    Account account =
-        new Account(
-            UUID.randomUUID(),
-            customerId,
-            generateAccountNumber(),
-            currencyCode,
-            accountType,
-            transitNumber,
-            limitBased,
-            Money.zero(currencyCode));
-
-    accountRepository.save(account);
-    log.info("Account created: {}", account.getAccountId());
-
-    // Return account details for next process step
-    return Map.of(
-        "accountId", account.getAccountId().toString(),
-        "accountNumber", account.getAccountNumber());
-  }
-
-  /**
-   * Command handler for CompleteAccountCreationCommand. This is a no-op terminal command that marks
-   * completion. Auto-discovered by AutoCommandHandlerRegistry.
-   */
-  public Map<String, Object> handleCompleteAccountCreation(CompleteAccountCreationCommand cmd) {
-    log.info("Account creation process completed for account: {}", cmd.accountId());
-    return Map.of("status", "completed");
-  }
-
-  @Transactional
-  public Transaction createTransaction(CreateTransactionCommand cmd) {
-    log.info(
-        "Creating {} transaction on account {} for amount {}",
-        cmd.transactionType(),
-        cmd.accountId(),
-        cmd.amount().amount());
-
-    Account account =
-        accountRepository
-            .findById(cmd.accountId())
-            .orElseThrow(() -> new AccountNotFoundException(cmd.accountId()));
-
-    Transaction transaction =
-        account.createTransaction(cmd.transactionType(), cmd.amount(), cmd.description());
-
-    accountRepository.save(account);
-    log.info("Transaction created: {}", transaction.transactionId());
-
-    return transaction;
-  }
-
-  @Transactional(readOnly = true)
-  public Account getAccountById(UUID accountId) {
-    return accountRepository
-        .findById(accountId)
-        .orElseThrow(() -> new AccountNotFoundException(accountId));
-  }
-
-  @Transactional
-  public Transaction reverseTransaction(UUID transactionId, String reason) {
-    log.info("Reversing transaction {} reason: {}", transactionId, reason);
-
-    // Find the original transaction by searching through accounts
-    // In a real implementation, you'd have a transaction repository or index
-    Transaction originalTransaction = findTransactionById(transactionId);
-
-    Account account =
-        accountRepository
-            .findById(originalTransaction.accountId())
-            .orElseThrow(() -> new AccountNotFoundException(originalTransaction.accountId()));
-
-    // Create reversal transaction with opposite type and amount
-    TransactionType reversalType = originalTransaction.transactionType().reverse();
-    String reversalDescription =
-        "Reversal: " + reason + " (Original: " + originalTransaction.description() + ")";
-
-    Transaction reversalTransaction =
-        account.createTransaction(reversalType, originalTransaction.amount(), reversalDescription);
-
-    accountRepository.save(account);
-    log.info("Transaction reversed: {} -> {}", transactionId, reversalTransaction.transactionId());
-
-    return reversalTransaction;
-  }
-
-  /**
-   * Command handler for ReverseTransactionCommand This method will be auto-discovered by
-   * AutoCommandHandlerRegistry
-   */
-  public Transaction handleReverseTransaction(ReverseTransactionCommand cmd) {
-    return reverseTransaction(cmd.transactionId(), cmd.reason());
-  }
-
-  private Transaction findTransactionById(UUID transactionId) {
-    // Not implemented - would require transaction index or scanning all accounts
-    // This feature is not currently required for the payment system
-    throw new UnsupportedOperationException(
-        "Transaction lookup by ID not yet implemented. "
-            + "Would need transaction index or search across accounts.");
-  }
-
-  private String generateAccountNumber() {
-    // Simple implementation - in reality would use a proper account number generator
-    return "ACC" + UUID.randomUUID().toString().substring(0, 10).toUpperCase(java.util.Locale.ROOT);
-  }
-
-  public static class AccountNotFoundException extends RuntimeException {
-    public AccountNotFoundException(UUID accountId) {
-      super("Account not found: " + accountId);
+        return createAccount(
+                cmd.customerId(),
+                cmd.currencyCode(),
+                cmd.accountType(),
+                cmd.transitNumber(),
+                cmd.limitBased());
     }
-  }
 
-  public static class TransactionNotFoundException extends RuntimeException {
-    public TransactionNotFoundException(UUID transactionId) {
-      super("Transaction not found: " + transactionId);
+    /**
+     * Creates an account. Called internally by command handler.
+     */
+    @Transactional
+    public Map<String, Object> createAccount(
+            UUID customerId,
+            String currencyCode,
+            AccountType accountType,
+            String transitNumber,
+            boolean limitBased) {
+        log.info("Creating account for customer {} with currency {}", customerId, currencyCode);
+
+        Account account =
+                new Account(
+                        UUID.randomUUID(),
+                        customerId,
+                        generateAccountNumber(),
+                        currencyCode,
+                        accountType,
+                        transitNumber,
+                        limitBased,
+                        Money.zero(currencyCode));
+
+        accountRepository.save(account);
+        log.info("Account created: {}", account.getAccountId());
+
+        // Return account details for next process step
+        return Map.of(
+                "accountId", account.getAccountId().toString(),
+                "accountNumber", account.getAccountNumber());
     }
-  }
+
+    /**
+     * Command handler for CompleteAccountCreationCommand. This is a no-op terminal command that marks
+     * completion. Auto-discovered by AutoCommandHandlerRegistry.
+     */
+    public Map<String, Object> handleCompleteAccountCreation(CompleteAccountCreationCommand cmd) {
+        log.info("Account creation process completed for account: {}", cmd.accountId());
+        return Map.of("status", "completed");
+    }
+
+    @Transactional
+    public Transaction createTransaction(CreateTransactionCommand cmd) {
+        log.info(
+                "Creating {} transaction on account {} for amount {}",
+                cmd.transactionType(),
+                cmd.accountId(),
+                cmd.amount().amount());
+
+        Account account =
+                accountRepository
+                        .findById(cmd.accountId())
+                        .orElseThrow(() -> new AccountNotFoundException(cmd.accountId()));
+
+        Transaction transaction =
+                account.createTransaction(cmd.transactionType(), cmd.amount(), cmd.description());
+
+        accountRepository.save(account);
+        log.info("Transaction created: {}", transaction.transactionId());
+
+        return transaction;
+    }
+
+    @Transactional(readOnly = true)
+    public Account getAccountById(UUID accountId) {
+        return accountRepository
+                .findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException(accountId));
+    }
+
+    @Transactional
+    public Transaction reverseTransaction(UUID transactionId, String reason) {
+        log.info("Reversing transaction {} reason: {}", transactionId, reason);
+
+        // Find the original transaction by searching through accounts
+        // In a real implementation, you'd have a transaction repository or index
+        Transaction originalTransaction = findTransactionById(transactionId);
+
+        Account account =
+                accountRepository
+                        .findById(originalTransaction.accountId())
+                        .orElseThrow(() -> new AccountNotFoundException(originalTransaction.accountId()));
+
+        // Create reversal transaction with opposite type and amount
+        TransactionType reversalType = originalTransaction.transactionType().reverse();
+        String reversalDescription =
+                "Reversal: " + reason + " (Original: " + originalTransaction.description() + ")";
+
+        Transaction reversalTransaction =
+                account.createTransaction(reversalType, originalTransaction.amount(), reversalDescription);
+
+        accountRepository.save(account);
+        log.info("Transaction reversed: {} -> {}", transactionId, reversalTransaction.transactionId());
+
+        return reversalTransaction;
+    }
+
+    /**
+     * Command handler for ReverseTransactionCommand This method will be auto-discovered by
+     * AutoCommandHandlerRegistry
+     */
+    public Transaction handleReverseTransaction(ReverseTransactionCommand cmd) {
+        return reverseTransaction(cmd.transactionId(), cmd.reason());
+    }
+
+    private Transaction findTransactionById(UUID transactionId) {
+        // Not implemented - would require transaction index or scanning all accounts
+        // This feature is not currently required for the payment system
+        throw new UnsupportedOperationException(
+                "Transaction lookup by ID not yet implemented. "
+                        + "Would need transaction index or search across accounts.");
+    }
+
+    private String generateAccountNumber() {
+        // Simple implementation - in reality would use a proper account number generator
+        return "ACC" + UUID.randomUUID().toString().substring(0, 10).toUpperCase(java.util.Locale.ROOT);
+    }
+
+    public static class AccountNotFoundException extends RuntimeException {
+        public AccountNotFoundException(UUID accountId) {
+            super("Account not found: " + accountId);
+        }
+    }
+
+    public static class TransactionNotFoundException extends RuntimeException {
+        public TransactionNotFoundException(UUID transactionId) {
+            super("Transaction not found: " + transactionId);
+        }
+    }
 }

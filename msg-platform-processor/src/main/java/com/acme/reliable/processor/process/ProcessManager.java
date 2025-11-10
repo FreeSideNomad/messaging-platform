@@ -18,58 +18,60 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 public class ProcessManager extends BaseProcessManager
-    implements ApplicationEventListener<ServerStartupEvent> {
+        implements ApplicationEventListener<ServerStartupEvent> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ProcessManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ProcessManager.class);
 
-  private final ProcessRepository processRepo;
-  private final CommandBus commandBus;
-  private final BeanContext beanContext;
+    private final ProcessRepository processRepo;
+    private final CommandBus commandBus;
+    private final BeanContext beanContext;
 
-  public ProcessManager(
-      ProcessRepository processRepo, CommandBus commandBus, BeanContext beanContext) {
-    this.processRepo = processRepo;
-    this.commandBus = commandBus;
-    this.beanContext = beanContext;
-  }
-
-  @Override
-  protected ProcessRepository getProcessRepository() {
-    return processRepo;
-  }
-
-  @Override
-  protected CommandBus getCommandBus() {
-    return commandBus;
-  }
-
-  @Override
-  @Transactional
-  protected void executeInTransaction(Runnable action) {
-    action.run();
-  }
-
-  /** Auto-discover and register all ProcessConfiguration beans on startup */
-  @Override
-  public void onApplicationEvent(ServerStartupEvent event) {
-    LOG.info("Auto-discovering process configurations...");
-    int configurationsRegistered = 0;
-
-    for (ProcessConfiguration config : beanContext.getBeansOfType(ProcessConfiguration.class)) {
-      try {
-        register(config);
-        configurationsRegistered++;
-        LOG.info("Auto-registered process: {}", config.getProcessType());
-      } catch (IllegalStateException e) {
-        String errorMsg =
-            String.format(
-                "Ambiguous process configuration for type '%s': %s",
-                config.getProcessType(), e.getMessage());
-        LOG.error(errorMsg);
-        throw new IllegalStateException(errorMsg, e);
-      }
+    public ProcessManager(
+            ProcessRepository processRepo, CommandBus commandBus, BeanContext beanContext) {
+        this.processRepo = processRepo;
+        this.commandBus = commandBus;
+        this.beanContext = beanContext;
     }
 
-    LOG.info("Auto-discovery complete: {} process(es) registered", configurationsRegistered);
-  }
+    @Override
+    protected ProcessRepository getProcessRepository() {
+        return processRepo;
+    }
+
+    @Override
+    protected CommandBus getCommandBus() {
+        return commandBus;
+    }
+
+    @Override
+    @Transactional
+    protected void executeInTransaction(Runnable action) {
+        action.run();
+    }
+
+    /**
+     * Auto-discover and register all ProcessConfiguration beans on startup
+     */
+    @Override
+    public void onApplicationEvent(ServerStartupEvent event) {
+        LOG.info("Auto-discovering process configurations...");
+        int configurationsRegistered = 0;
+
+        for (ProcessConfiguration config : beanContext.getBeansOfType(ProcessConfiguration.class)) {
+            try {
+                register(config);
+                configurationsRegistered++;
+                LOG.info("Auto-registered process: {}", config.getProcessType());
+            } catch (IllegalStateException e) {
+                String errorMsg =
+                        String.format(
+                                "Ambiguous process configuration for type '%s': %s",
+                                config.getProcessType(), e.getMessage());
+                LOG.error(errorMsg);
+                throw new IllegalStateException(errorMsg, e);
+            }
+        }
+
+        LOG.info("Auto-discovery complete: {} process(es) registered", configurationsRegistered);
+    }
 }

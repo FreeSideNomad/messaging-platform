@@ -7,8 +7,8 @@ import io.micronaut.http.annotation.Get;
 @Controller
 public class HealthController {
 
-  @Get("/health")
-  public HttpResponse<String> health() {
-    return HttpResponse.ok("{\"status\":\"UP\"}");
-  }
+    @Get("/health")
+    public HttpResponse<String> health() {
+        return HttpResponse.ok("{\"status\":\"UP\"}");
+    }
 }

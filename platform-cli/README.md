@@ -1,6 +1,7 @@
 # Messaging Platform CLI
 
-A comprehensive command-line interface tool for managing and monitoring the messaging platform. Supports both interactive menu mode and direct CLI commands with JSON output.
+A comprehensive command-line interface tool for managing and monitoring the messaging platform. Supports both
+interactive menu mode and direct CLI commands with JSON output.
 
 ## Features
 
@@ -94,12 +95,14 @@ Run specific commands directly with optional JSON output:
 #### Database Commands
 
 **List all tables:**
+
 ```bash
 java -jar target/platform-cli.jar db list
 java -jar target/platform-cli.jar db list --format json
 ```
 
 **Query a table:**
+
 ```bash
 # First page (default 20 records)
 java -jar target/platform-cli.jar db query command
@@ -115,6 +118,7 @@ java -jar target/platform-cli.jar db query command --format json
 ```
 
 **Get table info:**
+
 ```bash
 java -jar target/platform-cli.jar db info command
 java -jar target/platform-cli.jar db info command --format json
@@ -125,6 +129,7 @@ java -jar target/platform-cli.jar db info command --format json
 **Execute a command:**
 
 First, create a payload file (e.g., `payment-payload.json`):
+
 ```json
 {
   "accountId": "ACC001",
@@ -134,6 +139,7 @@ First, create a payload file (e.g., `payment-payload.json`):
 ```
 
 Then execute:
+
 ```bash
 java -jar target/platform-cli.jar api exec ProcessPayment payment-payload.json
 
@@ -147,6 +153,7 @@ java -jar target/platform-cli.jar api exec ProcessPayment payment-payload.json -
 The CLI automatically generates an idempotency key with timestamp: `test-run-1699123456789`
 
 **Make a GET request:**
+
 ```bash
 java -jar target/platform-cli.jar api get /api/health
 java -jar target/platform-cli.jar api get /api/commands/123 --format json
@@ -155,12 +162,14 @@ java -jar target/platform-cli.jar api get /api/commands/123 --format json
 #### Message Queue Commands
 
 **List all queues:**
+
 ```bash
 java -jar target/platform-cli.jar mq list
 java -jar target/platform-cli.jar mq list --format json
 ```
 
 **Get queue status:**
+
 ```bash
 java -jar target/platform-cli.jar mq status payment-commands
 java -jar target/platform-cli.jar mq status payment-commands --format json
@@ -169,18 +178,21 @@ java -jar target/platform-cli.jar mq status payment-commands --format json
 #### Kafka Commands
 
 **List all topics:**
+
 ```bash
 java -jar target/platform-cli.jar kafka topics
 java -jar target/platform-cli.jar kafka topics --format json
 ```
 
 **Get topic info:**
+
 ```bash
 java -jar target/platform-cli.jar kafka topic payment-events
 java -jar target/platform-cli.jar kafka topic payment-events --format json
 ```
 
 **Show consumer lag:**
+
 ```bash
 java -jar target/platform-cli.jar kafka lag payment-processor
 java -jar target/platform-cli.jar kafka lag payment-processor --format json
@@ -189,6 +201,7 @@ java -jar target/platform-cli.jar kafka lag payment-processor --format json
 #### Docker Commands
 
 **List containers:**
+
 ```bash
 # Running containers only
 java -jar target/platform-cli.jar docker list
@@ -201,6 +214,7 @@ java -jar target/platform-cli.jar docker list --format json
 ```
 
 **Execute command in container:**
+
 ```bash
 java -jar target/platform-cli.jar docker exec messaging-postgres "psql -U postgres -d reliable -c 'SELECT COUNT(*) FROM command;'"
 
@@ -209,6 +223,7 @@ java -jar target/platform-cli.jar docker exec payments-worker "ls -la" --format 
 ```
 
 **View container logs:**
+
 ```bash
 # Last 100 lines (default)
 java -jar target/platform-cli.jar docker logs payments-worker
@@ -221,6 +236,7 @@ java -jar target/platform-cli.jar docker logs payments-worker --format json
 ```
 
 **Container resource stats:**
+
 ```bash
 java -jar target/platform-cli.jar docker stats payments-worker
 java -jar target/platform-cli.jar docker stats messaging-postgres --format json
@@ -317,30 +333,31 @@ java -jar target/platform-cli.jar docker --help
 
 ## Configuration Reference
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DB_HOST` | Database host | localhost |
-| `DB_PORT` | Database port | 5432 |
-| `DB_NAME` | Database name | reliable |
-| `DB_USER` | Database username | postgres |
-| `DB_PASSWORD` | Database password | postgres |
-| `DB_MAX_POOL_SIZE` | Connection pool size | 10 |
-| `API_BASE_URL` | API base URL | http://localhost:8080 |
-| `API_TIMEOUT_SECONDS` | API request timeout | 30 |
-| `KAFKA_BOOTSTRAP_SERVERS` | Kafka brokers | localhost:9092 |
-| `KAFKA_CONSUMER_GROUP` | Consumer group ID | platform-cli |
-| `RABBITMQ_HOST` | RabbitMQ host | localhost |
-| `RABBITMQ_PORT` | RabbitMQ port | 5672 |
-| `RABBITMQ_USER` | RabbitMQ username | guest |
-| `RABBITMQ_PASSWORD` | RabbitMQ password | guest |
-| `RABBITMQ_VHOST` | RabbitMQ virtual host | / |
-| `DOCKER_HOST` | Docker daemon socket | unix:///var/run/docker.sock |
-| `CLI_PAGE_SIZE` | Default pagination size | 20 |
-| `CLI_DEFAULT_IDEMPOTENCY_PREFIX` | Default idempotency prefix | cli-request |
+| Variable                         | Description                | Default                     |
+|----------------------------------|----------------------------|-----------------------------|
+| `DB_HOST`                        | Database host              | localhost                   |
+| `DB_PORT`                        | Database port              | 5432                        |
+| `DB_NAME`                        | Database name              | reliable                    |
+| `DB_USER`                        | Database username          | postgres                    |
+| `DB_PASSWORD`                    | Database password          | postgres                    |
+| `DB_MAX_POOL_SIZE`               | Connection pool size       | 10                          |
+| `API_BASE_URL`                   | API base URL               | http://localhost:8080       |
+| `API_TIMEOUT_SECONDS`            | API request timeout        | 30                          |
+| `KAFKA_BOOTSTRAP_SERVERS`        | Kafka brokers              | localhost:9092              |
+| `KAFKA_CONSUMER_GROUP`           | Consumer group ID          | platform-cli                |
+| `RABBITMQ_HOST`                  | RabbitMQ host              | localhost                   |
+| `RABBITMQ_PORT`                  | RabbitMQ port              | 5672                        |
+| `RABBITMQ_USER`                  | RabbitMQ username          | guest                       |
+| `RABBITMQ_PASSWORD`              | RabbitMQ password          | guest                       |
+| `RABBITMQ_VHOST`                 | RabbitMQ virtual host      | /                           |
+| `DOCKER_HOST`                    | Docker daemon socket       | unix:///var/run/docker.sock |
+| `CLI_PAGE_SIZE`                  | Default pagination size    | 20                          |
+| `CLI_DEFAULT_IDEMPOTENCY_PREFIX` | Default idempotency prefix | cli-request                 |
 
 ## Logging
 
 Logs are written to:
+
 - Console: INFO level and above
 - File: `platform-cli.log` (rotated daily, kept for 7 days)
 
@@ -349,21 +366,25 @@ Logs are written to:
 ### Connection Issues
 
 **Database connection failed:**
+
 - Verify database is running and accessible
 - Check `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` in `.env`
 - Test with: `psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME`
 
 **Kafka connection failed:**
+
 - Verify Kafka is running
 - Check `KAFKA_BOOTSTRAP_SERVERS` in `.env`
 - Test with: `kafka-topics.sh --bootstrap-server $KAFKA_BOOTSTRAP_SERVERS --list`
 
 **RabbitMQ connection failed:**
+
 - Verify RabbitMQ is running
 - Check `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD` in `.env`
 - Test with RabbitMQ management UI at http://localhost:15672
 
 **Docker connection failed:**
+
 - Verify Docker daemon is running
 - Check `DOCKER_HOST` in `.env`
 - On Mac/Linux: Ensure Docker socket is accessible
@@ -372,11 +393,13 @@ Logs are written to:
 ### Performance
 
 **Queries are slow:**
+
 - Reduce page size: `--page-size 10`
 - Add database indexes on frequently queried columns
 - Check database connection pool size: `DB_MAX_POOL_SIZE`
 
 **Topic event count takes long:**
+
 - This is normal for large topics with many partitions
 - Event count is calculated by reading offsets from all partitions
 

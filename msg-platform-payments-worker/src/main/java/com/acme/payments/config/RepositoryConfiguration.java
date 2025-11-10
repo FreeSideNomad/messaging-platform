@@ -11,27 +11,29 @@ import com.acme.payments.infrastructure.persistence.JdbcPaymentRepository;
 import io.micronaut.context.annotation.Factory;
 import jakarta.inject.Singleton;
 
-/** Configuration for repository bindings */
+/**
+ * Configuration for repository bindings
+ */
 @Factory
 public class RepositoryConfiguration {
 
-  @Singleton
-  public AccountRepository accountRepository(JdbcAccountRepository impl) {
-    return impl;
-  }
+    @Singleton
+    public AccountRepository accountRepository(JdbcAccountRepository impl) {
+        return impl;
+    }
 
-  @Singleton
-  public AccountLimitRepository accountLimitRepository(JdbcAccountLimitRepository impl) {
-    return impl;
-  }
+    @Singleton
+    public AccountLimitRepository accountLimitRepository(JdbcAccountLimitRepository impl) {
+        return impl;
+    }
 
-  @Singleton
-  public FxContractRepository fxContractRepository(JdbcFxContractRepository impl) {
-    return impl;
-  }
+    @Singleton
+    public FxContractRepository fxContractRepository(JdbcFxContractRepository impl) {
+        return impl;
+    }
 
-  @Singleton
-  public PaymentRepository paymentRepository(JdbcPaymentRepository impl) {
-    return impl;
-  }
+    @Singleton
+    public PaymentRepository paymentRepository(JdbcPaymentRepository impl) {
+        return impl;
+    }
 }

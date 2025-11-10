@@ -5,6 +5,7 @@ This document explains how to run End-to-End (E2E) tests locally and in CI/CD.
 ## Overview
 
 E2E tests verify the full application flow from API → Worker → Database. They require:
+
 - PostgreSQL (database)
 - IBM MQ (message queue)
 - Kafka (event streaming)
@@ -49,30 +50,39 @@ docker-compose -f docker-compose.e2e.yml down -v
 The `scripts/e2e-services.sh` script provides convenient commands:
 
 ### Start Services
+
 ```bash
 ./scripts/e2e-services.sh start
 ```
+
 Starts all E2E infrastructure services and waits for them to be healthy.
 
 ### Stop Services
+
 ```bash
 ./scripts/e2e-services.sh stop
 ```
+
 Stops and removes all E2E services and volumes (clean slate).
 
 ### Restart Services
+
 ```bash
 ./scripts/e2e-services.sh restart
 ```
+
 Equivalent to stop + start.
 
 ### Check Status
+
 ```bash
 ./scripts/e2e-services.sh status
 ```
+
 Shows current status of all E2E services.
 
 ### View Logs
+
 ```bash
 # All services
 ./scripts/e2e-services.sh logs
@@ -88,30 +98,35 @@ Shows current status of all E2E services.
 
 When E2E services are running, you can access:
 
-| Service    | Endpoint                  | Credentials              |
-|------------|---------------------------|--------------------------|
-| PostgreSQL | localhost:5432            | postgres/postgres        |
-| IBM MQ     | localhost:1414            | app/passw0rd             |
-| IBM MQ Web | https://localhost:9443    | admin/passw0rd           |
-| Kafka      | localhost:9092            | (no auth)                |
-| API        | http://localhost:8080     | -                        |
+| Service    | Endpoint               | Credentials       |
+|------------|------------------------|-------------------|
+| PostgreSQL | localhost:5432         | postgres/postgres |
+| IBM MQ     | localhost:1414         | app/passw0rd      |
+| IBM MQ Web | https://localhost:9443 | admin/passw0rd    |
+| Kafka      | localhost:9092         | (no auth)         |
+| API        | http://localhost:8080  | -                 |
 
 ## Docker Compose Files
 
 ### docker-compose.yml (Full Stack)
+
 The main compose file for running the complete application stack including multiple workers. Used for:
+
 - Local development
 - Performance testing
 - Load testing
 
 ### docker-compose.e2e.yml (E2E Testing)
+
 Minimal compose file specifically for E2E tests. Includes:
+
 - Infrastructure services (PostgreSQL, IBM MQ, Kafka)
 - API application
 - No persistent volumes (ephemeral data)
 - Optimized for fast startup and teardown
 
 **Key differences from main compose file:**
+
 - Uses smaller resource limits
 - No data persistence (no volumes)
 - Faster health check intervals
@@ -121,16 +136,19 @@ Minimal compose file specifically for E2E tests. Includes:
 ## Running E2E Tests
 
 ### All E2E Tests
+
 ```bash
 mvn test -Pe2e
 ```
 
 ### Specific E2E Test
+
 ```bash
 mvn test -Pe2e -Dtest=FunctionalE2ETest
 ```
 
 ### E2E Tests with Debug Output
+
 ```bash
 mvn test -Pe2e -X
 ```
@@ -147,6 +165,7 @@ The GitHub Actions workflow (`.github/workflows/sonarcloud.yml`) automatically:
 6. Cleans up services (even on failure)
 
 **Workflow steps:**
+
 ```yaml
 - Build application (mvn package -DskipTests)
 - Start E2E services (docker-compose up)
@@ -159,6 +178,7 @@ The GitHub Actions workflow (`.github/workflows/sonarcloud.yml`) automatically:
 ## Troubleshooting
 
 ### Services not starting
+
 ```bash
 # Check logs
 ./scripts/e2e-services.sh logs
@@ -171,7 +191,9 @@ docker logs e2e-api
 ```
 
 ### Port conflicts
+
 If ports 5432, 1414, 9092, or 8080 are already in use:
+
 ```bash
 # Find process using port
 lsof -i :8080
@@ -181,7 +203,9 @@ lsof -i :8080
 ```
 
 ### Tests timing out
+
 E2E tests wait up to 3 minutes for the API to be ready. If tests timeout:
+
 ```bash
 # Check API health
 curl http://localhost:8080/health
@@ -193,6 +217,7 @@ docker logs e2e-api
 ```
 
 ### Database connection issues
+
 ```bash
 # Verify PostgreSQL is running
 docker exec -it e2e-postgres psql -U postgres -c '\l'
@@ -202,6 +227,7 @@ docker exec -it e2e-postgres psql -U postgres -d reliable -c '\dt'
 ```
 
 ### IBM MQ connection issues
+
 ```bash
 # Check MQ status
 docker exec -it e2e-ibmmq dspmq
@@ -214,7 +240,9 @@ EOF
 ```
 
 ### Clean slate
+
 If services are in a bad state, completely reset:
+
 ```bash
 # Stop all E2E services
 ./scripts/e2e-services.sh stop
@@ -229,16 +257,19 @@ docker ps -a | grep e2e | awk '{print $1}' | xargs docker rm -f
 ## Best Practices
 
 ### Local Development
+
 1. **Keep services running**: Start E2E services once and keep them running during development
 2. **Run tests frequently**: Execute E2E tests after significant changes
 3. **Clean up**: Stop services when done to free resources
 
 ### CI/CD
+
 1. **Ephemeral environments**: Each CI/CD run gets fresh services
 2. **Automatic cleanup**: Services always stopped, even on failure
 3. **Fast feedback**: Separate unit and E2E test steps
 
 ### Writing E2E Tests
+
 1. **Use unique test data**: Prefix with `e2e-test-` for easy cleanup
 2. **Clean up after tests**: Tests should clean their own data
 3. **Wait for async operations**: Use `waitForCommandStatus()` helper
@@ -247,11 +278,13 @@ docker ps -a | grep e2e | awk '{print $1}' | xargs docker rm -f
 ## Performance Considerations
 
 ### Local Testing
+
 - E2E services use ~2GB RAM
 - Startup time: ~60 seconds
 - Recommended: Keep services running between test runs
 
 ### CI/CD
+
 - Services start fresh on every run
 - Adds ~2-3 minutes to build time
 - Runs in parallel with other checks where possible
@@ -259,19 +292,25 @@ docker ps -a | grep e2e | awk '{print $1}' | xargs docker rm -f
 ## Maven Profiles
 
 ### -Pcoverage
+
 Runs tests with JaCoCo code coverage.
+
 ```bash
 mvn test -Pcoverage
 ```
 
 ### -Pe2e
+
 Runs only E2E tests (tagged with `@Tag("e2e")`).
+
 ```bash
 mvn test -Pe2e
 ```
 
 ### Combined
+
 Run both unit tests with coverage and E2E tests:
+
 ```bash
 mvn test -Pcoverage
 mvn test -Pe2e

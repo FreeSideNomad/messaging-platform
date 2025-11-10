@@ -3,6 +3,7 @@
 ## Overview
 
 Restructure `msg-platform-payments-worker` repositories to follow the pattern in `msg-platform-persistence-jdbc`:
+
 - Abstract base JDBC classes (template method pattern)
 - H2-specific implementations (for testing)
 - PostgreSQL implementations (for production)
@@ -11,6 +12,7 @@ Restructure `msg-platform-payments-worker` repositories to follow the pattern in
 ## Key Differences: PostgreSQL vs H2
 
 ### PostgreSQL (Production)
+
 ```sql
 -- Schemas
 CREATE SCHEMA payments;
@@ -33,6 +35,7 @@ gen_random_uuid()
 ```
 
 ### H2 (Testing)
+
 ```sql
 -- No schemas (tables in default)
 CREATE TABLE account (
@@ -53,6 +56,7 @@ id BIGINT AUTO_INCREMENT PRIMARY KEY
 ## Directory Structure
 
 ### Before (Current)
+
 ```
 msg-platform-payments-worker/src/
 ├── main/java/com/acme/payments/
@@ -70,6 +74,7 @@ msg-platform-payments-worker/src/
 ```
 
 ### After (Restructured)
+
 ```
 msg-platform-payments-worker/src/
 ├── main/java/com/acme/payments/
@@ -115,6 +120,7 @@ msg-platform-payments-worker/src/
 **Location**: `msg-platform-payments-worker/src/test/resources/db/migration/h2/`
 
 **V1__baseline_h2.sql**: Platform tables (command, inbox, outbox, process_instance)
+
 - Remove schemas (no `CREATE SCHEMA payments`)
 - Replace TIMESTAMPTZ with TIMESTAMP
 - Replace JSONB with TEXT
@@ -123,12 +129,14 @@ msg-platform-payments-worker/src/
 - Use AUTO_INCREMENT for sequences
 
 **V1.1__payments_schema_h2.sql**: Payment-specific tables (account, transaction, limit, fx_contract, payment)
+
 - Same H2 conversions as above
 - Tables in default schema (no prefix)
 
 ### Production Migrations (PostgreSQL)
 
 Keep existing migrations:
+
 - `migrations/payments/V1__baseline.sql` (PostgreSQL native)
 - `migrations/payments/V1.1__payments_schema.sql` (PostgreSQL native)
 
@@ -469,6 +477,7 @@ CREATE INDEX idx_payment_status ON payment(status, created_at);
 ### Step 2: Create Abstract JDBC Repository Base Classes
 
 Base classes should:
+
 - Use Template Method pattern
 - Contain all CRUD logic
 - Define abstract `getSql*()` methods for dialect-specific SQL
@@ -478,6 +487,7 @@ Base classes should:
 ### Step 3: Create H2 & PostgreSQL Implementations
 
 Implementations should:
+
 - Extend abstract base class
 - Override `getSql*()` methods with dialect-specific SQL
 - Use `@Singleton` + `@Requires(property = "db.dialect", value = "H2"|"PostgreSQL")`
@@ -486,6 +496,7 @@ Implementations should:
 ### Step 4: Update application-test.yml
 
 Configure:
+
 - H2 DataSource URL with in-memory database
 - Flyway to load H2 migrations from `classpath:db/migration/h2`
 - `db.dialect: H2` property for conditional bean loading
@@ -494,6 +505,7 @@ Configure:
 ### Step 5: Create Integration Tests
 
 Test classes should:
+
 - Use `@MicronautTest(environments = {"test"})`
 - Inject repositories and services
 - Send JMS commands via ActiveMQ
@@ -554,14 +566,14 @@ msg-platform-payments-worker/src/test/java/com/acme/payments/
 
 ## Challenges & Solutions
 
-| Challenge | Solution |
-|-----------|----------|
-| H2 lacks ENUM types | Use VARCHAR(20) for status fields |
-| H2 has no JSONB | Use TEXT, parse as needed in code |
-| H2 has no TIMESTAMPTZ | Use TIMESTAMP, handle TZ in application layer |
-| H2 no RETURNING clause | Separate SELECT after INSERT to get ID |
-| H2 AUTO_INCREMENT vs BIGSERIAL | Use AUTO_INCREMENT, adjust parameter binding |
-| Dual dialect SQL | Use protected abstract methods, override per dialect |
+| Challenge                      | Solution                                             |
+|--------------------------------|------------------------------------------------------|
+| H2 lacks ENUM types            | Use VARCHAR(20) for status fields                    |
+| H2 has no JSONB                | Use TEXT, parse as needed in code                    |
+| H2 has no TIMESTAMPTZ          | Use TIMESTAMP, handle TZ in application layer        |
+| H2 no RETURNING clause         | Separate SELECT after INSERT to get ID               |
+| H2 AUTO_INCREMENT vs BIGSERIAL | Use AUTO_INCREMENT, adjust parameter binding         |
+| Dual dialect SQL               | Use protected abstract methods, override per dialect |
 
 ## Testing Strategy
 
@@ -572,6 +584,7 @@ msg-platform-payments-worker/src/test/java/com/acme/payments/
 5. **Verify responses**: Check reply queue messages
 
 Example test:
+
 ```java
 @MicronautTest(environments = {"test"})
 class PaymentIntegrationTest {

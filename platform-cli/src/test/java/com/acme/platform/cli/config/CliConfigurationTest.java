@@ -62,11 +62,11 @@ class CliConfigurationTest {
     void testGetDbUrl_returnsFormattedUrl() {
         String dbUrl = config.getDbUrl();
         assertThat(dbUrl)
-            .isNotNull()
-            .startsWith("jdbc:postgresql://")
-            .contains(config.getDbHost())
-            .contains(String.valueOf(config.getDbPort()))
-            .contains(config.getDbName());
+                .isNotNull()
+                .startsWith("jdbc:postgresql://")
+                .contains(config.getDbHost())
+                .contains(String.valueOf(config.getDbPort()))
+                .contains(config.getDbName());
     }
 
     @Test

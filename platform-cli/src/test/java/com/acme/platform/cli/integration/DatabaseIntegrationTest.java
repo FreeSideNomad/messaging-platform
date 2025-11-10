@@ -108,7 +108,7 @@ class DatabaseIntegrationTest {
                 // Query table metadata
                 try (ResultSet rs = stmt.executeQuery(
                         "SELECT column_name, data_type FROM information_schema.columns " +
-                        "WHERE table_name = 'metadata_test' ORDER BY ordinal_position")) {
+                                "WHERE table_name = 'metadata_test' ORDER BY ordinal_position")) {
 
                     assertThat(rs.next()).isTrue();
                     assertThat(rs.getString("column_name")).isEqualTo("id");

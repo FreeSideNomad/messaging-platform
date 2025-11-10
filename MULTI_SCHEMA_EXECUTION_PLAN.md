@@ -1,6 +1,7 @@
 # Multi-Schema Architecture Execution Plan
 
-**Objective**: Consolidate platform messaging and payments domain into single `payments` database using two PostgreSQL schemas (`platform` and `payments`) with proper dependency inversion and clean architecture.
+**Objective**: Consolidate platform messaging and payments domain into single `payments` database using two PostgreSQL
+schemas (`platform` and `payments`) with proper dependency inversion and clean architecture.
 
 **Scope**: JDBC layer, persistence module, Flyway migrations only. Core services and application logic remain unchanged.
 
@@ -31,11 +32,13 @@ com/acme/reliable/repository/
 ```
 
 **Task**: Create all repository interfaces in msg-platform-core
+
 - Copy method signatures from existing JdbcOutboxRepository, JdbcOutboxDao, etc.
 - Keep only interface definitions
 - No implementation details
 
 **Files to Create**:
+
 1. `CommandRepository.java` - save, findById, findByStatus, etc.
 2. `InboxRepository.java` - insertIfAbsent, findByMessageId, etc.
 3. `OutboxRepository.java` - insert, findNew, claim, markPublished, etc.
@@ -69,11 +72,13 @@ com/acme/reliable/service/
 ```
 
 **Task**: Create service interfaces/implementations that depend on repository interfaces
+
 - Move existing OutboxService, InboxService logic to depend on repository interfaces
 - Create new PaymentService, AccountService
 - Keep services in core module (persistence-agnostic)
 
 **Files to Create/Move**:
+
 1. `OutboxService.java` - depends on OutboxRepository interface
 2. `InboxService.java` - depends on InboxRepository interface
 3. `CommandService.java` - depends on CommandRepository interface
@@ -89,6 +94,7 @@ com/acme/reliable/service/
 ### Step 2.1: Reorganize msg-platform-persistence-jdbc Package Structure
 
 **Current**:
+
 ```
 msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/
 ├── model/
@@ -101,6 +107,7 @@ msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/
 ```
 
 **Target**:
+
 ```
 msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/
 ├── platform/
@@ -132,6 +139,7 @@ msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/
 ```
 
 **Task**: Create directory structure and move/refactor files
+
 1. Create `platform/entity/` directory
 2. Create `platform/repository/` directory
 3. Create `payments/entity/` directory
@@ -150,6 +158,7 @@ msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/
 **Task**: Update all entity classes with schema-qualified table names
 
 For each entity in `platform/entity/`:
+
 ```java
 // Before
 @MappedEntity("outbox")
@@ -162,6 +171,7 @@ public class Outbox {  // Rename from OutboxEntity to Outbox
 ```
 
 For each entity in `payments/entity/`:
+
 ```java
 @MappedEntity("payments.account")
 @Table("account")
@@ -169,6 +179,7 @@ public class Account {
 ```
 
 **Files to Update**:
+
 1. `platform/entity/Command.java` → `@MappedEntity("platform.command")`
 2. `platform/entity/Inbox.java` → `@MappedEntity("platform.inbox")`
 3. `platform/entity/Outbox.java` → `@MappedEntity("platform.outbox")`
@@ -189,6 +200,7 @@ public class Account {
 **Task**: Create JdbcXxxRepository classes that implement repository interfaces from msg-platform-core
 
 **Pattern**:
+
 ```java
 // In msg-platform-persistence-jdbc/platform/repository/
 @DataRepository
@@ -211,6 +223,7 @@ public class JdbcOutboxRepository
 ```
 
 **Files to Create**:
+
 1. `platform/repository/JdbcCommandRepository.java` implements CommandRepository
 2. `platform/repository/JdbcInboxRepository.java` implements InboxRepository
 3. `platform/repository/JdbcOutboxRepository.java` implements OutboxRepository
@@ -231,12 +244,14 @@ public class JdbcOutboxRepository
 **Task**: Update imports and references throughout codebase
 
 **Files to Search and Update**:
+
 - `msg-platform-processor/` - update imports from old JdbcXxxRepository to new locations
 - `msg-platform-payments-worker/` - update imports
 - `msg-platform-api/` - update imports
 - Any test files referencing old repository locations
 
 **Search Pattern**:
+
 ```
 Find: import com.acme.reliable.persistence.jdbc.JdbcOutboxRepository
 Replace: import com.acme.reliable.persistence.jdbc.platform.repository.JdbcOutboxRepository
@@ -256,6 +271,7 @@ Replace: import com.acme.reliable.persistence.jdbc.platform.entity.Outbox
 **Location**: `migrations/payments/V1__platform_schema.sql`
 
 **Content**:
+
 ```sql
 -- Create platform schema
 CREATE SCHEMA IF NOT EXISTS platform;
@@ -272,7 +288,8 @@ CREATE INDEX ... ON platform.outbox
 CREATE INDEX ... ON platform.process_instance
 ```
 
-**Task**: Extract relevant DDL from `/migrations/reliable/V1__baseline.sql` and `/migrations/reliable/V2__process_manager.sql` into new file with `platform.` schema qualification
+**Task**: Extract relevant DDL from `/migrations/reliable/V1__baseline.sql` and
+`/migrations/reliable/V2__process_manager.sql` into new file with `platform.` schema qualification
 
 **Verification**: SQL syntax is valid, can be executed manually
 
@@ -283,6 +300,7 @@ CREATE INDEX ... ON platform.process_instance
 **Location**: `migrations/payments/V1.1__payments_schema.sql`
 
 **Content**:
+
 ```sql
 -- Create payments schema
 CREATE SCHEMA IF NOT EXISTS payments;
@@ -300,7 +318,9 @@ CREATE INDEX ... ON payments.payment
 ```
 
 **Task**: Consolidate:
-- Current `/migrations/payments/V1__baseline.sql` (command, inbox, outbox, process tables) → Move to V1__platform_schema.sql
+
+- Current `/migrations/payments/V1__baseline.sql` (command, inbox, outbox, process tables) → Move to
+  V1__platform_schema.sql
 - Current `/migrations/payments/V1.1__payments_schema.sql` (payments domain) → Keep as V1.1 but with `payments.` schema
 
 **Verification**: SQL syntax is valid, both V1 and V1.1 can be executed in sequence
@@ -314,6 +334,7 @@ CREATE INDEX ... ON payments.payment
 **Solution Options**:
 
 **Option A (Recommended)**: Start fresh with new environment
+
 - Delete `flyway_schema_history` table from payments database
 - Run new V1 + V1.1 migrations
 - ✅ Clean migration path
@@ -321,6 +342,7 @@ CREATE INDEX ... ON payments.payment
 - ❌ Requires data migration if running system
 
 **Option B**: Create migration continuation
+
 - Keep old V1__baseline.sql (populated)
 - Add V1.1__payments_schema.sql
 - Add V1.2__platform_schema_consolidation.sql (creates platform schema, migrates data)
@@ -328,11 +350,13 @@ CREATE INDEX ... ON payments.payment
 - ✅ Supports existing data
 
 **Recommendation for this execution**: Use **Option A** (start fresh)
+
 - This is architectural refactoring
 - Clean environment enables proper schema separation
 - Deploy as new version
 
 **Task**:
+
 1. Delete old migrations/payments/V1__baseline.sql
 2. Delete old migrations/payments/V1.1__payments_schema.sql (the one we just cleaned up)
 3. Create new V1__platform_schema.sql
@@ -385,6 +409,7 @@ echo "PostgreSQL Init Script: Databases created successfully!"
 ```
 
 **Task**:
+
 1. Remove `CREATE DATABASE reliable;` line
 2. Keep only `CREATE DATABASE payments;`
 3. Update comments
@@ -398,6 +423,7 @@ echo "PostgreSQL Init Script: Databases created successfully!"
 **Location**: `docker-compose.yml`
 
 **Verification**:
+
 - ✅ API service connects to `POSTGRES_DB=reliable` (unchanged, backward compatible)
 - ✅ Payments-worker connects to `POSTGRES_DB=payments` (unchanged)
 - ✅ Flyway migrations run against both databases
@@ -414,10 +440,12 @@ echo "PostgreSQL Init Script: Databases created successfully!"
 **Task**: Update unit tests to use new package structure
 
 **Files to Update**:
+
 - Tests referencing JdbcOutboxRepository → update imports to platform/repository/
 - Tests referencing PaymentRepository → update imports to payments/repository/
 
 **Command**:
+
 ```bash
 mvn clean test -pl msg-platform-persistence-jdbc
 mvn clean test -pl msg-platform-payments-worker
@@ -461,6 +489,7 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "\dn" 2>&1
 ```
 
 **Expected Output**:
+
 ```
 # Two schemas should exist
  List of schemas
@@ -486,6 +515,7 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "SELECT tablenam
 ```
 
 **Expected Output**:
+
 ```
 # Platform schema
  tablename
@@ -519,6 +549,7 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "SELECT version,
 ```
 
 **Expected Output**:
+
 ```
  version |   description   | success
 ---------+-----------------+---------
@@ -553,12 +584,14 @@ curl http://localhost:9091/health
 **Task**: Verify platform and payments services can interact
 
 **Test Scenario**:
+
 1. API submits command (goes to platform.outbox)
 2. Verify command in platform schema
 3. Payments worker processes payment (saves to payments schema)
 4. Verify data in both schemas
 
 **Command** (if exposed via API):
+
 ```bash
 curl -X POST http://localhost:8080/api/payments \
   -H "Content-Type: application/json" \
@@ -578,6 +611,7 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "SELECT * FROM p
 ### Step 6.1: Update Architecture Documentation
 
 **Files to Update** (as-is, system documents unchanged):
+
 - `reliable-payments-combined-blueprint.md` - already updated, no action needed
 - `SPRINT-3-COMPLETE.md` - documents old architecture, leave as historical record
 - `process-implementation-plan.md` - documents process manager, leave as-is
@@ -585,6 +619,7 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "SELECT * FROM p
 **Task**: Create new documentation file
 
 **New File**: `MULTI_SCHEMA_ARCHITECTURE.md`
+
 - Explains new schema separation
 - Shows platform vs payments schema purpose
 - Includes SQL schema diagram
@@ -595,12 +630,14 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "SELECT * FROM p
 ## Summary: Files Changed by Phase
 
 ### Phase 1: Core Module (No Breaking Changes)
+
 - Create: `msg-platform-core/src/main/java/com/acme/reliable/repository/platform/*.java` (5 files)
 - Create: `msg-platform-core/src/main/java/com/acme/reliable/repository/payments/*.java` (5 files)
 - Create: `msg-platform-core/src/main/java/com/acme/reliable/service/platform/*.java` (3 files)
 - Create: `msg-platform-core/src/main/java/com/acme/reliable/service/payments/*.java` (2 files)
 
 ### Phase 2: JDBC Module (Breaking Changes - Reorganization)
+
 - Move: `msg-platform-persistence-jdbc/` entities to `platform/entity/` and `payments/entity/`
 - Create: `msg-platform-persistence-jdbc/platform/repository/*.java` (5 files)
 - Create: `msg-platform-persistence-jdbc/payments/repository/*.java` (5 files)
@@ -608,21 +645,25 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "SELECT * FROM p
 - Update: All imports across codebase
 
 ### Phase 3: Flyway Migrations
+
 - Delete: `migrations/payments/V1__baseline.sql` (old)
 - Delete: `migrations/payments/V1.1__payments_schema.sql` (old)
 - Create: `migrations/payments/V1__platform_schema.sql` (new)
 - Create: `migrations/payments/V1.1__payments_schema.sql` (new, payments only)
 
 ### Phase 4: Docker/Infrastructure
+
 - Update: `scripts/init-databases.sh` (remove reliable database creation)
 - Verify: `docker-compose.yml` (no changes needed)
 - Verify: `scripts/flyway-config/flyway-payments.conf` (add schemas config)
 
 ### Phase 5: Testing
+
 - Update: Test imports in all modules
 - Run: Full test suite
 
 ### Phase 6: Documentation
+
 - Create: `MULTI_SCHEMA_ARCHITECTURE.md`
 
 ---
@@ -630,18 +671,22 @@ docker-compose exec -T postgres psql -U postgres -d payments -c "SELECT * FROM p
 ## Risk Mitigation
 
 **Risk 1: Import conflicts during reorganization**
+
 - Mitigation: Use IDE refactoring tools (Intellij IDEA refactor → move)
 - Mitigation: Commit after each major move with full test run
 
 **Risk 2: Flyway migration version conflicts**
+
 - Mitigation: Use fresh environment (Option A) for clean state
 - Mitigation: Verify flyway_schema_history after deployment
 
 **Risk 3: Service dependencies on old JDBC imports**
+
 - Mitigation: Identify all usages first with grep before moving
 - Mitigation: Update imports immediately after move
 
 **Risk 4: Schema qualification typos in SQL**
+
 - Mitigation: Test migrations before deployment
 - Mitigation: Verify all tables exist in correct schemas
 
@@ -686,15 +731,15 @@ If critical issues arise:
 
 ## Timeline Estimate
 
-| Phase | Duration | Effort |
-|-------|----------|--------|
-| Phase 1: Interfaces | 2 hours | 20 lines × 10 interfaces |
-| Phase 2: JDBC Reorganization | 4 hours | Move, rename, update imports |
-| Phase 3: Flyway Migrations | 1 hour | Extract SQL, create 2 files |
-| Phase 4: Docker/Infrastructure | 30 min | Script updates, verification |
-| Phase 5: Testing & Validation | 2 hours | Test runs, bug fixes |
-| Phase 6: Documentation | 1 hour | New architecture doc |
-| **Total** | **~10.5 hours** | Excluding debugging |
+| Phase                          | Duration        | Effort                       |
+|--------------------------------|-----------------|------------------------------|
+| Phase 1: Interfaces            | 2 hours         | 20 lines × 10 interfaces     |
+| Phase 2: JDBC Reorganization   | 4 hours         | Move, rename, update imports |
+| Phase 3: Flyway Migrations     | 1 hour          | Extract SQL, create 2 files  |
+| Phase 4: Docker/Infrastructure | 30 min          | Script updates, verification |
+| Phase 5: Testing & Validation  | 2 hours         | Test runs, bug fixes         |
+| Phase 6: Documentation         | 1 hour          | New architecture doc         |
+| **Total**                      | **~10.5 hours** | Excluding debugging          |
 
 ---
 

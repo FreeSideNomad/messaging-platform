@@ -1,4 +1,5 @@
 # Process Manager Implementation Plan
+
 **Version:** 1.0
 **Date:** 2025-11-03
 **Scope:** Minimal subset for msg-platform-payments-worker (no batch initially)
@@ -6,6 +7,7 @@
 ---
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Phase 1: Generic Process Manager Framework](#phase-1-generic-process-manager-framework)
 3. [Phase 2: Payments Worker Implementation](#phase-2-payments-worker-implementation)
@@ -17,6 +19,7 @@
 ## Overview
 
 ### Goals
+
 - Implement a **generic, reusable Process Manager** framework in `msg-platform-processor`
 - Create domain objects in `msg-platform-core`
 - Add persistence layer in `msg-platform-persistence-jdbc`
@@ -24,12 +27,14 @@
 - Start with **minimal feature set**: single payment orchestration (no batch)
 
 ### Out of Scope (Future)
+
 - Batch processing (`batch_run`, `batch_item` tables)
 - Multiple bounded contexts (Accounts, Limits, FX - only Payments for now)
 - Advanced compensation logic
 - Operator admin UI/REST endpoints
 
 ### Architecture Principles
+
 1. **Generic first**: Process Manager should be reusable for any orchestration
 2. **Domain-driven**: Clear separation between framework and business logic
 3. **Event-sourced process log**: Immutable audit trail of all decisions
@@ -45,6 +50,7 @@
 #### New Package: `com.acme.reliable.process`
 
 **ProcessInstance** (Value Object)
+
 ```java
 public record ProcessInstance(
     UUID processId,
@@ -59,6 +65,7 @@ public record ProcessInstance(
 ```
 
 **ProcessStatus** (Enum)
+
 ```java
 public enum ProcessStatus {
     NEW,
@@ -72,6 +79,7 @@ public enum ProcessStatus {
 ```
 
 **ProcessLogEntry** (Value Object)
+
 ```java
 public record ProcessLogEntry(
     UUID processId,
@@ -82,6 +90,7 @@ public record ProcessLogEntry(
 ```
 
 **ProcessEvent** (Interface + Implementations)
+
 ```java
 public sealed interface ProcessEvent {
     record ProcessStarted(String processType, String businessKey) implements ProcessEvent {}
@@ -97,6 +106,7 @@ public sealed interface ProcessEvent {
 ```
 
 **ProcessDefinition** (Interface - implemented by business logic)
+
 ```java
 public interface ProcessDefinition {
     String getProcessType();
@@ -114,6 +124,7 @@ public interface ProcessDefinition {
 #### New Package: `com.acme.reliable.persistence.jdbc.process`
 
 **SQL Schema** (Flyway migration `V3__process_manager.sql`)
+
 ```sql
 -- Process instance state
 CREATE TABLE process_instance (
@@ -145,6 +156,7 @@ CREATE INDEX idx_process_log_at ON process_log(at);
 ```
 
 **ProcessRepository** (Interface)
+
 ```java
 public interface ProcessRepository {
     void insert(ProcessInstance instance, ProcessEvent initialEvent);
@@ -156,6 +168,7 @@ public interface ProcessRepository {
 ```
 
 **JdbcProcessRepository** (Implementation)
+
 ```java
 @Singleton
 public class JdbcProcessRepository implements ProcessRepository {
@@ -184,6 +197,7 @@ public class JdbcProcessRepository implements ProcessRepository {
 #### New Package: `com.acme.reliable.processor.process`
 
 **ProcessManager** (Core orchestration engine)
+
 ```java
 @Singleton
 public class ProcessManager {
@@ -369,6 +383,7 @@ public class ProcessManager {
 ```
 
 **ReplyConsumer** (Listens to MQ replies)
+
 ```java
 @Singleton
 public class ReplyConsumer {
@@ -439,6 +454,7 @@ msg-platform-payments-worker/
 ### 2.2 Domain Model (Simplified - Start Minimal)
 
 **Account.java** (Aggregate Root)
+
 ```java
 public class Account {
     private UUID accountId;
@@ -483,6 +499,7 @@ public class Account {
 ```
 
 **AccountLimit.java** (Aggregate Root)
+
 ```java
 public class AccountLimit {
     private UUID limitId;
@@ -510,6 +527,7 @@ public class AccountLimit {
 ```
 
 **FxContract.java** (Aggregate Root)
+
 ```java
 public class FxContract {
     private UUID fxContractId;
@@ -531,6 +549,7 @@ public class FxContract {
 ```
 
 **Payment.java** (Aggregate Root)
+
 ```java
 public class Payment {
     private UUID paymentId;
@@ -549,6 +568,7 @@ public class Payment {
 ### 2.3 Application Domain Services (ADS)
 
 **AccountService.java**
+
 ```java
 @Singleton
 public class AccountService {
@@ -594,6 +614,7 @@ public class AccountService {
 ```
 
 **LimitService.java**
+
 ```java
 @Singleton
 public class LimitService {
@@ -631,6 +652,7 @@ public class LimitService {
 ```
 
 **FxService.java**
+
 ```java
 @Singleton
 public class FxService {
@@ -667,6 +689,7 @@ public class FxService {
 ```
 
 **PaymentService.java**
+
 ```java
 @Singleton
 public class PaymentService {
@@ -696,6 +719,7 @@ public class PaymentService {
 ### 2.4 Command Handlers
 
 **CreateTransactionHandler.java**
+
 ```java
 @Singleton
 public class CreateTransactionHandler {
@@ -758,6 +782,7 @@ public class CreateTransactionHandler {
 ### 2.5 Process Definition
 
 **SubmitPaymentProcessDefinition.java**
+
 ```java
 @Singleton
 public class SubmitPaymentProcessDefinition implements ProcessDefinition {
@@ -822,6 +847,7 @@ public class SubmitPaymentProcessDefinition implements ProcessDefinition {
 ### 2.6 Database Schema
 
 **V1__payments_schema.sql**
+
 ```sql
 -- Value Objects
 CREATE TABLE currency_code (
@@ -976,12 +1002,14 @@ CREATE INDEX idx_outbox_bc_dispatch ON outbox_bc(status, COALESCE(next_at, 'epoc
 ## Phase 3: Testing & Validation
 
 ### 3.1 Unit Tests
+
 - [ ] `ProcessManager` state transitions
 - [ ] `ProcessDefinition` step logic
 - [ ] Domain services (AccountService, LimitService, etc.)
 - [ ] Command handlers with inbox dedupe
 
 ### 3.2 Integration Tests
+
 - [ ] Process Manager with in-memory MQ
 - [ ] Full orchestration: CreateTransaction → BookLimits → BookFx → CreatePayment
 - [ ] Compensation flow: failure after BookFx triggers UnwindFx
@@ -989,6 +1017,7 @@ CREATE INDEX idx_outbox_bc_dispatch ON outbox_bc(status, COALESCE(next_at, 'epoc
 - [ ] Idempotency: duplicate command delivery
 
 ### 3.3 E2E Tests (Testcontainers)
+
 - [ ] Postgres + IBM MQ containers
 - [ ] Happy path: submit payment, verify all steps
 - [ ] Failure path: insufficient balance
@@ -1001,25 +1030,29 @@ CREATE INDEX idx_outbox_bc_dispatch ON outbox_bc(status, COALESCE(next_at, 'epoc
 ## Future Enhancements
 
 ### Phase 4: Batch Support
+
 - Add `batch_run` and `batch_item` tables
 - Batch orchestrator that creates multiple process instances
 - Dashboard for batch progress
 
 ### Phase 5: Multiple Bounded Contexts
+
 - Extract Accounts BC
 - Extract Limits BC
 - Extract FX BC
 - Each with their own database and workers
 
 ### Phase 6: Operator Tools
+
 - Admin REST API for:
-  - Resubmit failed process
-  - Skip to next step
-  - Force compensation
-  - View process log
+    - Resubmit failed process
+    - Skip to next step
+    - Force compensation
+    - View process log
 - Web UI for batch monitoring
 
 ### Phase 7: Advanced Features
+
 - Process instance timeouts (watchdog)
 - Dead Letter Queue (DLQ) handling
 - Metrics and observability
@@ -1030,27 +1063,32 @@ CREATE INDEX idx_outbox_bc_dispatch ON outbox_bc(status, COALESCE(next_at, 'epoc
 ## Implementation Order
 
 ### Sprint 1: Foundation (Week 1)
+
 1. Create domain objects in `msg-platform-core`
 2. Create process tables + Flyway migration in `msg-platform-persistence-jdbc`
 3. Implement `ProcessRepository` (JDBC)
 
 ### Sprint 2: Process Manager Engine (Week 2)
+
 4. Implement `ProcessManager` core logic
 5. Implement `ReplyConsumer`
 6. Unit tests for process state machine
 
 ### Sprint 3: Payments Worker (Week 3)
+
 7. Create `msg-platform-payments-worker` module
 8. Implement domain model (Account, Payment, etc.)
 9. Implement repositories (JDBC)
 10. Implement Application Domain Services
 
 ### Sprint 4: Orchestration (Week 4)
+
 11. Implement command handlers with inbox/outbox
 12. Implement `SubmitPaymentProcessDefinition`
 13. Integration tests
 
 ### Sprint 5: E2E Testing (Week 5)
+
 14. E2E tests with Testcontainers
 15. Performance testing
 16. Documentation

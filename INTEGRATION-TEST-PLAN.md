@@ -2,9 +2,12 @@
 
 ## Overview
 
-This plan designs integration tests for three modules using **H2** (in-memory database) and **Embedded ActiveMQ** (in-process JMS), without Docker/Testcontainers. Tests validate message flow, database persistence, and command processing with real JMS semantics and JDBC operations.
+This plan designs integration tests for three modules using **H2** (in-memory database) and **Embedded ActiveMQ** (
+in-process JMS), without Docker/Testcontainers. Tests validate message flow, database persistence, and command
+processing with real JMS semantics and JDBC operations.
 
 **Constraints & Approach**:
+
 - ✅ H2 for JDBC persistence (already in test profile)
 - ✅ Embedded ActiveMQ for JMS (already configured)
 - ❌ No Docker/Testcontainers (CI/CD constraint)
@@ -19,18 +22,22 @@ This plan designs integration tests for three modules using **H2** (in-memory da
 ### 1. msg-platform-processor (18 main Java files)
 
 **Key Responsibilities**:
+
 - `OutboxRelay`: Batch processes outbox records, publishes to MQ/Kafka, marks as published (scheduled every 1s)
-- `OutboxSweeper`: Batch sweeps outbox records, recovers stuck messages, implements exponential backoff retry (scheduled every 1s)
+- `OutboxSweeper`: Batch sweeps outbox records, recovers stuck messages, implements exponential backoff retry (scheduled
+  every 1s)
 - `ProcessManager`: Manages command processing workflows
 - `ResponseRegistry`: Collects responses from async operations
 - `TransactionalCommandBus`: Executes commands transactionally
 
 **Database Operations**:
+
 - Reads from outbox table (PENDING, CLAIMED, SENDING, PUBLISHED states)
 - Writes status updates (claim, published, failed with backoff reschedule)
 - Transactional operations with connection pooling
 
 **Message Flow**:
+
 ```
 INSERT outbox (PENDING)
     ↓
@@ -42,11 +49,13 @@ Marks PUBLISHED or FAILED with reschedule
 ```
 
 **Current Test Gap**:
+
 - No integration tests for OutboxRelay/Sweeper
 - No tests for retry/backoff logic
 - No end-to-end outbox→MQ flow validation
 
 **Coverage Targets**:
+
 - OutboxRelay: ~85% (scheduling is hard to test)
 - OutboxSweeper: ~85% (same reason)
 - TransactionalCommandBus: ~90%
@@ -57,6 +66,7 @@ Marks PUBLISHED or FAILED with reschedule
 ### 2. msg-platform-payments-worker (43 main Java files)
 
 **Key Responsibilities**:
+
 - `PaymentCommandConsumer`: JMS listener receiving commands from 11 different queues
 - `AccountService`: Account creation, lookup, updates
 - `PaymentService`: Payment creation and processing
@@ -66,11 +76,13 @@ Marks PUBLISHED or FAILED with reschedule
 - `SimplePaymentProcessDefinition`: Orchestrates payment workflow
 
 **Database Operations**:
+
 - Reads/writes Account, AccountLimit, Payment, Transaction, FxContract entities
 - Transactional domain operations
 - Complex multi-step workflows
 
 **Message Flow**:
+
 ```
 Command received on queue (e.g., APP.CMD.CREATEACCOUNT.Q)
     ↓
@@ -84,12 +96,14 @@ Response sent to reply queue (APP.CMD.REPLY.Q)
 ```
 
 **Current Test Gaps**:
+
 - No integration tests for PaymentCommandConsumer receiving actual JMS messages
 - Command handlers tested in isolation, not with real message flow
 - No e2e workflow tests (create account → add limits → payment)
 - Repository integration tests exist but no message-driven tests
 
 **Coverage Targets**:
+
 - PaymentCommandConsumer: ~95% (mostly routing logic)
 - AccountService: ~85% (business logic paths)
 - PaymentService: ~85% (complex workflows)
@@ -101,10 +115,12 @@ Response sent to reply queue (APP.CMD.REPLY.Q)
 ### 3. msg-platform-worker (5 main Java files)
 
 **Key Responsibilities**:
+
 - `CommandConsumers`: JMS listener for basic commands (CreateUser)
 - `UserService`: Simple user CRUD operations
 
 **Message Flow**:
+
 ```
 CreateUser command received on queue
     ↓
@@ -116,10 +132,12 @@ Response sent to reply queue
 ```
 
 **Current Test Gaps**:
+
 - No integration tests with actual message flow
 - Only E2E test exists (SingleCommandE2ETest) but is not tagged as such
 
 **Coverage Targets**:
+
 - CommandConsumers: ~90%
 - UserService: ~90%
 
@@ -130,6 +148,7 @@ Response sent to reply queue
 ### Test Environment Setup
 
 **H2 Database** (already configured in `application-test.yml`):
+
 ```yaml
 datasources:
   default:
@@ -138,6 +157,7 @@ datasources:
 ```
 
 **Embedded ActiveMQ** (already configured via `TestMqFactoryProvider`):
+
 ```java
 @Requires(env = "test")
 @Factory
@@ -153,6 +173,7 @@ public class TestMqFactoryProvider {
 ```
 
 **Test Profiles**:
+
 ```
 MICRONAUT_ENVIRONMENTS=test
 ```
@@ -160,6 +181,7 @@ MICRONAUT_ENVIRONMENTS=test
 ### Test Class Patterns
 
 **Pattern 1: OutboxRelay/Sweeper Integration Tests**
+
 ```java
 @MicronautTest(environments = {"test"})
 class OutboxProcessorIntegrationTest {
@@ -175,6 +197,7 @@ class OutboxProcessorIntegrationTest {
 ```
 
 **Pattern 2: Command Consumer Integration Tests**
+
 ```java
 @MicronautTest(environments = {"test"})
 class PaymentCommandConsumerIntegrationTest {
@@ -190,6 +213,7 @@ class PaymentCommandConsumerIntegrationTest {
 ```
 
 **Pattern 3: E2E Workflow Tests**
+
 ```java
 @MicronautTest(environments = {"test"})
 class PaymentWorkflowE2ETest {
@@ -215,6 +239,7 @@ class PaymentWorkflowE2ETest {
 ### Phase 1: msg-platform-processor (2 test classes)
 
 **1. OutboxProcessorIntegrationTest.java**
+
 - Test OutboxRelay.publishNow() with outbox records
 - Test OutboxSweeper.tick() batch processing
 - Test message publishing to MQ with different categories (command/reply/event)
@@ -222,6 +247,7 @@ class PaymentWorkflowE2ETest {
 - Test stuck message recovery
 
 **2. OutboxProcessorErrorHandlingTest.java**
+
 - Test exception handling in message publishing
 - Test database rollback on publish failures
 - Test backoff calculation
@@ -230,6 +256,7 @@ class PaymentWorkflowE2ETest {
 ### Phase 2: msg-platform-payments-worker (3 test classes)
 
 **1. PaymentCommandConsumerIntegrationTest.java**
+
 - Create test data in database
 - Send payment commands via ActiveMQ (CreateAccount, CreateLimits, CreatePayment)
 - Verify database state changes
@@ -237,6 +264,7 @@ class PaymentWorkflowE2ETest {
 - Test error scenarios (invalid input, constraint violations)
 
 **2. PaymentWorkflowIntegrationTest.java**
+
 - Test CreateAccount workflow (account creation process)
 - Test CreateLimits workflow (add limits to account)
 - Test SimplePayment workflow (from initiation to completion)
@@ -244,6 +272,7 @@ class PaymentWorkflowE2ETest {
 - Verify response messages for each step
 
 **3. PaymentServiceIntegrationTest.java**
+
 - Test AccountService with H2 database
 - Test PaymentService with real transaction processing
 - Test FxService contract management
@@ -253,6 +282,7 @@ class PaymentWorkflowE2ETest {
 ### Phase 3: msg-platform-worker (1 test class)
 
 **1. WorkerCommandConsumerIntegrationTest.java**
+
 - Send CreateUser command via ActiveMQ
 - Verify user created in H2 database
 - Verify response sent
@@ -265,6 +295,7 @@ class PaymentWorkflowE2ETest {
 ### msg-platform-processor
 
 **OutboxRelay Tests**:
+
 ```
 ✓ Publish PENDING command to MQ
 ✓ Publish PENDING reply to MQ
@@ -278,6 +309,7 @@ class PaymentWorkflowE2ETest {
 ```
 
 **OutboxSweeper Tests**:
+
 ```
 ✓ Batch process up to 500 messages
 ✓ Recover stuck SENDING messages (stuck for > 10s)
@@ -291,6 +323,7 @@ class PaymentWorkflowE2ETest {
 ### msg-platform-payments-worker
 
 **PaymentCommandConsumer Tests**:
+
 ```
 ✓ onCreateAccountCommand: Creates account, sends reply
 ✓ onCreateLimitsCommand: Adds limits, sends reply
@@ -304,6 +337,7 @@ class PaymentWorkflowE2ETest {
 ```
 
 **Workflow Tests**:
+
 ```
 ✓ CreateAccount workflow: Account created, state ACTIVE
 ✓ CreateLimits workflow: Limits applied to account
@@ -313,6 +347,7 @@ class PaymentWorkflowE2ETest {
 ```
 
 **Service Tests**:
+
 ```
 ✓ AccountService.create(): Valid account creation
 ✓ AccountService.findById(): Retrieve account
@@ -326,6 +361,7 @@ class PaymentWorkflowE2ETest {
 ### msg-platform-worker
 
 **Worker Tests**:
+
 ```
 ✓ CreateUser command: User created in database
 ✓ User response: Reply sent to queue
@@ -337,21 +373,21 @@ class PaymentWorkflowE2ETest {
 
 ## Coverage Goals
 
-| Module | Class | Target | Strategy |
-|--------|-------|--------|----------|
-| processor | OutboxRelay | 85% | Test claim/send/mark, error paths, backoff |
-| processor | OutboxSweeper | 85% | Test sweep, recovery, backoff, error handling |
-| processor | ProcessManager | 80% | Test workflow coordination |
-| processor | ResponseRegistry | 90% | Test response collection/retrieval |
-| processor | TransactionalCommandBus | 90% | Test command execution + transaction |
-| payments | PaymentCommandConsumer | 95% | Test all 11 command handlers |
-| payments | AccountService | 85% | Test CRUD + business logic |
-| payments | PaymentService | 85% | Test payment lifecycle + limits |
-| payments | FxService | 85% | Test FX operations |
-| payments | LimitService | 85% | Test limit management |
-| payments | Workflows | 80% | Test orchestration |
-| worker | CommandConsumers | 90% | Test command routing |
-| worker | UserService | 90% | Test CRUD operations |
+| Module    | Class                   | Target | Strategy                                      |
+|-----------|-------------------------|--------|-----------------------------------------------|
+| processor | OutboxRelay             | 85%    | Test claim/send/mark, error paths, backoff    |
+| processor | OutboxSweeper           | 85%    | Test sweep, recovery, backoff, error handling |
+| processor | ProcessManager          | 80%    | Test workflow coordination                    |
+| processor | ResponseRegistry        | 90%    | Test response collection/retrieval            |
+| processor | TransactionalCommandBus | 90%    | Test command execution + transaction          |
+| payments  | PaymentCommandConsumer  | 95%    | Test all 11 command handlers                  |
+| payments  | AccountService          | 85%    | Test CRUD + business logic                    |
+| payments  | PaymentService          | 85%    | Test payment lifecycle + limits               |
+| payments  | FxService               | 85%    | Test FX operations                            |
+| payments  | LimitService            | 85%    | Test limit management                         |
+| payments  | Workflows               | 80%    | Test orchestration                            |
+| worker    | CommandConsumers        | 90%    | Test command routing                          |
+| worker    | UserService             | 90%    | Test CRUD operations                          |
 
 **Overall Target**: **80% line + branch coverage across all three modules**
 
@@ -362,6 +398,7 @@ class PaymentWorkflowE2ETest {
 ### Database Setup (H2)
 
 Each test uses `@MicronautTest` with test profile:
+
 ```java
 @MicronautTest(environments = {"test"})
 class IntegrationTest {
@@ -374,6 +411,7 @@ class IntegrationTest {
 ### Message Setup (ActiveMQ)
 
 Send commands via `ConnectionFactory`:
+
 ```java
 @Inject
 private ConnectionFactory connectionFactory;
@@ -391,6 +429,7 @@ void sendCreateAccountCommand() {
 ### Data Factories
 
 Create builders for common test data:
+
 ```java
 class OutboxTestData {
     static Outbox command(String topic, String payload) { ... }
@@ -449,6 +488,7 @@ msg-platform-worker/src/test/resources/
 ### POM Updates
 
 Ensure all modules have:
+
 ```xml
 <!-- In dependencyManagement or direct dependency -->
 <dependency>
@@ -503,6 +543,7 @@ open target/site/jacoco/index.html
 **Problem**: Messages sent via ActiveMQ arrive asynchronously
 
 **Solution**: Use explicit synchronization primitives
+
 ```java
 CountDownLatch messageReceived = new CountDownLatch(1);
 // Send message
@@ -515,6 +556,7 @@ assertTrue(messageReceived.getCount() == 0, "Message not received");
 **Problem**: Multiple threads may update database during test
 
 **Solution**: Use transactional queries with explicit waits
+
 ```java
 // Wait for database update
 Awaitility.await()
@@ -531,6 +573,7 @@ Awaitility.await()
 **Problem**: Embedded ActiveMQ reuses broker instance across tests
 
 **Solution**: Use unique queue names per test or reset queue state
+
 ```java
 // Either use unique queue name
 String queueName = "TEST.QUEUE." + UUID.randomUUID();
@@ -548,6 +591,7 @@ void clearQueue(String queueName) {
 **Problem**: OutboxRelay/Sweeper run on schedule, hard to test timing
 
 **Solution**: Call methods directly in tests, don't rely on @Scheduled
+
 ```java
 // Inject OutboxRelay/Sweeper
 @Inject

@@ -1,6 +1,7 @@
 package com.acme.payments.application.command;
 
 import com.acme.reliable.command.DomainCommand;
+
 import java.util.UUID;
 
 /**
@@ -8,4 +9,5 @@ import java.util.UUID;
  * the opposite amount
  */
 public record ReverseTransactionCommand(UUID transactionId, String reason)
-    implements DomainCommand {}
+        implements DomainCommand {
+}

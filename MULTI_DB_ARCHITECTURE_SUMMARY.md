@@ -5,57 +5,66 @@
 ### Phase 1: Strategy Pattern & Dialect Implementation ✅
 
 #### 1. **SqlDialect Interface** (Core Strategy Contract)
+
 - **Location**: `msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dialect/SqlDialect.java`
 - **Purpose**: Encapsulates all database-specific SQL syntax variations
 - **Methods**: 22 interface methods covering:
-  - Timestamp functions (now() → CURRENT_TIMESTAMP → GETDATE())
-  - JSON handling (JSONB casting, object aggregation, key-value unpacking)
-  - Date/time arithmetic (INTERVAL → DATEADD)
-  - Upsert operations (ON CONFLICT → MERGE)
-  - Row locking (FOR UPDATE SKIP LOCKED → FOR UPDATE → WITH UPDLOCK)
-  - Complex operations (sweepBatchQuery, result processing)
-  - Dialect metadata (name, version, max string length)
+    - Timestamp functions (now() → CURRENT_TIMESTAMP → GETDATE())
+    - JSON handling (JSONB casting, object aggregation, key-value unpacking)
+    - Date/time arithmetic (INTERVAL → DATEADD)
+    - Upsert operations (ON CONFLICT → MERGE)
+    - Row locking (FOR UPDATE SKIP LOCKED → FOR UPDATE → WITH UPDLOCK)
+    - Complex operations (sweepBatchQuery, result processing)
+    - Dialect metadata (name, version, max string length)
 
 #### 2. **PostgresSqlDialect** (Production Implementation)
-- **Location**: `msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dialect/PostgresSqlDialect.java`
+
+- **Location**:
+  `msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dialect/PostgresSqlDialect.java`
 - **Status**: ✅ Complete - Uses native PostgreSQL features
 - **Features**:
-  - Activated via `@Requires(property = "app.database.dialect", value = "postgres", defaultValue = "postgres")`
-  - JSONB casting with `::jsonb` operator
-  - CTE (Common Table Expression) with FOR UPDATE SKIP LOCKED for batch operations
-  - RETURNING clause for single ID retrieval
-  - Native JSON aggregation functions (jsonb_object_agg, jsonb_each_text)
-  - INTERVAL arithmetic for timestamp calculations
+    - Activated via `@Requires(property = "app.database.dialect", value = "postgres", defaultValue = "postgres")`
+    - JSONB casting with `::jsonb` operator
+    - CTE (Common Table Expression) with FOR UPDATE SKIP LOCKED for batch operations
+    - RETURNING clause for single ID retrieval
+    - Native JSON aggregation functions (jsonb_object_agg, jsonb_each_text)
+    - INTERVAL arithmetic for timestamp calculations
 
 #### 3. **H2SqlDialect** (Testing Implementation)
-- **Location**: `msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dialect/H2SqlDialect.java`
+
+- **Location**:
+  `msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dialect/H2SqlDialect.java`
 - **Status**: ✅ Complete - Simplified for H2 limitations
 - **Features**:
-  - Activated via `@Requires(property = "app.database.dialect", value = "h2")`
-  - VARCHAR storage for JSON (no JSONB type)
-  - DATEADD for interval arithmetic
-  - MERGE syntax for upsert operations
-  - FOR UPDATE (without SKIP LOCKED)
-  - processSweepResultRow() method for Java-side result transformation
-  - Fallback strategies for unsupported features
+    - Activated via `@Requires(property = "app.database.dialect", value = "h2")`
+    - VARCHAR storage for JSON (no JSONB type)
+    - DATEADD for interval arithmetic
+    - MERGE syntax for upsert operations
+    - FOR UPDATE (without SKIP LOCKED)
+    - processSweepResultRow() method for Java-side result transformation
+    - Fallback strategies for unsupported features
 
 #### 4. **SqlServerDialect** (Future Implementation)
-- **Location**: `msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dialect/SqlServerDialect.java`
+
+- **Location**:
+  `msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dialect/SqlServerDialect.java`
 - **Status**: ✅ Complete - Placeholder for SQL Server 2016+
 - **Features**:
-  - Activated via `@Requires(property = "app.database.dialect", value = "sqlserver")`
-  - T-SQL syntax (GETDATE(), DATEADD, OPENJSON)
-  - JSON_OBJECT and OPENJSON for JSON handling
-  - OUTPUT clause instead of RETURNING
-  - WITH (UPDLOCK, READCOMMITTED) for table-level locking
-  - MERGE syntax for upsert operations
+    - Activated via `@Requires(property = "app.database.dialect", value = "sqlserver")`
+    - T-SQL syntax (GETDATE(), DATEADD, OPENJSON)
+    - JSON_OBJECT and OPENJSON for JSON handling
+    - OUTPUT clause instead of RETURNING
+    - WITH (UPDLOCK, READCOMMITTED) for table-level locking
+    - MERGE syntax for upsert operations
 
 ---
 
 ### Phase 2: Test Configuration & H2 Setup ✅
 
 #### 5. **H2TestConfiguration**
-- **Location**: `msg-platform-persistence-jdbc/src/test/java/com/acme/reliable/persistence/jdbc/config/H2TestConfiguration.java`
+
+- **Location**:
+  `msg-platform-persistence-jdbc/src/test/java/com/acme/reliable/persistence/jdbc/config/H2TestConfiguration.java`
 - **Purpose**: Provides test-specific beans for H2 testing
 - **Provides**:
   ```java
@@ -65,17 +74,19 @@
 - **Usage**: Imported in test classes via `@Import(H2TestConfiguration.class)`
 
 #### 6. **H2 Migration Files**
+
 - **Location**: `msg-platform-persistence-jdbc/src/test/resources/db/migration/h2/V1__baseline_h2.sql`
 - **Purpose**: H2-specific schema simplified from PostgreSQL
 - **Includes**:
-  - Schema creation (platform schema)
-  - All 6 core tables (outbox, command, inbox, command_dlq, process_instance, process_log)
-  - VARCHAR storage for JSON instead of JSONB
-  - CHECK constraints for enums instead of ENUM types
-  - All necessary indexes for query performance
-  - Foreign key relationships with ON DELETE CASCADE
+    - Schema creation (platform schema)
+    - All 6 core tables (outbox, command, inbox, command_dlq, process_instance, process_log)
+    - VARCHAR storage for JSON instead of JSONB
+    - CHECK constraints for enums instead of ENUM types
+    - All necessary indexes for query performance
+    - Foreign key relationships with ON DELETE CASCADE
 
 #### 7. **pom.xml H2 Dependency**
+
 - **Update**: Added H2 database driver for testing
   ```xml
   <dependency>
@@ -86,27 +97,31 @@
   ```
 
 #### 8. **JdbcRepositoryTestBase**
-- **Location**: `msg-platform-persistence-jdbc/src/test/java/com/acme/reliable/persistence/jdbc/JdbcRepositoryTestBase.java`
+
+- **Location**:
+  `msg-platform-persistence-jdbc/src/test/java/com/acme/reliable/persistence/jdbc/JdbcRepositoryTestBase.java`
 - **Purpose**: Reusable base class for all JDBC repository tests
 - **Provides**:
-  - Automatic H2 schema initialization via Flyway
-  - JDBC template utilities (namedJdbc, jdbc)
-  - SQL dialect access (sqlDialect)
-  - Dialect verification (ensures H2 is used in tests)
-  - Table cleanup between tests
-  - Helper methods:
-    - `cleanupAllTables()` - Disable foreign keys, truncate all tables
-    - `truncateTable(tableName)` - Safe truncation with error handling
-    - `rowExists(sql, args)` - Check row existence
-    - `countRows(table, whereClause)` - Count matching rows
-    - `getCurrentTimestamp()` - Get dialect-aware timestamp
+    - Automatic H2 schema initialization via Flyway
+    - JDBC template utilities (namedJdbc, jdbc)
+    - SQL dialect access (sqlDialect)
+    - Dialect verification (ensures H2 is used in tests)
+    - Table cleanup between tests
+    - Helper methods:
+        - `cleanupAllTables()` - Disable foreign keys, truncate all tables
+        - `truncateTable(tableName)` - Safe truncation with error handling
+        - `rowExists(sql, args)` - Check row existence
+        - `countRows(table, whereClause)` - Count matching rows
+        - `getCurrentTimestamp()` - Get dialect-aware timestamp
 
 ---
 
 ## Architecture Benefits
 
 ### 1. **Single Implementation, Multiple Databases**
+
 Each `JdbcXxxRepository` uses injected `SqlDialect` strategy:
+
 ```java
 @Singleton
 public class JdbcCommandRepository {
@@ -120,18 +135,22 @@ public class JdbcCommandRepository {
 ```
 
 ### 2. **Clean Separation of Concerns**
+
 - **SQL Dialect Logic**: Isolated in strategy classes
 - **Repository Logic**: Database-agnostic, depends only on SqlDialect interface
 - **Test Configuration**: Separate H2 configuration, no production code changes
 
 ### 3. **Extensible for New Databases**
+
 Adding SQL Server support requires:
+
 1. Create `SqlServerDialect` implementation ✅ (done)
 2. Create SQL Server migrations in `src/main/resources/db/migration/sqlserver/`
 3. Update configuration to support SQL Server profile
 4. All repositories work automatically (no code changes needed)
 
 ### 4. **Comprehensive Test Support**
+
 - **H2 In-Memory Database**: No external dependencies, fast test execution
 - **Dialect Strategy Testing**: Can test dialect logic independently
 - **Result Transformation**: H2SqlDialect.processSweepResultRow() handles H2-specific result mapping
@@ -172,6 +191,7 @@ msg-platform-persistence-jdbc/
 ### Test Implementation Strategy
 
 #### Pattern for Each Repository Test
+
 ```java
 @MicronautTest
 class JdbcCommandRepositoryTest extends JdbcRepositoryTestBase {
@@ -188,23 +208,23 @@ class JdbcCommandRepositoryTest extends JdbcRepositoryTestBase {
 
 #### Test Categories (Per Repository)
 
-| Category | Tests | Complexity | Notes |
-|----------|-------|-----------|-------|
-| **Happy Path** | 3-4 | Low | Normal operation, expected results |
-| **Edge Cases** | 2-3 | Medium | Empty results, null values, boundaries |
-| **Error Handling** | 1-2 | Medium | SQL errors, constraint violations |
-| **Concurrency** | 1-2 | High | Lock contention, race conditions (outbox sweep) |
+| Category           | Tests | Complexity | Notes                                           |
+|--------------------|-------|------------|-------------------------------------------------|
+| **Happy Path**     | 3-4   | Low        | Normal operation, expected results              |
+| **Edge Cases**     | 2-3   | Medium     | Empty results, null values, boundaries          |
+| **Error Handling** | 1-2   | Medium     | SQL errors, constraint violations               |
+| **Concurrency**    | 1-2   | High       | Lock contention, race conditions (outbox sweep) |
 
 #### Estimated Test Coverage
 
-| Repository | Methods | Tests | Target Coverage |
-|------------|---------|-------|-----------------|
-| CommandRepository | 6 | 20 | 85% |
-| DlqRepository | 1 | 3 | 90% |
-| InboxRepository | 1 | 4 | 95% |
-| OutboxRepository | 7 | 35 | 80% |
-| ProcessRepository | 8 | 35 | 85% |
-| **TOTAL** | **23** | **~95** | **85% overall** |
+| Repository        | Methods | Tests   | Target Coverage |
+|-------------------|---------|---------|-----------------|
+| CommandRepository | 6       | 20      | 85%             |
+| DlqRepository     | 1       | 3       | 90%             |
+| InboxRepository   | 1       | 4       | 95%             |
+| OutboxRepository  | 7       | 35      | 80%             |
+| ProcessRepository | 8       | 35      | 85%             |
+| **TOTAL**         | **23**  | **~95** | **85% overall** |
 
 ### Key Test Considerations
 
@@ -218,6 +238,7 @@ class JdbcCommandRepositoryTest extends JdbcRepositoryTestBase {
 ## Configuration for Different Environments
 
 ### Production (PostgreSQL)
+
 ```yaml
 app:
   database:
@@ -225,6 +246,7 @@ app:
 ```
 
 ### Testing (H2)
+
 ```java
 @MicronautTest
 class TestClass extends JdbcRepositoryTestBase {
@@ -233,6 +255,7 @@ class TestClass extends JdbcRepositoryTestBase {
 ```
 
 ### Future: SQL Server
+
 ```yaml
 app:
   database:
@@ -248,6 +271,7 @@ app:
 ✅ **Dependency Management**: H2 added to pom.xml
 
 🔄 **Next Phase: Repository Tests** (6 tasks, ~40 hours)
+
 - Write comprehensive tests for 5 repositories
 - Achieve 80% code coverage + 80% branch coverage
 - Test all SQL variations across H2 dialect
@@ -263,6 +287,7 @@ app:
 5. **Finally**: JdbcOutboxRepository (7 complex operations, most challenging)
 
 Each test class extends `JdbcRepositoryTestBase` and automatically gets:
+
 - H2 DataSource
 - H2SqlDialect
 - JDBC utilities

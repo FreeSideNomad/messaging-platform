@@ -5,11 +5,13 @@ Simple guide for running payment load tests against the live Docker Compose stac
 ## Quick Start
 
 ### 1. Start Services
+
 ```bash
 docker-compose up -d
 ```
 
 ### 2. Run Load Test
+
 ```bash
 # Default test (small scenario, 10 req/s, 60s)
 ./scripts/run-payments-load-test.sh
@@ -22,6 +24,7 @@ docker-compose up -d
 ```
 
 ### 3. View Results
+
 ```bash
 # Open HTML plot
 open test-data/vegeta/results/plot.html
@@ -31,6 +34,7 @@ cat test-data/vegeta/results/combined-report.txt
 ```
 
 ### 4. Inspect Database
+
 ```bash
 docker exec -it messaging-postgres psql -U postgres -d payments
 ```
@@ -38,6 +42,7 @@ docker exec -it messaging-postgres psql -U postgres -d payments
 ## Configuration Files
 
 ### Default Config (`scripts/load-test.config`)
+
 ```bash
 SCENARIO=small      # 100 accounts
 RATE=10            # 10 requests per second
@@ -45,6 +50,7 @@ DURATION=60s       # Run for 60 seconds
 ```
 
 ### Smoke Test (`scripts/load-test-smoke.config`)
+
 ```bash
 SCENARIO=smoke     # 10 accounts (fast)
 RATE=5            # 5 req/s
@@ -52,6 +58,7 @@ DURATION=30s      # 30 seconds
 ```
 
 ### Stress Test (`scripts/load-test-stress.config`)
+
 ```bash
 SCENARIO=medium    # 1000 accounts
 RATE=100          # 100 req/s
@@ -61,6 +68,7 @@ DURATION=120s     # 2 minutes
 ## Creating Custom Config
 
 Create your own config file:
+
 ```bash
 cat > scripts/my-test.config << 'EOF'
 SCENARIO=small
@@ -76,20 +84,20 @@ EOF
 
 ## Scenario Sizes
 
-| Scenario | Accounts | Use Case |
-|----------|----------|----------|
-| smoke    | 10       | Quick sanity check |
+| Scenario | Accounts | Use Case            |
+|----------|----------|---------------------|
+| smoke    | 10       | Quick sanity check  |
 | small    | 100      | Development testing |
-| medium   | 1,000    | Load testing |
-| large    | 10,000   | Stress testing |
+| medium   | 1,000    | Load testing        |
+| large    | 10,000   | Stress testing      |
 
 ## Rate Guidelines
 
-| Rate (req/s) | Load Type | Use Case |
-|--------------|-----------|----------|
-| 5-10         | Light     | Development |
-| 50           | Moderate  | Typical load |
-| 100          | Heavy     | Peak load |
+| Rate (req/s) | Load Type | Use Case       |
+|--------------|-----------|----------------|
+| 5-10         | Light     | Development    |
+| 50           | Moderate  | Typical load   |
+| 100          | Heavy     | Peak load      |
 | 500+         | Extreme   | Stress testing |
 
 ## Database Inspection
@@ -97,11 +105,13 @@ EOF
 ### Quick Queries
 
 **Connect to database:**
+
 ```bash
 docker exec -it messaging-postgres psql -U postgres -d payments
 ```
 
 **Useful queries:**
+
 ```sql
 -- Count entities
 SELECT 'accounts' as entity, COUNT(*) FROM account
@@ -152,15 +162,18 @@ ORDER BY created_at DESC;
 The test runs in 3 phases:
 
 ### Phase 1: Create Accounts
+
 - Creates customer accounts
 - Sets up account infrastructure
 - Waits for accounts to be ready
 
 ### Phase 2: Opening Credits
+
 - Adds initial funding to accounts
 - Establishes starting balances
 
 ### Phase 3: Concurrent Activity
+
 - Funding transactions (background)
 - Payment submissions (background)
 - Runs both simultaneously to simulate real load
@@ -188,11 +201,13 @@ test-data/vegeta/
 ## Prerequisites
 
 ### Required Tools
+
 - **Docker & Docker Compose** - For running services
 - **Maven** - For compiling test code
 - **Vegeta** - For load testing
 
 ### Install Vegeta
+
 ```bash
 # macOS
 brew install vegeta
@@ -209,6 +224,7 @@ vegeta --version
 ## Troubleshooting
 
 ### Services Not Running
+
 ```bash
 # Check if services are up
 docker-compose ps
@@ -221,6 +237,7 @@ curl http://localhost:8080/health
 ```
 
 ### Test Data Already Exists
+
 ```bash
 # Clean up old test data
 rm -rf test-data/
@@ -230,12 +247,14 @@ OUTPUT_DIR=./test-data-$(date +%Y%m%d-%H%M%S)
 ```
 
 ### High Error Rate
+
 - Reduce RATE in config
 - Increase DURATION to spread load
 - Check service logs: `docker-compose logs -f`
 - Monitor resource usage: `docker stats`
 
 ### Database Full
+
 ```bash
 # Connect and clean up
 docker exec -it messaging-postgres psql -U postgres -d payments
@@ -249,6 +268,7 @@ DELETE FROM account;
 ## Advanced Usage
 
 ### Running Multiple Tests
+
 ```bash
 # Run tests with different configs back-to-back
 for config in scripts/load-test-*.config; do
@@ -259,6 +279,7 @@ done
 ```
 
 ### Monitoring During Test
+
 ```bash
 # Terminal 1: Run load test
 ./scripts/run-payments-load-test.sh
@@ -274,6 +295,7 @@ docker-compose logs -f payments-worker
 ```
 
 ### Comparing Scenarios
+
 ```bash
 # Run small test
 ./scripts/run-payments-load-test.sh scripts/load-test.config
@@ -302,6 +324,7 @@ Key metrics from Vegeta report:
 ## Integration with CI/CD
 
 Run load tests in CI/CD:
+
 ```yaml
 - name: Load Test
   run: |

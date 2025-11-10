@@ -1,7 +1,9 @@
 # E2E Testing Framework Plan - Payments Platform
 
 ## Overview
+
 Create a comprehensive end-to-end testing framework for the payments platform featuring:
+
 - Test data generators using Java Faker
 - Dual execution paths: HTTP API and Direct MQ messaging
 - Configurable test scenarios with parameters
@@ -9,6 +11,7 @@ Create a comprehensive end-to-end testing framework for the payments platform fe
 - Load test execution scripts
 
 **✅ VERIFIED AGAINST ACTUAL CODEBASE**
+
 - All command structures verified from source code
 - No Customer entity (uses UUID customerId only)
 - Vegeta format uses inline JSON (no external files)
@@ -19,6 +22,7 @@ Create a comprehensive end-to-end testing framework for the payments platform fe
 ## Architecture
 
 ### Test Data Flow
+
 ```
 Parameters → Data Generator → Account Creation → Transaction Creation → Payment Initiation
                     ↓
@@ -33,6 +37,7 @@ Parameters → Data Generator → Account Creation → Transaction Creation → 
 ```
 
 ### Key Components
+
 1. **Data Generators**: Java Faker-based generators for realistic test data
 2. **Account Factory**: Creates accounts with realistic distributions
 3. **Transaction Factory**: Generates funding transactions
@@ -47,9 +52,11 @@ Parameters → Data Generator → Account Creation → Transaction Creation → 
 ### Phase 1: Core Domain Model Generators (Parallel Tasks)
 
 #### Task 1.1: Base Generator Infrastructure
+
 **File**: `src/test/java/com/acme/payments/e2e/generator/BaseDataGenerator.java`
 
 **Responsibilities**:
+
 - Initialize JavaFaker instance
 - Provide common random utilities
 - Distribution helpers (skewed distributions)
@@ -57,6 +64,7 @@ Parameters → Data Generator → Account Creation → Transaction Creation → 
 - Date/time generation
 
 **Key Methods**:
+
 ```java
 - Faker getFaker()
 - BigDecimal generateSkewedAmount(min, max, skewPercentile, threshold)
@@ -70,9 +78,11 @@ Parameters → Data Generator → Account Creation → Transaction Creation → 
 ---
 
 #### Task 1.2: Account Data Generator
+
 **File**: `src/test/java/com/acme/payments/e2e/generator/AccountDataGenerator.java`
 
 **Responsibilities**:
+
 - Generate account creation process commands (InitiateCreateAccountProcess)
 - Generate random customer IDs (UUID)
 - Calculate initial balances (10K-1M, 90% < 100K)
@@ -82,6 +92,7 @@ Parameters → Data Generator → Account Creation → Transaction Creation → 
 - Support different account types (CHECKING, SAVINGS, CREDIT_CARD, LINE_OF_CREDIT)
 
 **Key Methods**:
+
 ```java
 - InitiateCreateAccountProcess generateAccount(int limitBasedPercentage)
 - List<InitiateCreateAccountProcess> generateAccounts(int count, int limitBasedPercentage)
@@ -94,6 +105,7 @@ Parameters → Data Generator → Account Creation → Transaction Creation → 
 ```
 
 **Limit Calculation Logic**:
+
 ```
 PeriodType.MINUTE:  2% of balance, min 2,000
 PeriodType.HOUR:    10% of balance, min 10,000
@@ -103,6 +115,7 @@ PeriodType.MONTH:   500% of balance, min 5,000,000
 ```
 
 **Actual InitiateCreateAccountProcess Structure**:
+
 ```java
 // From src/main/java/com/acme/payments/command/InitiateCreateAccountProcess.java
 public record InitiateCreateAccountProcess(
@@ -116,6 +129,7 @@ public record InitiateCreateAccountProcess(
 ```
 
 **Distribution Strategy**:
+
 - Use inverse transform sampling for skewed distribution
 - 90th percentile at 100,000
 - Range: 10,000 to 1,000,000
@@ -125,14 +139,17 @@ public record InitiateCreateAccountProcess(
 ### Phase 2: Transaction and Payment Generators (Parallel Tasks)
 
 #### Task 2.1: Transaction Data Generator
+
 **File**: `src/test/java/com/acme/payments/e2e/generator/TransactionDataGenerator.java`
 
 **Responsibilities**:
+
 - Generate initial opening credit transactions
 - Generate funding transactions (random amounts)
 - Support configurable transaction count ranges
 
 **Key Methods**:
+
 ```java
 - CreateTransactionCommand generateOpeningCredit(UUID accountId, Money amount)
 - CreateTransactionCommand generateFundingTransaction(UUID accountId, String currencyCode, BigDecimal balance)
@@ -141,6 +158,7 @@ public record InitiateCreateAccountProcess(
 ```
 
 **Actual CreateTransactionCommand Structure**:
+
 ```java
 // From src/main/java/com/acme/payments/command/CreateTransactionCommand.java
 public record CreateTransactionCommand(
@@ -152,21 +170,25 @@ public record CreateTransactionCommand(
 ```
 
 **Transaction Types**:
+
 - Opening Credit: Exact initial balance amount
 - Funding: 1-20% of account balance, random
 
 ---
 
 #### Task 2.2: Payment Data Generator
+
 **File**: `src/test/java/com/acme/payments/e2e/generator/PaymentDataGenerator.java`
 
 **Responsibilities**:
+
 - Generate simple payments (same currency)
 - Generate FX payments (cross-currency)
 - Generate payment beneficiaries
 - Support configurable payment count ranges
 
 **Key Methods**:
+
 ```java
 - InitiateSimplePaymentCommand generatePayment(UUID customerId, UUID debitAccountId, String currencyCode, Map<PeriodType, Money> limits)
 - InitiateSimplePaymentCommand generateFxPayment(UUID customerId, UUID debitAccountId, String debitCurrency, String creditCurrency, Map<PeriodType, Money> limits)
@@ -176,6 +198,7 @@ public record CreateTransactionCommand(
 ```
 
 **Actual InitiateSimplePaymentCommand Structure**:
+
 ```java
 // From src/main/java/com/acme/payments/command/InitiateSimplePaymentCommand.java
 public record InitiateSimplePaymentCommand(
@@ -190,6 +213,7 @@ public record InitiateSimplePaymentCommand(
 ```
 
 **Actual Beneficiary Structure**:
+
 ```java
 // From src/main/java/com/acme/payments/domain/model/Beneficiary.java
 public record Beneficiary(
@@ -201,6 +225,7 @@ public record Beneficiary(
 ```
 
 **Payment Amount Strategy**:
+
 - Respect account limits
 - 50% of payments: < 10% of hourly limit
 - 30% of payments: 10-50% of hourly limit
@@ -212,15 +237,18 @@ public record Beneficiary(
 ### Phase 3: Test Scenario Orchestrator (Sequential after Phase 1 & 2)
 
 #### Task 3.1: E2E Test Scenario Builder
+
 **File**: `src/test/java/com/acme/payments/e2e/scenario/E2ETestScenarioBuilder.java`
 
 **Responsibilities**:
+
 - Orchestrate end-to-end test data generation
 - Apply parameters and configuration
 - Generate complete test scenarios
 - Maintain referential integrity (accounts → transactions → payments)
 
 **Key Methods**:
+
 ```java
 - E2ETestScenarioBuilder withAccountCount(int count)
 - E2ETestScenarioBuilder withPaymentCountRange(int min, int max)
@@ -231,6 +259,7 @@ public record Beneficiary(
 ```
 
 **Output Model**:
+
 ```java
 class E2ETestScenario {
     List<InitiateCreateAccountProcess> accountCommands;
@@ -254,32 +283,36 @@ record AccountMetadata(
 ```
 
 **Orchestration Flow**:
+
 1. Generate N accounts:
-   - Generate random UUID for customerId (no Customer entity needed)
-   - Calculate initial balance using skewed distribution
-   - Calculate limits based on balance
-   - Create InitiateCreateAccountProcess command
-   - Store AccountMetadata for reference
+    - Generate random UUID for customerId (no Customer entity needed)
+    - Calculate initial balance using skewed distribution
+    - Calculate limits based on balance
+    - Create InitiateCreateAccountProcess command
+    - Store AccountMetadata for reference
 2. For each account:
-   - Generate opening credit transaction (initial balance)
-   - Generate M funding transactions (M = random in range)
-   - Generate P payments (P = random in range)
+    - Generate opening credit transaction (initial balance)
+    - Generate M funding transactions (M = random in range)
+    - Generate P payments (P = random in range)
 3. Validate:
-   - All account references exist
-   - Payment amounts respect limits
-   - Transaction balances add up
+    - All account references exist
+    - Payment amounts respect limits
+    - Transaction balances add up
 
 ---
 
 #### Task 3.2: Test Scenario Configuration
+
 **File**: `src/test/java/com/acme/payments/e2e/scenario/TestScenarioConfig.java`
 
 **Responsibilities**:
+
 - Define test scenario parameters
 - Provide preset configurations (small, medium, large, stress)
 - Support custom configurations
 
 **Configuration Parameters**:
+
 ```java
 record TestScenarioConfig(
     int accountCount,
@@ -296,12 +329,14 @@ record TestScenarioConfig(
 ```
 
 **Limit-Based Account Strategy**:
+
 - `limitBasedAccountPercentage`: Determines what % of accounts have `limitBased=true`
 - Limit-based accounts can go negative (no insufficient funds check)
 - Non-limit-based accounts enforce balance >= 0
 - Typical values: 20% (most accounts are balance-based), 50% (mixed), 80% (mostly limit-based)
 
 **Preset Scenarios**:
+
 ```java
 - SMOKE: 10 accounts, 5-10 payments, 2-5 funding, 50% limit-based
 - SMALL: 100 accounts, 10-20 payments, 5-15 funding, 30% limit-based
@@ -315,14 +350,17 @@ record TestScenarioConfig(
 ### Phase 4: Output Adapters (Parallel Tasks)
 
 #### Task 4.1: Vegeta Output Adapter (HTTP API Testing)
+
 **File**: `src/test/java/com/acme/payments/e2e/output/VegetaOutputAdapter.java`
 
 **Responsibilities**:
+
 - Convert commands to Vegeta HTTP targets format
 - Generate multiple target files (accounts, transactions, payments)
 - Support sequencing and dependencies
 
 **Vegeta Target Format** (Inline JSON):
+
 ```
 POST http://localhost:8080/api/accounts
 Content-Type: application/json
@@ -336,6 +374,7 @@ Content-Type: application/json
 ```
 
 **Key Methods**:
+
 ```java
 - void writeAccountTargets(List<InitiateCreateAccountProcess> commands, Path outputFile)
 - void writeTransactionTargets(List<CreateTransactionCommand> commands, Path outputFile)
@@ -345,6 +384,7 @@ Content-Type: application/json
 ```
 
 **Output Files**:
+
 ```
 vegeta/
 ├── 01-accounts.txt          (POST /api/accounts with inline JSON)
@@ -355,11 +395,13 @@ vegeta/
 ```
 
 **Format Requirements**:
+
 - Each target block separated by blank line
 - JSON body on single line (compact, no whitespace) after headers
 - No external file references (@/path/to/file)
 
 **Sequencing Strategy**:
+
 - Accounts first (can run in parallel)
 - Opening credits second (sequential per account)
 - Funding + Payments third (can interleave)
@@ -367,14 +409,17 @@ vegeta/
 ---
 
 #### Task 4.2: MQ JSON Output Adapter
+
 **File**: `src/test/java/com/acme/payments/e2e/output/MqJsonOutputAdapter.java`
 
 **Responsibilities**:
+
 - Convert commands to MQ message JSON format
 - Generate message files with proper structure
 - Include correlation IDs and metadata
 
 **MQ Message Format**:
+
 ```json
 {
   "messageId": "uuid",
@@ -391,6 +436,7 @@ vegeta/
 ```
 
 **Key Methods**:
+
 ```java
 - void writeAccountMessages(List<InitiateCreateAccountProcess> commands, Path outputFile)
 - void writeTransactionMessages(List<CreateTransactionCommand> commands, Path outputFile)
@@ -399,6 +445,7 @@ vegeta/
 ```
 
 **Output Files**:
+
 ```
 mq/
 ├── accounts.jsonl           (newline-delimited JSON)
@@ -414,15 +461,18 @@ mq/
 ### Phase 5: Execution Scripts (Sequential after Phase 4)
 
 #### Task 5.1: Vegeta Execution Script
+
 **File**: `src/test/resources/e2e/scripts/run-vegeta-test.sh`
 
 **Responsibilities**:
+
 - Execute Vegeta load tests in correct sequence
 - Collect metrics and results
 - Handle rate limiting and throttling
 - Generate reports
 
 **Script Features**:
+
 ```bash
 #!/bin/bash
 # Usage: ./run-vegeta-test.sh <scenario-dir> <rate> <duration>
@@ -472,15 +522,18 @@ vegeta plot results-*.bin > plot.html
 ---
 
 #### Task 5.2: MQ Loader Script
+
 **File**: `src/test/resources/e2e/scripts/load-mq.sh`
 
 **Responsibilities**:
+
 - Read JSON message files
 - Publish messages to IBM MQ
 - Support rate limiting
 - Track published messages
 
 **Script Features**:
+
 ```bash
 #!/bin/bash
 # Usage: ./load-mq.sh <message-file> <queue-name> [rate]
@@ -528,14 +581,17 @@ echo "Average rate: $(echo "scale=2; $message_count/$duration" | bc) msg/s"
 ### Phase 6: Test Harness and Utilities (Parallel with Phase 5)
 
 #### Task 6.1: E2E Test Runner
+
 **File**: `src/test/java/com/acme/payments/e2e/E2ETestRunner.java`
 
 **Responsibilities**:
+
 - Main entry point for E2E test execution
 - CLI interface for test execution
 - Progress tracking and reporting
 
 **Key Methods**:
+
 ```java
 - void generateTestData(TestScenarioConfig config)
 - void executeVegetaTest(Path scenarioDir, int rate, Duration duration)
@@ -544,6 +600,7 @@ echo "Average rate: $(echo "scale=2; $message_count/$duration" | bc) msg/s"
 ```
 
 **CLI Interface**:
+
 ```bash
 # Generate test data
 java -jar e2e-test-runner.jar generate \
@@ -569,15 +626,18 @@ java -jar e2e-test-runner.jar mq \
 ---
 
 #### Task 6.2: Test Data Validator
+
 **File**: `src/test/java/com/acme/payments/e2e/validation/TestDataValidator.java`
 
 **Responsibilities**:
+
 - Validate generated test data
 - Check referential integrity
 - Verify limit calculations
 - Ensure no duplicate IDs
 
 **Key Methods**:
+
 ```java
 - ValidationResult validate(E2ETestScenario scenario)
 - boolean validateAccountReferences(E2ETestScenario scenario)
@@ -589,15 +649,18 @@ java -jar e2e-test-runner.jar mq \
 ---
 
 #### Task 6.3: Test Metrics Collector
+
 **File**: `src/test/java/com/acme/payments/e2e/metrics/TestMetricsCollector.java`
 
 **Responsibilities**:
+
 - Collect test execution metrics
 - Track API response times
 - Monitor success/failure rates
 - Generate performance reports
 
 **Metrics Tracked**:
+
 ```java
 record TestMetrics(
     int totalRequests,
@@ -616,9 +679,11 @@ record TestMetrics(
 ### Phase 7: Integration and Testing (Sequential, Final Phase)
 
 #### Task 7.1: Unit Tests for Generators
+
 **Files**: Various test files
 
 **Coverage**:
+
 - Test distribution functions (verify 90% < 100K)
 - Test limit calculations
 - Test payment amount generation
@@ -627,9 +692,11 @@ record TestMetrics(
 ---
 
 #### Task 7.2: Integration Tests
+
 **File**: `src/test/java/com/acme/payments/e2e/E2EFrameworkIntegrationTest.java`
 
 **Test Scenarios**:
+
 - Generate small scenario (10 accounts)
 - Validate output files
 - Verify Vegeta format
@@ -639,9 +706,11 @@ record TestMetrics(
 ---
 
 #### Task 7.3: Documentation
+
 **File**: `msg-platform-payments-worker/docs/e2e-testing-guide.md`
 
 **Content**:
+
 - Quick start guide
 - Configuration reference
 - Scenario examples
@@ -653,25 +722,30 @@ record TestMetrics(
 ## Parallel Execution Plan
 
 ### Sprint 1: Foundation (Week 1)
+
 **Parallel Track A**: Tasks 1.1, 1.2 (Core Generators - Base + Account)
 **Parallel Track B**: Task 3.2 (Configuration model)
 
 ### Sprint 2: Business Logic (Week 1-2)
+
 **Parallel Track A**: Task 2.1 (Transaction Generator)
 **Parallel Track B**: Task 2.2 (Payment Generator)
 **Sequential**: Task 3.1 (Orchestrator - depends on A & B)
 
 ### Sprint 3: Output & Execution (Week 2)
+
 **Parallel Track A**: Task 4.1 (Vegeta Adapter)
 **Parallel Track B**: Task 4.2 (MQ Adapter)
 **Parallel Track C**: Task 6.2, 6.3 (Validation & Metrics)
 
 ### Sprint 4: Scripts & Integration (Week 2-3)
+
 **Parallel Track A**: Task 5.1 (Vegeta Script)
 **Parallel Track B**: Task 5.2 (MQ Script)
 **Sequential**: Task 6.1 (Test Runner - depends on all)
 
 ### Sprint 5: Testing & Documentation (Week 3)
+
 **Parallel Track A**: Task 7.1 (Unit Tests)
 **Parallel Track B**: Task 7.2 (Integration Tests)
 **Sequential**: Task 7.3 (Documentation)
@@ -681,6 +755,7 @@ record TestMetrics(
 ## Dependencies
 
 ### External Libraries
+
 ```xml
 <dependency>
     <groupId>com.github.javafaker</groupId>
@@ -698,6 +773,7 @@ record TestMetrics(
 ```
 
 ### External Tools
+
 - Vegeta (HTTP load testing): https://github.com/tsenart/vegeta
 - IBM MQ Client libraries
 - jq (JSON processing in shell scripts)
@@ -747,6 +823,7 @@ msg-platform-payments-worker/
 ## Success Criteria
 
 ### Functional Requirements
+
 ✅ Generate N accounts with realistic data
 ✅ Calculate limits correctly based on balance
 ✅ Generate opening and funding transactions
@@ -756,6 +833,7 @@ msg-platform-payments-worker/
 ✅ Execute load tests via scripts
 
 ### Non-Functional Requirements
+
 ✅ Generate 100K accounts in < 5 minutes
 ✅ Maintain referential integrity 100%
 ✅ Support configurable distributions
@@ -763,6 +841,7 @@ msg-platform-payments-worker/
 ✅ Scripts handle errors gracefully
 
 ### Quality Requirements
+
 ✅ >80% unit test coverage
 ✅ Integration tests for all components
 ✅ Documentation complete
@@ -773,15 +852,19 @@ msg-platform-payments-worker/
 ## Risk Mitigation
 
 ### Risk 1: Memory Issues with Large Datasets
+
 **Mitigation**: Stream-based processing, write incrementally
 
 ### Risk 2: MQ Connection Issues
+
 **Mitigation**: Retry logic, connection pooling, error reporting
 
 ### Risk 3: Invalid Test Data
+
 **Mitigation**: Comprehensive validation before execution
 
 ### Risk 4: Distribution Skew Incorrect
+
 **Mitigation**: Unit tests with statistical validation
 
 ---

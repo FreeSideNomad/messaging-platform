@@ -23,10 +23,10 @@ This guide will help you set up SonarCloud integration for the Messaging Platfor
 2. Select **"Analyze new project"**
 3. Choose **"GitHub"** as the source
 4. If not already authorized, click **"Configure on GitHub"** and:
-   - Select your GitHub organization (FreeSideNomad)
-   - Choose **"Only select repositories"**
-   - Select **"messaging-platform"**
-   - Click **"Save"**
+    - Select your GitHub organization (FreeSideNomad)
+    - Choose **"Only select repositories"**
+    - Select **"messaging-platform"**
+    - Click **"Save"**
 5. Back on SonarCloud, you should see **"messaging-platform"** in the list
 6. Click **"Set Up"** next to the repository
 
@@ -44,11 +44,11 @@ During setup:
 2. Click on **"Administration"** > **"Analysis Method"**
 3. Under **"GitHub Actions"**, you'll see instructions to create a token
 4. Click **"Generate a token"** or go to:
-   - Your Profile (top right) > **"My Account"** > **"Security"**
-   - Click **"Generate Tokens"**
-   - Name: `messaging-platform-github-actions`
-   - Type: **User Token** (for free plan)
-   - Click **"Generate"**
+    - Your Profile (top right) > **"My Account"** > **"Security"**
+    - Click **"Generate Tokens"**
+    - Name: `messaging-platform-github-actions`
+    - Type: **User Token** (for free plan)
+    - Click **"Generate"**
 5. **Copy the token immediately** (you won't be able to see it again)
 
 ### 5. Add SONAR_TOKEN to GitHub Secrets
@@ -66,6 +66,7 @@ During setup:
 The following files have already been added to the repository:
 
 #### `sonar-project.properties`
+
 ```properties
 sonar.projectKey=FreeSideNomad_messaging-platform
 sonar.organization=freesidenomad
@@ -74,7 +75,9 @@ sonar.projectVersion=0.0.2
 ```
 
 #### `pom.xml` (root)
+
 SonarCloud properties added:
+
 ```xml
 <properties>
   <sonar.projectKey>FreeSideNomad_messaging-platform</sonar.projectKey>
@@ -84,11 +87,13 @@ SonarCloud properties added:
 ```
 
 #### `.github/workflows/sonarcloud.yml`
+
 GitHub Actions workflow for automatic analysis on push and PR
 
 ### 7. Trigger First Analysis
 
 #### Option A: Push to Repository (Automatic)
+
 ```bash
 git add .
 git commit -m "Add SonarCloud configuration"
@@ -98,6 +103,7 @@ git push
 The GitHub Action will automatically run and perform the analysis.
 
 #### Option B: Manual Maven Command (Local)
+
 ```bash
 # Install dependencies and run tests with coverage
 mvn clean verify -Pcoverage
@@ -112,17 +118,18 @@ mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
 1. Go to [SonarCloud Dashboard](https://sonarcloud.io/projects)
 2. Click on **"messaging-platform"**
 3. You'll see:
-   - Code Quality metrics
-   - Security vulnerabilities
-   - Code coverage
-   - Duplications
-   - Technical debt
+    - Code Quality metrics
+    - Security vulnerabilities
+    - Code coverage
+    - Duplications
+    - Technical debt
 
 ## Understanding the Setup
 
 ### Code Coverage with JaCoCo
 
 The project uses JaCoCo for code coverage:
+
 - **Profile**: `coverage` (activated in CI)
 - **Reports**: Generated at `**/target/site/jacoco/jacoco.xml`
 - **Execution**: Automatically triggered during `mvn verify -Pcoverage`
@@ -130,6 +137,7 @@ The project uses JaCoCo for code coverage:
 ### Multi-Module Analysis
 
 The project is configured as a multi-module Maven project:
+
 - Parent POM configures SonarScanner
 - Each module is analyzed separately
 - Aggregated results shown in SonarCloud dashboard
@@ -137,17 +145,19 @@ The project is configured as a multi-module Maven project:
 ### CI/CD Integration
 
 The GitHub Actions workflow:
+
 - **Triggers**: Push to `main` branch, Pull Requests
 - **Steps**:
-  1. Checkout code with full git history
-  2. Setup JDK 17
-  3. Cache dependencies
-  4. Build, test, and analyze with coverage
+    1. Checkout code with full git history
+    2. Setup JDK 17
+    3. Cache dependencies
+    4. Build, test, and analyze with coverage
 - **Environment**: Uses `SONAR_TOKEN` secret
 
 ## Quality Gates
 
 SonarCloud will automatically apply quality gates:
+
 - **New Code Coverage**: Must maintain or improve coverage
 - **Duplications**: Limit on duplicated code
 - **Maintainability**: No increase in code smells

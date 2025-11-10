@@ -8,4 +8,5 @@ package com.acme.reliable.command;
  * command type will be derived by removing the "Command" suffix (e.g., "CreateAccount") - Service
  * methods accepting the command as a single parameter will be auto-registered as handlers
  */
-public interface DomainCommand {}
+public interface DomainCommand {
+}

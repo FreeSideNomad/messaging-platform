@@ -25,7 +25,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,7 +58,7 @@ services:
     volumes:
       - ibmmq_data:/mnt/mqm
     healthcheck:
-      test: ["CMD", "dspmq"]
+      test: [ "CMD", "dspmq" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -87,7 +87,7 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -101,7 +101,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -121,7 +121,7 @@ services:
       - ./scripts/flyway-config:/etc/flyway
       - ./scripts/run-flyway-migrations.sh:/flyway/run-migrations.sh
     entrypoint: "/bin/sh"
-    command: ["/flyway/run-migrations.sh"]
+    command: [ "/flyway/run-migrations.sh" ]
     networks:
       - messaging-network
 
@@ -172,7 +172,7 @@ services:
       flyway-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/commands/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/commands/health" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -227,7 +227,7 @@ services:
       flyway-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/commands/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/commands/health" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -286,7 +286,7 @@ services:
       flyway-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9090/health" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -345,7 +345,7 @@ services:
       flyway-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9091/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9091/health" ]
       interval: 30s
       timeout: 5s
       retries: 3

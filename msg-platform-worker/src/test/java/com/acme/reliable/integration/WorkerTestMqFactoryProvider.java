@@ -4,6 +4,7 @@ import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.jms.annotations.JMSConnectionFactory;
 import jakarta.jms.ConnectionFactory;
+
 import java.util.logging.Logger;
 
 /**
@@ -22,50 +23,50 @@ import java.util.logging.Logger;
 @Requires(env = "test")
 public class WorkerTestMqFactoryProvider {
 
-  private static final Logger logger = Logger.getLogger(WorkerTestMqFactoryProvider.class.getName());
+    private static final Logger logger = Logger.getLogger(WorkerTestMqFactoryProvider.class.getName());
 
-  /**
-   * Creates an embedded ActiveMQ ConnectionFactory for testing.
-   *
-   * <p>Uses VM transport (vm://localhost) which is an in-process transport that doesn't require
-   * a separate broker process or Docker container. Perfect for integration tests.
-   *
-   * @return a ConnectionFactory configured for embedded ActiveMQ
-   */
-  @JMSConnectionFactory("testActiveMqFactory")
-  public ConnectionFactory connectionFactory() {
-    logger.info("Creating embedded ActiveMQ ConnectionFactory for worker test environment");
+    /**
+     * Creates an embedded ActiveMQ ConnectionFactory for testing.
+     *
+     * <p>Uses VM transport (vm://localhost) which is an in-process transport that doesn't require
+     * a separate broker process or Docker container. Perfect for integration tests.
+     *
+     * @return a ConnectionFactory configured for embedded ActiveMQ
+     */
+    @JMSConnectionFactory("testActiveMqFactory")
+    public ConnectionFactory connectionFactory() {
+        logger.info("Creating embedded ActiveMQ ConnectionFactory for worker test environment");
 
-    try {
-      // Try to load ActiveMQ ConnectionFactory using reflection to avoid hard dependency
-      Class<?> activeMqFactoryClass =
-          Class.forName("org.apache.activemq.ActiveMQConnectionFactory");
+        try {
+            // Try to load ActiveMQ ConnectionFactory using reflection to avoid hard dependency
+            Class<?> activeMqFactoryClass =
+                    Class.forName("org.apache.activemq.ActiveMQConnectionFactory");
 
-      // VM transport: runs broker in-process, no separate process needed
-      // Each unique name creates a separate broker instance for test isolation
-      // brokerConfig=xbean:... would require XML, so using default in-memory broker instead
-      String brokerUrl = "vm://TestBroker" + System.nanoTime() + "?broker.persistent=false";
+            // VM transport: runs broker in-process, no separate process needed
+            // Each unique name creates a separate broker instance for test isolation
+            // brokerConfig=xbean:... would require XML, so using default in-memory broker instead
+            String brokerUrl = "vm://TestBroker" + System.nanoTime() + "?broker.persistent=false";
 
-      // Create factory instance using reflection
-      Object factory =
-          activeMqFactoryClass
-              .getConstructor(String.class)
-              .newInstance(brokerUrl);
+            // Create factory instance using reflection
+            Object factory =
+                    activeMqFactoryClass
+                            .getConstructor(String.class)
+                            .newInstance(brokerUrl);
 
-      // Set disable timestamps using reflection
-      activeMqFactoryClass
-          .getMethod("setDisableTimeStampsByDefault", boolean.class)
-          .invoke(factory, true);
+            // Set disable timestamps using reflection
+            activeMqFactoryClass
+                    .getMethod("setDisableTimeStampsByDefault", boolean.class)
+                    .invoke(factory, true);
 
-      logger.info("Embedded ActiveMQ ConnectionFactory created: " + brokerUrl);
+            logger.info("Embedded ActiveMQ ConnectionFactory created: " + brokerUrl);
 
-      return (ConnectionFactory) factory;
-    } catch (ClassNotFoundException e) {
-      // ActiveMQ not available - return a null-safe factory
-      logger.warning("ActiveMQ not available in classpath. JMS tests will be skipped.");
-      return null;
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to create ActiveMQ ConnectionFactory", e);
+            return (ConnectionFactory) factory;
+        } catch (ClassNotFoundException e) {
+            // ActiveMQ not available - return a null-safe factory
+            logger.warning("ActiveMQ not available in classpath. JMS tests will be skipped.");
+            return null;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create ActiveMQ ConnectionFactory", e);
+        }
     }
-  }
 }

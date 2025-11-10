@@ -2,19 +2,22 @@
 
 ## Summary
 
-Comprehensive E2E testing framework has been successfully implemented for the payments platform. The framework generates realistic test data using Java Faker and supports dual execution paths: HTTP API (via Vegeta) and Direct MQ messaging.
+Comprehensive E2E testing framework has been successfully implemented for the payments platform. The framework generates
+realistic test data using Java Faker and supports dual execution paths: HTTP API (via Vegeta) and Direct MQ messaging.
 
 ## 🎯 Implementation Status
 
 ### ✅ Completed Components
 
 **Phase 1: Core Data Generators**
+
 - ✅ `BaseDataGenerator` - Common utilities, Faker instance, distribution functions
 - ✅ `AccountDataGenerator` - Generates accounts with skewed balance distribution (90% < 100K)
 - ✅ `TransactionDataGenerator` - Generates opening credits and funding transactions
 - ✅ `PaymentDataGenerator` - Generates payments with realistic amount distributions
 
 **Phase 2: Configuration & Orchestration**
+
 - ✅ `TestScenarioConfig` - Configuration with 5 preset scenarios (smoke/small/medium/large/stress)
 - ✅ `AccountMetadata` - Internal tracking for referential integrity
 - ✅ `E2ETestScenario` - Output model with metrics
@@ -22,18 +25,22 @@ Comprehensive E2E testing framework has been successfully implemented for the pa
 - ✅ `E2ETestScenarioBuilder` - Main orchestrator maintaining referential integrity
 
 **Phase 3: Output Adapters**
+
 - ✅ `VegetaOutputAdapter` - Generates HTTP targets with inline JSON (no external files)
 - ✅ `MqJsonOutputAdapter` - Generates MQ messages in JSONL format
 
 **Phase 4: Execution Scripts**
+
 - ✅ `run-vegeta-test.sh` - Automated Vegeta load test execution
 - ✅ `load-mq.sh` - MQ message loader script
 
 **Phase 5: Main Entry Point**
+
 - ✅ `E2ETestRunner` - CLI interface for test data generation
 - ✅ `E2EFrameworkTest` - Comprehensive unit tests
 
 **Configuration**
+
 - ✅ JavaFaker dependency added to pom.xml
 - ✅ All command structures verified against actual codebase
 
@@ -78,19 +85,21 @@ mvn exec:java -Dexec.mainClass="com.acme.payments.e2e.E2ETestRunner" \
 ```
 
 **Scenario Sizes:**
+
 - **smoke**: 10 accounts (quick validation)
 - **small**: 100 accounts (development)
 - **medium**: 1,000 accounts (moderate load)
 - **large**: 10,000 accounts (production-like)
 - **stress**: 100,000 accounts (stress testing)
 
-###  2. Run Vegeta Load Test
+### 2. Run Vegeta Load Test
 
 ```bash
 ./src/test/resources/e2e/scripts/run-vegeta-test.sh ./test-data/vegeta 10 60s
 ```
 
 Parameters:
+
 - `./test-data/vegeta` - Scenario directory
 - `10` - Rate (requests per second)
 - `60s` - Duration
@@ -102,6 +111,7 @@ Parameters:
 ```
 
 Parameters:
+
 - `./test-data/mq/all-messages.jsonl` - Message file
 - `COMMAND.QUEUE` - Queue name
 - `10` - Rate (messages per second, 0 = unlimited)
@@ -109,6 +119,7 @@ Parameters:
 ## 📊 Generated Output
 
 ### Vegeta Output (HTTP API Testing)
+
 ```
 vegeta/
 ├── 01-accounts.txt          # Account creation targets
@@ -122,6 +133,7 @@ vegeta/
 ```
 
 **Vegeta Format** (inline JSON):
+
 ```
 POST http://localhost:8080/api/accounts
 Content-Type: application/json
@@ -135,6 +147,7 @@ Content-Type: application/json
 ```
 
 ### MQ Output (Direct Messaging)
+
 ```
 mq/
 ├── accounts.jsonl           # Account creation messages
@@ -145,6 +158,7 @@ mq/
 ```
 
 **MQ Message Format**:
+
 ```json
 {
   "messageId": "uuid",
@@ -159,13 +173,16 @@ mq/
 ## 🎲 Key Features
 
 ### 1. **Realistic Data Distribution**
+
 - Account balances: Skewed distribution (90% < $100K, range $10K-$1M)
 - Payment amounts: 50% small, 30% medium, 15% large, 5% over-limit
 - FX payments: Configurable percentage (default 25%)
 - Limit-based accounts: Configurable percentage (20-80%)
 
 ### 2. **Automatic Limit Calculation**
+
 Based on account balance with minimum floors:
+
 - **Minute**: 2% of balance, min $2,000
 - **Hour**: 10% of balance, min $10,000
 - **Day**: 50% of balance, min $100,000
@@ -173,12 +190,14 @@ Based on account balance with minimum floors:
 - **Month**: 500% of balance, min $5,000,000
 
 ### 3. **Referential Integrity**
+
 - All transactions reference valid accounts
 - All payments reference valid accounts
 - FX contracts created before payment references
 - Account IDs tracked in AccountMetadata index
 
 ### 4. **Dual Execution Paths**
+
 1. **HTTP API via Vegeta**: Load testing with inline JSON
 2. **Direct MQ**: Message-based testing with JSONL format
 
@@ -191,6 +210,7 @@ mvn test -Dtest=E2EFrameworkTest
 ```
 
 Tests cover:
+
 - Account generation with correct limit distributions
 - Transaction generation (opening credits, funding)
 - Payment generation (same-currency and FX)
@@ -242,7 +262,9 @@ TestScenarioConfig config = new TestScenarioConfig(
 ## 📝 Implementation Notes
 
 ### Verified Against Actual Codebase
+
 All command structures are verified from actual source files:
+
 - `CreateAccountCommand` - `com.acme.payments.application.command`
 - `CreateTransactionCommand` - `com.acme.payments.application.command`
 - `InitiateSimplePaymentCommand` - `com.acme.payments.application.command`
@@ -250,6 +272,7 @@ All command structures are verified from actual source files:
 - `Beneficiary` value object (name, accountNumber, transitNumber, bankName)
 
 ### Dependencies
+
 ```xml
 <dependency>
     <groupId>com.github.javafaker</groupId>
@@ -262,6 +285,7 @@ All command structures are verified from actual source files:
 ## 🔮 Future Enhancements
 
 As documented in `e2e-testing-plan.md`:
+
 1. Real-time monitoring dashboard
 2. Database assertion framework
 3. Chaos engineering (failure injection)
@@ -277,9 +301,11 @@ As documented in `e2e-testing-plan.md`:
 
 ## ✅ Ready for Use
 
-The E2E testing framework is complete and ready for use. All components compile correctly (note: some existing test files have unrelated compilation errors that need fixing separately).
+The E2E testing framework is complete and ready for use. All components compile correctly (note: some existing test
+files have unrelated compilation errors that need fixing separately).
 
 **Next Steps**:
+
 1. Fix existing test compilation errors (unrelated to E2E framework)
 2. Run `mvn clean compile test-compile` to verify
 3. Generate smoke test data: `mvn exec:java ...`

@@ -7,4 +7,5 @@ import java.util.UUID;
  * which is used for persistence.
  */
 public record CommandMessage(
-    UUID commandId, UUID correlationId, String commandType, String payload) {}
+        UUID commandId, UUID correlationId, String commandType, String payload) {
+}

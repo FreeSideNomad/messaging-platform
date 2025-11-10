@@ -5,9 +5,7 @@ import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.jms.annotations.JMSConnectionFactory;
 import jakarta.jms.ConnectionFactory;
-import java.net.URI;
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.broker.BrokerFactory;
 import org.apache.activemq.broker.BrokerService;
 
 /**

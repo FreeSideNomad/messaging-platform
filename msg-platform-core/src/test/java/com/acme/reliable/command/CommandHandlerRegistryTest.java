@@ -1,274 +1,277 @@
 package com.acme.reliable.command;
 
-import static org.assertj.core.api.Assertions.*;
-
 import com.acme.reliable.process.CommandReply;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for CommandHandlerRegistry */
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.*;
+
+/**
+ * Unit tests for CommandHandlerRegistry
+ */
 class CommandHandlerRegistryTest {
 
-  private CommandHandlerRegistry registry;
+    private CommandHandlerRegistry registry;
 
-  @BeforeEach
-  void setUp() {
-    registry = new CommandHandlerRegistry();
-  }
-
-  @Nested
-  @DisplayName("Handler Registration Tests")
-  class HandlerRegistrationTests {
-
-    @Test
-    @DisplayName("registerHandler - should register handler successfully")
-    void testRegisterHandler() {
-      Function<CommandMessage, CommandReply> handler =
-          cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
-
-      assertThatCode(() -> registry.registerHandler("CreateUser", handler))
-          .doesNotThrowAnyException();
+    @BeforeEach
+    void setUp() {
+        registry = new CommandHandlerRegistry();
     }
 
-    @Test
-    @DisplayName("registerHandler - should throw exception when duplicate handler registered")
-    void testRegisterDuplicateHandler() {
-      Function<CommandMessage, CommandReply> handler1 =
-          cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
-      Function<CommandMessage, CommandReply> handler2 =
-          cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
+    @Nested
+    @DisplayName("Handler Registration Tests")
+    class HandlerRegistrationTests {
 
-      registry.registerHandler("CreateUser", handler1);
+        @Test
+        @DisplayName("registerHandler - should register handler successfully")
+        void testRegisterHandler() {
+            Function<CommandMessage, CommandReply> handler =
+                    cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
 
-      assertThatThrownBy(() -> registry.registerHandler("CreateUser", handler2))
-          .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("Handler already registered for command type: CreateUser");
+            assertThatCode(() -> registry.registerHandler("CreateUser", handler))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("registerHandler - should throw exception when duplicate handler registered")
+        void testRegisterDuplicateHandler() {
+            Function<CommandMessage, CommandReply> handler1 =
+                    cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
+            Function<CommandMessage, CommandReply> handler2 =
+                    cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
+
+            registry.registerHandler("CreateUser", handler1);
+
+            assertThatThrownBy(() -> registry.registerHandler("CreateUser", handler2))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Handler already registered for command type: CreateUser");
+        }
+
+        @Test
+        @DisplayName("registerHandler - should allow different command types")
+        void testRegisterMultipleHandlers() {
+            Function<CommandMessage, CommandReply> handler1 =
+                    cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
+            Function<CommandMessage, CommandReply> handler2 =
+                    cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
+
+            registry.registerHandler("CreateUser", handler1);
+            registry.registerHandler("DeleteUser", handler2);
+
+            CommandMessage cmd1 =
+                    new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CreateUser", "{}");
+            CommandMessage cmd2 =
+                    new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "DeleteUser", "{}");
+
+            assertThat(registry.handle(cmd1).isSuccess()).isTrue();
+            assertThat(registry.handle(cmd2).isSuccess()).isTrue();
+        }
     }
 
-    @Test
-    @DisplayName("registerHandler - should allow different command types")
-    void testRegisterMultipleHandlers() {
-      Function<CommandMessage, CommandReply> handler1 =
-          cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
-      Function<CommandMessage, CommandReply> handler2 =
-          cmd -> CommandReply.completed(cmd.commandId(), cmd.correlationId(), Map.of());
+    @Nested
+    @DisplayName("Command Handling Tests")
+    class CommandHandlingTests {
 
-      registry.registerHandler("CreateUser", handler1);
-      registry.registerHandler("DeleteUser", handler2);
+        @Test
+        @DisplayName("handle - should invoke registered handler")
+        void testHandleInvokesHandler() {
+            UUID commandId = UUID.randomUUID();
+            UUID correlationId = UUID.randomUUID();
+            Map<String, Object> responseData = Map.of("result", "success");
 
-      CommandMessage cmd1 =
-          new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CreateUser", "{}");
-      CommandMessage cmd2 =
-          new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "DeleteUser", "{}");
+            Function<CommandMessage, CommandReply> handler =
+                    cmd -> {
+                        assertThat(cmd.commandType()).isEqualTo("CreateUser");
+                        assertThat(cmd.commandId()).isEqualTo(commandId);
+                        return CommandReply.completed(cmd.commandId(), cmd.correlationId(), responseData);
+                    };
 
-      assertThat(registry.handle(cmd1).isSuccess()).isTrue();
-      assertThat(registry.handle(cmd2).isSuccess()).isTrue();
-    }
-  }
+            registry.registerHandler("CreateUser", handler);
 
-  @Nested
-  @DisplayName("Command Handling Tests")
-  class CommandHandlingTests {
+            CommandMessage command =
+                    new CommandMessage(commandId, correlationId, "CreateUser", "{\"name\":\"John\"}");
 
-    @Test
-    @DisplayName("handle - should invoke registered handler")
-    void testHandleInvokesHandler() {
-      UUID commandId = UUID.randomUUID();
-      UUID correlationId = UUID.randomUUID();
-      Map<String, Object> responseData = Map.of("result", "success");
+            CommandReply reply = registry.handle(command);
 
-      Function<CommandMessage, CommandReply> handler =
-          cmd -> {
-            assertThat(cmd.commandType()).isEqualTo("CreateUser");
-            assertThat(cmd.commandId()).isEqualTo(commandId);
-            return CommandReply.completed(cmd.commandId(), cmd.correlationId(), responseData);
-          };
+            assertThat(reply).isNotNull();
+            assertThat(reply.isSuccess()).isTrue();
+            assertThat(reply.commandId()).isEqualTo(commandId);
+            assertThat(reply.correlationId()).isEqualTo(correlationId);
+            assertThat(reply.data()).containsEntry("result", "success");
+        }
 
-      registry.registerHandler("CreateUser", handler);
+        @Test
+        @DisplayName("handle - should return failed reply for unregistered command")
+        void testHandleUnregisteredCommand() {
+            UUID commandId = UUID.randomUUID();
+            UUID correlationId = UUID.randomUUID();
 
-      CommandMessage command =
-          new CommandMessage(commandId, correlationId, "CreateUser", "{\"name\":\"John\"}");
+            CommandMessage command = new CommandMessage(commandId, correlationId, "UnknownCommand", "{}");
 
-      CommandReply reply = registry.handle(command);
+            CommandReply reply = registry.handle(command);
 
-      assertThat(reply).isNotNull();
-      assertThat(reply.isSuccess()).isTrue();
-      assertThat(reply.commandId()).isEqualTo(commandId);
-      assertThat(reply.correlationId()).isEqualTo(correlationId);
-      assertThat(reply.data()).containsEntry("result", "success");
-    }
+            assertThat(reply).isNotNull();
+            assertThat(reply.isFailure()).isTrue();
+            assertThat(reply.commandId()).isEqualTo(commandId);
+            assertThat(reply.correlationId()).isEqualTo(correlationId);
+            assertThat(reply.error()).contains("No handler registered for command type: UnknownCommand");
+        }
 
-    @Test
-    @DisplayName("handle - should return failed reply for unregistered command")
-    void testHandleUnregisteredCommand() {
-      UUID commandId = UUID.randomUUID();
-      UUID correlationId = UUID.randomUUID();
+        @Test
+        @DisplayName("handle - should return failed reply when handler throws exception")
+        void testHandleHandlerThrowsException() {
+            UUID commandId = UUID.randomUUID();
+            UUID correlationId = UUID.randomUUID();
 
-      CommandMessage command = new CommandMessage(commandId, correlationId, "UnknownCommand", "{}");
+            Function<CommandMessage, CommandReply> faultyHandler =
+                    cmd -> {
+                        throw new RuntimeException("Handler error");
+                    };
 
-      CommandReply reply = registry.handle(command);
+            registry.registerHandler("FaultyCommand", faultyHandler);
 
-      assertThat(reply).isNotNull();
-      assertThat(reply.isFailure()).isTrue();
-      assertThat(reply.commandId()).isEqualTo(commandId);
-      assertThat(reply.correlationId()).isEqualTo(correlationId);
-      assertThat(reply.error()).contains("No handler registered for command type: UnknownCommand");
-    }
+            CommandMessage command = new CommandMessage(commandId, correlationId, "FaultyCommand", "{}");
 
-    @Test
-    @DisplayName("handle - should return failed reply when handler throws exception")
-    void testHandleHandlerThrowsException() {
-      UUID commandId = UUID.randomUUID();
-      UUID correlationId = UUID.randomUUID();
+            CommandReply reply = registry.handle(command);
 
-      Function<CommandMessage, CommandReply> faultyHandler =
-          cmd -> {
-            throw new RuntimeException("Handler error");
-          };
+            assertThat(reply).isNotNull();
+            assertThat(reply.isFailure()).isTrue();
+            assertThat(reply.commandId()).isEqualTo(commandId);
+            assertThat(reply.correlationId()).isEqualTo(correlationId);
+            assertThat(reply.error()).isEqualTo("Handler error");
+        }
 
-      registry.registerHandler("FaultyCommand", faultyHandler);
+        @Test
+        @DisplayName("handle - should handle null pointer exception in handler")
+        void testHandleNullPointerException() {
+            UUID commandId = UUID.randomUUID();
+            UUID correlationId = UUID.randomUUID();
 
-      CommandMessage command = new CommandMessage(commandId, correlationId, "FaultyCommand", "{}");
+            Function<CommandMessage, CommandReply> faultyHandler =
+                    cmd -> {
+                        throw new NullPointerException("Unexpected null");
+                    };
 
-      CommandReply reply = registry.handle(command);
+            registry.registerHandler("NullCommand", faultyHandler);
 
-      assertThat(reply).isNotNull();
-      assertThat(reply.isFailure()).isTrue();
-      assertThat(reply.commandId()).isEqualTo(commandId);
-      assertThat(reply.correlationId()).isEqualTo(correlationId);
-      assertThat(reply.error()).isEqualTo("Handler error");
-    }
+            CommandMessage command = new CommandMessage(commandId, correlationId, "NullCommand", "{}");
 
-    @Test
-    @DisplayName("handle - should handle null pointer exception in handler")
-    void testHandleNullPointerException() {
-      UUID commandId = UUID.randomUUID();
-      UUID correlationId = UUID.randomUUID();
+            CommandReply reply = registry.handle(command);
 
-      Function<CommandMessage, CommandReply> faultyHandler =
-          cmd -> {
-            throw new NullPointerException("Unexpected null");
-          };
+            assertThat(reply).isNotNull();
+            assertThat(reply.isFailure()).isTrue();
+            assertThat(reply.error()).isEqualTo("Unexpected null");
+        }
 
-      registry.registerHandler("NullCommand", faultyHandler);
+        @Test
+        @DisplayName("handle - should handle exception with null message")
+        void testHandleExceptionWithNullMessage() {
+            UUID commandId = UUID.randomUUID();
+            UUID correlationId = UUID.randomUUID();
 
-      CommandMessage command = new CommandMessage(commandId, correlationId, "NullCommand", "{}");
+            Function<CommandMessage, CommandReply> faultyHandler =
+                    cmd -> {
+                        throw new RuntimeException();
+                    };
 
-      CommandReply reply = registry.handle(command);
+            registry.registerHandler("ErrorCommand", faultyHandler);
 
-      assertThat(reply).isNotNull();
-      assertThat(reply.isFailure()).isTrue();
-      assertThat(reply.error()).isEqualTo("Unexpected null");
-    }
+            CommandMessage command = new CommandMessage(commandId, correlationId, "ErrorCommand", "{}");
 
-    @Test
-    @DisplayName("handle - should handle exception with null message")
-    void testHandleExceptionWithNullMessage() {
-      UUID commandId = UUID.randomUUID();
-      UUID correlationId = UUID.randomUUID();
+            CommandReply reply = registry.handle(command);
 
-      Function<CommandMessage, CommandReply> faultyHandler =
-          cmd -> {
-            throw new RuntimeException();
-          };
-
-      registry.registerHandler("ErrorCommand", faultyHandler);
-
-      CommandMessage command = new CommandMessage(commandId, correlationId, "ErrorCommand", "{}");
-
-      CommandReply reply = registry.handle(command);
-
-      assertThat(reply).isNotNull();
-      assertThat(reply.isFailure()).isTrue();
-      assertThat(reply.error()).isNull();
-    }
-  }
-
-  @Nested
-  @DisplayName("Integration Tests")
-  class IntegrationTests {
-
-    @Test
-    @DisplayName("should handle multiple commands sequentially")
-    void testMultipleCommandsSequentially() {
-      Function<CommandMessage, CommandReply> createHandler =
-          cmd ->
-              CommandReply.completed(
-                  cmd.commandId(), cmd.correlationId(), Map.of("action", "created"));
-      Function<CommandMessage, CommandReply> updateHandler =
-          cmd ->
-              CommandReply.completed(
-                  cmd.commandId(), cmd.correlationId(), Map.of("action", "updated"));
-
-      registry.registerHandler("CreateUser", createHandler);
-      registry.registerHandler("UpdateUser", updateHandler);
-
-      CommandMessage createCmd =
-          new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CreateUser", "{}");
-      CommandReply createReply = registry.handle(createCmd);
-      assertThat(createReply.isSuccess()).isTrue();
-      assertThat(createReply.data()).containsEntry("action", "created");
-
-      CommandMessage updateCmd =
-          new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "UpdateUser", "{}");
-      CommandReply updateReply = registry.handle(updateCmd);
-      assertThat(updateReply.isSuccess()).isTrue();
-      assertThat(updateReply.data()).containsEntry("action", "updated");
+            assertThat(reply).isNotNull();
+            assertThat(reply.isFailure()).isTrue();
+            assertThat(reply.error()).isNull();
+        }
     }
 
-    @Test
-    @DisplayName("should maintain handler state across invocations")
-    void testHandlerState() {
-      int[] counter = {0};
-      Function<CommandMessage, CommandReply> statefulHandler =
-          cmd -> {
-            counter[0]++;
-            return CommandReply.completed(
-                cmd.commandId(), cmd.correlationId(), Map.of("count", counter[0]));
-          };
+    @Nested
+    @DisplayName("Integration Tests")
+    class IntegrationTests {
 
-      registry.registerHandler("CountCommand", statefulHandler);
+        @Test
+        @DisplayName("should handle multiple commands sequentially")
+        void testMultipleCommandsSequentially() {
+            Function<CommandMessage, CommandReply> createHandler =
+                    cmd ->
+                            CommandReply.completed(
+                                    cmd.commandId(), cmd.correlationId(), Map.of("action", "created"));
+            Function<CommandMessage, CommandReply> updateHandler =
+                    cmd ->
+                            CommandReply.completed(
+                                    cmd.commandId(), cmd.correlationId(), Map.of("action", "updated"));
 
-      CommandMessage cmd1 =
-          new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CountCommand", "{}");
-      CommandReply reply1 = registry.handle(cmd1);
-      assertThat(reply1.data()).containsEntry("count", 1);
+            registry.registerHandler("CreateUser", createHandler);
+            registry.registerHandler("UpdateUser", updateHandler);
 
-      CommandMessage cmd2 =
-          new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CountCommand", "{}");
-      CommandReply reply2 = registry.handle(cmd2);
-      assertThat(reply2.data()).containsEntry("count", 2);
+            CommandMessage createCmd =
+                    new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CreateUser", "{}");
+            CommandReply createReply = registry.handle(createCmd);
+            assertThat(createReply.isSuccess()).isTrue();
+            assertThat(createReply.data()).containsEntry("action", "created");
+
+            CommandMessage updateCmd =
+                    new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "UpdateUser", "{}");
+            CommandReply updateReply = registry.handle(updateCmd);
+            assertThat(updateReply.isSuccess()).isTrue();
+            assertThat(updateReply.data()).containsEntry("action", "updated");
+        }
+
+        @Test
+        @DisplayName("should maintain handler state across invocations")
+        void testHandlerState() {
+            int[] counter = {0};
+            Function<CommandMessage, CommandReply> statefulHandler =
+                    cmd -> {
+                        counter[0]++;
+                        return CommandReply.completed(
+                                cmd.commandId(), cmd.correlationId(), Map.of("count", counter[0]));
+                    };
+
+            registry.registerHandler("CountCommand", statefulHandler);
+
+            CommandMessage cmd1 =
+                    new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CountCommand", "{}");
+            CommandReply reply1 = registry.handle(cmd1);
+            assertThat(reply1.data()).containsEntry("count", 1);
+
+            CommandMessage cmd2 =
+                    new CommandMessage(UUID.randomUUID(), UUID.randomUUID(), "CountCommand", "{}");
+            CommandReply reply2 = registry.handle(cmd2);
+            assertThat(reply2.data()).containsEntry("count", 2);
+        }
+
+        @Test
+        @DisplayName("should handle commands with complex payloads")
+        void testComplexPayload() {
+            Function<CommandMessage, CommandReply> handler =
+                    cmd -> {
+                        assertThat(cmd.payload()).contains("name");
+                        assertThat(cmd.payload()).contains("email");
+                        return CommandReply.completed(
+                                cmd.commandId(), cmd.correlationId(), Map.of("processed", true));
+                    };
+
+            registry.registerHandler("ComplexCommand", handler);
+
+            CommandMessage command =
+                    new CommandMessage(
+                            UUID.randomUUID(),
+                            UUID.randomUUID(),
+                            "ComplexCommand",
+                            "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}");
+
+            CommandReply reply = registry.handle(command);
+
+            assertThat(reply.isSuccess()).isTrue();
+            assertThat(reply.data()).containsEntry("processed", true);
+        }
     }
-
-    @Test
-    @DisplayName("should handle commands with complex payloads")
-    void testComplexPayload() {
-      Function<CommandMessage, CommandReply> handler =
-          cmd -> {
-            assertThat(cmd.payload()).contains("name");
-            assertThat(cmd.payload()).contains("email");
-            return CommandReply.completed(
-                cmd.commandId(), cmd.correlationId(), Map.of("processed", true));
-          };
-
-      registry.registerHandler("ComplexCommand", handler);
-
-      CommandMessage command =
-          new CommandMessage(
-              UUID.randomUUID(),
-              UUID.randomUUID(),
-              "ComplexCommand",
-              "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}");
-
-      CommandReply reply = registry.handle(command);
-
-      assertThat(reply.isSuccess()).isTrue();
-      assertThat(reply.data()).containsEntry("processed", true);
-    }
-  }
 }

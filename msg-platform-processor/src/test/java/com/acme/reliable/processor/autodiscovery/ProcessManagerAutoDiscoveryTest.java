@@ -1,8 +1,5 @@
 package com.acme.reliable.processor.autodiscovery;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 import com.acme.reliable.command.CommandBus;
 import com.acme.reliable.command.DomainCommand;
 import com.acme.reliable.process.ProcessConfiguration;
@@ -12,188 +9,200 @@ import com.acme.reliable.processor.process.ProcessManager;
 import com.acme.reliable.repository.ProcessRepository;
 import io.micronaut.context.BeanContext;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Tests for ProcessManager auto-discovery mechanism */
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Tests for ProcessManager auto-discovery mechanism
+ */
 class ProcessManagerAutoDiscoveryTest {
 
-  private ProcessRepository mockRepo;
-  private CommandBus mockCommandBus;
-  private BeanContext mockBeanContext;
-  private ProcessManager processManager;
+    private ProcessRepository mockRepo;
+    private CommandBus mockCommandBus;
+    private BeanContext mockBeanContext;
+    private ProcessManager processManager;
 
-  // Test process definition
-  static class TestProcessConfiguration implements ProcessConfiguration {
-    @Override
-    public String getProcessType() {
-      return "TestProcess";
+    @BeforeEach
+    void setup() {
+        mockRepo = mock(ProcessRepository.class);
+        mockCommandBus = mock(CommandBus.class);
+        mockBeanContext = mock(BeanContext.class);
+        processManager = new ProcessManager(mockRepo, mockCommandBus, mockBeanContext);
     }
 
-    @Override
-    public ProcessGraph defineProcess() {
-      return ProcessGraphBuilder.process()
-          .startWith(TestStep1Command.class)
-          .withCompensation(CompensateTestStep1Command.class)
-          .then(TestStep2Command.class)
-          .withCompensation(CompensateTestStep2Command.class)
-          .end();
+    @Test
+    void testAutoDiscovery_SingleDefinition() {
+        // Given: One process definition bean
+        TestProcessConfiguration definition = new TestProcessConfiguration();
+        when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
+                .thenReturn(List.of(definition));
+
+        // When: Auto-discovery runs on startup
+        processManager.onApplicationEvent(mock(ServerStartupEvent.class));
+
+        // Then: Definition should be registered (verified by verifying bean lookup)
+        verify(mockBeanContext, times(1)).getBeansOfType(ProcessConfiguration.class);
     }
 
-    @Override
-    public boolean isRetryable(String step, String error) {
-      return false;
+    @Test
+    void testAutoDiscovery_MultipleDefinitions() {
+        // Given: Multiple process definition beans
+        TestProcessConfiguration def1 = new TestProcessConfiguration();
+        AnotherProcessConfiguration def2 = new AnotherProcessConfiguration();
+
+        when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
+                .thenReturn(Arrays.asList(def1, def2));
+
+        // When: Auto-discovery runs
+        processManager.onApplicationEvent(mock(ServerStartupEvent.class));
+
+        // Then: All definitions should be registered (verified by verifying bean lookup)
+        verify(mockBeanContext, times(1)).getBeansOfType(ProcessConfiguration.class);
     }
 
-    @Override
-    public int getMaxRetries(String step) {
-      return 3;
-    }
-  }
+    @Test
+    void testAutoDiscovery_AmbiguousDefinitions() {
+        // Given: Two definitions with same process type
+        TestProcessConfiguration def1 = new TestProcessConfiguration();
+        DuplicateProcessConfiguration def2 = new DuplicateProcessConfiguration();
 
-  // Another test process definition
-  static class AnotherProcessConfiguration implements ProcessConfiguration {
-    @Override
-    public String getProcessType() {
-      return "AnotherProcess";
-    }
+        when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
+                .thenReturn(Arrays.asList(def1, def2));
 
-    @Override
-    public ProcessGraph defineProcess() {
-      return ProcessGraphBuilder.process().startWith(AnotherStartCommand.class).end();
-    }
+        // When/Then: Should throw IllegalStateException
+        IllegalStateException exception =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> processManager.onApplicationEvent(mock(ServerStartupEvent.class)));
 
-    @Override
-    public boolean isRetryable(String step, String error) {
-      return false;
+        assertTrue(exception.getMessage().contains("Ambiguous process configuration"));
+        assertTrue(exception.getMessage().contains("TestProcess"));
     }
 
-    @Override
-    public int getMaxRetries(String step) {
-      return 0;
-    }
-  }
+    @Test
+    void testRegisterDefinition_DuplicateType() {
+        // Given: A definition already registered
+        TestProcessConfiguration def1 = new TestProcessConfiguration();
+        processManager.register(def1);
 
-  // Duplicate process definition (same type as TestProcessConfiguration)
-  static class DuplicateProcessConfiguration implements ProcessConfiguration {
-    @Override
-    public String getProcessType() {
-      return "TestProcess"; // DUPLICATE!
-    }
+        // When: Trying to register another with same type
+        DuplicateProcessConfiguration def2 = new DuplicateProcessConfiguration();
 
-    @Override
-    public ProcessGraph defineProcess() {
-      return ProcessGraphBuilder.process().startWith(DuplicateOtherStepCommand.class).end();
-    }
+        // Then: Should throw IllegalStateException
+        IllegalStateException exception =
+                assertThrows(IllegalStateException.class, () -> processManager.register(def2));
 
-    @Override
-    public boolean isRetryable(String step, String error) {
-      return false;
+        assertTrue(exception.getMessage().contains("already registered"));
+        assertTrue(exception.getMessage().contains("TestProcess"));
     }
 
-    @Override
-    public int getMaxRetries(String step) {
-      return 0;
+    @Test
+    void testRegisterDefinition_UniqueTypes() {
+        // Given/When: Registering definitions with unique types
+        TestProcessConfiguration def1 = new TestProcessConfiguration();
+        AnotherProcessConfiguration def2 = new AnotherProcessConfiguration();
+
+        // Then: Should succeed without throwing exception
+        assertDoesNotThrow(() -> processManager.register(def1));
+        assertDoesNotThrow(() -> processManager.register(def2));
     }
-  }
 
-  @BeforeEach
-  void setup() {
-    mockRepo = mock(ProcessRepository.class);
-    mockCommandBus = mock(CommandBus.class);
-    mockBeanContext = mock(BeanContext.class);
-    processManager = new ProcessManager(mockRepo, mockCommandBus, mockBeanContext);
-  }
+    // Test process definition
+    static class TestProcessConfiguration implements ProcessConfiguration {
+        @Override
+        public String getProcessType() {
+            return "TestProcess";
+        }
 
-  @Test
-  void testAutoDiscovery_SingleDefinition() {
-    // Given: One process definition bean
-    TestProcessConfiguration definition = new TestProcessConfiguration();
-    when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
-        .thenReturn(List.of(definition));
+        @Override
+        public ProcessGraph defineProcess() {
+            return ProcessGraphBuilder.process()
+                    .startWith(TestStep1Command.class)
+                    .withCompensation(CompensateTestStep1Command.class)
+                    .then(TestStep2Command.class)
+                    .withCompensation(CompensateTestStep2Command.class)
+                    .end();
+        }
 
-    // When: Auto-discovery runs on startup
-    processManager.onApplicationEvent(mock(ServerStartupEvent.class));
+        @Override
+        public boolean isRetryable(String step, String error) {
+            return false;
+        }
 
-    // Then: Definition should be registered (verified by verifying bean lookup)
-    verify(mockBeanContext, times(1)).getBeansOfType(ProcessConfiguration.class);
-  }
+        @Override
+        public int getMaxRetries(String step) {
+            return 3;
+        }
+    }
 
-  @Test
-  void testAutoDiscovery_MultipleDefinitions() {
-    // Given: Multiple process definition beans
-    TestProcessConfiguration def1 = new TestProcessConfiguration();
-    AnotherProcessConfiguration def2 = new AnotherProcessConfiguration();
+    // Another test process definition
+    static class AnotherProcessConfiguration implements ProcessConfiguration {
+        @Override
+        public String getProcessType() {
+            return "AnotherProcess";
+        }
 
-    when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
-        .thenReturn(Arrays.asList(def1, def2));
+        @Override
+        public ProcessGraph defineProcess() {
+            return ProcessGraphBuilder.process().startWith(AnotherStartCommand.class).end();
+        }
 
-    // When: Auto-discovery runs
-    processManager.onApplicationEvent(mock(ServerStartupEvent.class));
+        @Override
+        public boolean isRetryable(String step, String error) {
+            return false;
+        }
 
-    // Then: All definitions should be registered (verified by verifying bean lookup)
-    verify(mockBeanContext, times(1)).getBeansOfType(ProcessConfiguration.class);
-  }
+        @Override
+        public int getMaxRetries(String step) {
+            return 0;
+        }
+    }
 
-  @Test
-  void testAutoDiscovery_AmbiguousDefinitions() {
-    // Given: Two definitions with same process type
-    TestProcessConfiguration def1 = new TestProcessConfiguration();
-    DuplicateProcessConfiguration def2 = new DuplicateProcessConfiguration();
+    // Duplicate process definition (same type as TestProcessConfiguration)
+    static class DuplicateProcessConfiguration implements ProcessConfiguration {
+        @Override
+        public String getProcessType() {
+            return "TestProcess"; // DUPLICATE!
+        }
 
-    when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
-        .thenReturn(Arrays.asList(def1, def2));
+        @Override
+        public ProcessGraph defineProcess() {
+            return ProcessGraphBuilder.process().startWith(DuplicateOtherStepCommand.class).end();
+        }
 
-    // When/Then: Should throw IllegalStateException
-    IllegalStateException exception =
-        assertThrows(
-            IllegalStateException.class,
-            () -> processManager.onApplicationEvent(mock(ServerStartupEvent.class)));
+        @Override
+        public boolean isRetryable(String step, String error) {
+            return false;
+        }
 
-    assertTrue(exception.getMessage().contains("Ambiguous process configuration"));
-    assertTrue(exception.getMessage().contains("TestProcess"));
-  }
+        @Override
+        public int getMaxRetries(String step) {
+            return 0;
+        }
+    }
 
-  @Test
-  void testRegisterDefinition_DuplicateType() {
-    // Given: A definition already registered
-    TestProcessConfiguration def1 = new TestProcessConfiguration();
-    processManager.register(def1);
+    // Dummy command classes for testing
+    static class TestStep1Command implements DomainCommand {
+    }
 
-    // When: Trying to register another with same type
-    DuplicateProcessConfiguration def2 = new DuplicateProcessConfiguration();
+    static class TestStep2Command implements DomainCommand {
+    }
 
-    // Then: Should throw IllegalStateException
-    IllegalStateException exception =
-        assertThrows(IllegalStateException.class, () -> processManager.register(def2));
+    static class CompensateTestStep1Command implements DomainCommand {
+    }
 
-    assertTrue(exception.getMessage().contains("already registered"));
-    assertTrue(exception.getMessage().contains("TestProcess"));
-  }
+    static class CompensateTestStep2Command implements DomainCommand {
+    }
 
-  @Test
-  void testRegisterDefinition_UniqueTypes() {
-    // Given/When: Registering definitions with unique types
-    TestProcessConfiguration def1 = new TestProcessConfiguration();
-    AnotherProcessConfiguration def2 = new AnotherProcessConfiguration();
+    static class AnotherStartCommand implements DomainCommand {
+    }
 
-    // Then: Should succeed without throwing exception
-    assertDoesNotThrow(() -> processManager.register(def1));
-    assertDoesNotThrow(() -> processManager.register(def2));
-  }
-
-  // Dummy command classes for testing
-  static class TestStep1Command implements DomainCommand {}
-
-  static class TestStep2Command implements DomainCommand {}
-
-  static class CompensateTestStep1Command implements DomainCommand {}
-
-  static class CompensateTestStep2Command implements DomainCommand {}
-
-  static class AnotherStartCommand implements DomainCommand {}
-
-  static class DuplicateOtherStepCommand implements DomainCommand {}
+    static class DuplicateOtherStepCommand implements DomainCommand {
+    }
 }

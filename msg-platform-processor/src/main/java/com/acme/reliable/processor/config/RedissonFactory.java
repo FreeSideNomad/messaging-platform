@@ -12,11 +12,11 @@ import org.redisson.config.Config;
 @Requires(property = "redisson.enabled", value = "true", defaultValue = "true")
 public class RedissonFactory {
 
-  @Singleton
-  @Requires(property = "redisson.address")
-  public RedissonClient redissonClient(@Property(name = "redisson.address") String address) {
-    Config config = new Config();
-    config.useSingleServer().setAddress(address);
-    return Redisson.create(config);
-  }
+    @Singleton
+    @Requires(property = "redisson.address")
+    public RedissonClient redissonClient(@Property(name = "redisson.address") String address) {
+        Config config = new Config();
+        config.useSingleServer().setAddress(address);
+        return Redisson.create(config);
+    }
 }

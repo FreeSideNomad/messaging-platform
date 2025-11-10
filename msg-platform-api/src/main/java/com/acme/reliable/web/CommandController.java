@@ -5,98 +5,94 @@ import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.config.TimeoutConfig;
 import com.acme.reliable.processor.ResponseRegistry;
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.annotation.Body;
-import io.micronaut.http.annotation.Controller;
-import io.micronaut.http.annotation.Get;
-import io.micronaut.http.annotation.Header;
-import io.micronaut.http.annotation.PathVariable;
-import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.*;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Controller("/commands")
 public class CommandController {
-  private static final String HEADER_COMMAND_ID = "X-Command-Id";
-  private static final String HEADER_CORRELATION_ID = "X-Correlation-Id";
+    private static final String HEADER_COMMAND_ID = "X-Command-Id";
+    private static final String HEADER_CORRELATION_ID = "X-Correlation-Id";
 
-  private final CommandBus bus;
-  private final ResponseRegistry responses;
-  private final String defaultReplyQueue;
-  private final TimeoutConfig timeoutConfig;
+    private final CommandBus bus;
+    private final ResponseRegistry responses;
+    private final String defaultReplyQueue;
+    private final TimeoutConfig timeoutConfig;
 
-  public CommandController(
-      CommandBus b,
-      ResponseRegistry r,
-      MessagingConfig messagingConfig,
-      TimeoutConfig timeoutConfig) {
-    this.bus = b;
-    this.responses = r;
-    this.defaultReplyQueue = messagingConfig.getQueueNaming().getReplyQueue();
-    this.timeoutConfig = timeoutConfig;
-  }
-
-  @Post("/{name}")
-  public HttpResponse<String> submit(
-      @PathVariable String name,
-      @Header("Idempotency-Key") String idem,
-      @Body String payload,
-      @Header(value = "Reply-To", defaultValue = "") String replyTo) {
-
-    String effectiveReplyQueue =
-        replyTo != null && !replyTo.isBlank() ? replyTo : defaultReplyQueue;
-
-    var cmdId =
-        bus.accept(
-            name,
-            idem,
-            businessKey(payload),
-            payload,
-            java.util.Map.of("mode", "mq", "replyTo", effectiveReplyQueue));
-
-    // If configured for full async (syncWait = 0), return immediately
-    if (timeoutConfig.isAsync()) {
-      return HttpResponse.accepted()
-          .header(HEADER_COMMAND_ID, cmdId.toString())
-          .header(HEADER_CORRELATION_ID, cmdId.toString())
-          .body("{\"message\":\"Command accepted, processing asynchronously\"}");
+    public CommandController(
+            CommandBus b,
+            ResponseRegistry r,
+            MessagingConfig messagingConfig,
+            TimeoutConfig timeoutConfig) {
+        this.bus = b;
+        this.responses = r;
+        this.defaultReplyQueue = messagingConfig.getQueueNaming().getReplyQueue();
+        this.timeoutConfig = timeoutConfig;
     }
 
-    // Otherwise, register for response and wait for configured duration
-    var future = responses.register(cmdId);
+    @Post("/{name}")
+    public HttpResponse<String> submit(
+            @PathVariable String name,
+            @Header("Idempotency-Key") String idem,
+            @Body String payload,
+            @Header(value = "Reply-To", defaultValue = "") String replyTo) {
 
-    try {
-      String response = future.get(timeoutConfig.getSyncWaitMillis(), TimeUnit.MILLISECONDS);
-      return HttpResponse.ok(response)
-          .header(HEADER_COMMAND_ID, cmdId.toString())
-          .header(HEADER_CORRELATION_ID, cmdId.toString());
-    } catch (TimeoutException e) {
-      // Timeout - return accepted status
-      return HttpResponse.accepted()
-          .header(HEADER_COMMAND_ID, cmdId.toString())
-          .header(HEADER_CORRELATION_ID, cmdId.toString())
-          .body("{\"message\":\"Command accepted, processing asynchronously\"}");
-    } catch (InterruptedException e) {
-      // Thread was interrupted - restore interrupted status and return error
-      Thread.currentThread().interrupt();
-      return HttpResponse.serverError()
-          .header(HEADER_COMMAND_ID, cmdId.toString())
-          .body("{\"error\":\"Request interrupted\"}");
-    } catch (Exception e) {
-      // Error during processing
-      return HttpResponse.serverError()
-          .header(HEADER_COMMAND_ID, cmdId.toString())
-          .body("{\"error\":\"" + e.getMessage() + "\"}");
+        String effectiveReplyQueue =
+                replyTo != null && !replyTo.isBlank() ? replyTo : defaultReplyQueue;
+
+        var cmdId =
+                bus.accept(
+                        name,
+                        idem,
+                        businessKey(payload),
+                        payload,
+                        java.util.Map.of("mode", "mq", "replyTo", effectiveReplyQueue));
+
+        // If configured for full async (syncWait = 0), return immediately
+        if (timeoutConfig.isAsync()) {
+            return HttpResponse.accepted()
+                    .header(HEADER_COMMAND_ID, cmdId.toString())
+                    .header(HEADER_CORRELATION_ID, cmdId.toString())
+                    .body("{\"message\":\"Command accepted, processing asynchronously\"}");
+        }
+
+        // Otherwise, register for response and wait for configured duration
+        var future = responses.register(cmdId);
+
+        try {
+            String response = future.get(timeoutConfig.getSyncWaitMillis(), TimeUnit.MILLISECONDS);
+            return HttpResponse.ok(response)
+                    .header(HEADER_COMMAND_ID, cmdId.toString())
+                    .header(HEADER_CORRELATION_ID, cmdId.toString());
+        } catch (TimeoutException e) {
+            // Timeout - return accepted status
+            return HttpResponse.accepted()
+                    .header(HEADER_COMMAND_ID, cmdId.toString())
+                    .header(HEADER_CORRELATION_ID, cmdId.toString())
+                    .body("{\"message\":\"Command accepted, processing asynchronously\"}");
+        } catch (InterruptedException e) {
+            // Thread was interrupted - restore interrupted status and return error
+            Thread.currentThread().interrupt();
+            return HttpResponse.serverError()
+                    .header(HEADER_COMMAND_ID, cmdId.toString())
+                    .body("{\"error\":\"Request interrupted\"}");
+        } catch (Exception e) {
+            // Error during processing
+            return HttpResponse.serverError()
+                    .header(HEADER_COMMAND_ID, cmdId.toString())
+                    .body("{\"error\":\"" + e.getMessage() + "\"}");
+        }
     }
-  }
 
-  @Get("/health")
-  public HttpResponse<String> health() {
-    return HttpResponse.ok("{\"status\":\"UP\"}");
-  }
+    @Get("/health")
+    public HttpResponse<String> health() {
+        return HttpResponse.ok("{\"status\":\"UP\"}");
+    }
 
-  private String businessKey(String payload) {
-    // Simple key derivation - in production, extract from payload
-    // For now, use a UUID to ensure uniqueness
-    return java.util.UUID.randomUUID().toString();
-  }
+    private String businessKey(String payload) {
+        // Simple key derivation - in production, extract from payload
+        // For now, use a UUID to ensure uniqueness
+        return java.util.UUID.randomUUID().toString();
+    }
 }

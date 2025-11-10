@@ -3,6 +3,7 @@
 ## What You Have
 
 A **scalable multi-module messaging platform** with:
+
 - **msg-platform-core**: Shared domain logic, entities, repositories
 - **msg-platform-api**: REST API (accepts commands, publishes to MQ)
 - **msg-platform-worker**: Command processor (consumes MQ, executes handlers, publishes replies/events)
@@ -66,23 +67,27 @@ docker exec reliable-postgres psql -U postgres -d reliable -c \
 ## Run Multiple Workers
 
 **Terminal 1: API**
+
 ```bash
 cd msg-platform-api && mvn mn:run
 ```
 
 **Terminal 2: Worker 1**
+
 ```bash
 cd msg-platform-worker
 WORKER_ID=worker-1 WORKER_PORT=9091 mvn mn:run
 ```
 
 **Terminal 3: Worker 2**
+
 ```bash
 cd msg-platform-worker
 WORKER_ID=worker-2 WORKER_PORT=9092 mvn mn:run
 ```
 
 **Terminal 4: Worker 3**
+
 ```bash
 cd msg-platform-worker
 WORKER_ID=worker-3 WORKER_PORT=9093 mvn mn:run
@@ -107,23 +112,28 @@ Now submit many commands and watch them be processed in parallel across workers!
 ## Troubleshooting
 
 **API won't start**
+
 - Check PostgreSQL is running (`docker ps`)
 - Check IBM MQ is ready (~40 seconds after docker-compose up)
 - Check port 8080 is free
 
 **Worker won't start**
+
 - Check IBM MQ channel is ready
 - Check JMS_CONSUMERS_ENABLED=true in .env
 - Check unique WORKER_PORT for each worker instance
 
 **No messages processed**
+
 - Check worker logs for JMS connection
-- Check MQ queue has messages: `echo "DISPLAY QLOCAL('APP.CMD.CreateUser.Q') CURDEPTH" | docker exec -i reliable-ibmmq /opt/mqm/bin/runmqsc QM1`
+- Check MQ queue has messages:
+  `echo "DISPLAY QLOCAL('APP.CMD.CreateUser.Q') CURDEPTH" | docker exec -i reliable-ibmmq /opt/mqm/bin/runmqsc QM1`
 - Verify worker JMS consumers are enabled
 
 ## Success!
 
 You now have a production-ready scalable messaging platform!
+
 - Submit commands via API on port 8080
 - Process commands in parallel with multiple workers
 - Scale to 1000+ TPS by adding more worker instances

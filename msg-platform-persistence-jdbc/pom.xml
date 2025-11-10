@@ -1,199 +1,200 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>com.acme</groupId>
-    <artifactId>messaging-platform</artifactId>
-    <version>2.0.0</version>
-  </parent>
+    <parent>
+        <groupId>com.acme</groupId>
+        <artifactId>messaging-platform</artifactId>
+        <version>2.0.0</version>
+    </parent>
 
-  <artifactId>msg-platform-persistence-jdbc</artifactId>
-  <packaging>jar</packaging>
+    <artifactId>msg-platform-persistence-jdbc</artifactId>
+    <packaging>jar</packaging>
 
-  <name>Messaging Platform Persistence JDBC</name>
-  <description>PostgreSQL/JDBC persistence implementation</description>
+    <name>Messaging Platform Persistence JDBC</name>
+    <description>PostgreSQL/JDBC persistence implementation</description>
 
-  <dependencies>
-    <!-- Core module (for interfaces) -->
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-core</artifactId>
-    </dependency>
+    <dependencies>
+        <!-- Core module (for interfaces) -->
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-core</artifactId>
+        </dependency>
 
-    <!-- Micronaut Data JDBC -->
-    <dependency>
-      <groupId>io.micronaut.data</groupId>
-      <artifactId>micronaut-data-jdbc</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- Micronaut Data JDBC -->
+        <dependency>
+            <groupId>io.micronaut.data</groupId>
+            <artifactId>micronaut-data-jdbc</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- JDBC Hikari (provides DataSource bean) -->
-    <dependency>
-      <groupId>io.micronaut.sql</groupId>
-      <artifactId>micronaut-jdbc-hikari</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- JDBC Hikari (provides DataSource bean) -->
+        <dependency>
+            <groupId>io.micronaut.sql</groupId>
+            <artifactId>micronaut-jdbc-hikari</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- PostgreSQL Driver -->
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- PostgreSQL Driver -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- Flyway removed: Migrations handled by dedicated flyway-init service in Docker -->
+        <!-- Flyway removed: Migrations handled by dedicated flyway-init service in Docker -->
 
-    <!-- Transaction support -->
-    <dependency>
-      <groupId>io.micronaut.data</groupId>
-      <artifactId>micronaut-data-tx</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- Transaction support -->
+        <dependency>
+            <groupId>io.micronaut.data</groupId>
+            <artifactId>micronaut-data-tx</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- Micronaut runtime -->
-    <dependency>
-      <groupId>io.micronaut</groupId>
-      <artifactId>micronaut-runtime</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- Micronaut runtime -->
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-runtime</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- Lombok (boilerplate reduction) -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <scope>provided</scope>
-    </dependency>
+        <!-- Lombok (boilerplate reduction) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-    <!-- YAML Configuration -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+        <!-- YAML Configuration -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- Logging -->
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <scope>runtime</scope>
-    </dependency>
+        <!-- Logging -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- Testing -->
-    <dependency>
-      <groupId>io.micronaut.test</groupId>
-      <artifactId>micronaut-test-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
+        <!-- Testing -->
+        <dependency>
+            <groupId>io.micronaut.test</groupId>
+            <artifactId>micronaut-test-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-    <!-- H2 Database for in-memory testing -->
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
-    </dependency>
+        <!-- H2 Database for in-memory testing -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-    <!-- Flyway for test migrations -->
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+        <!-- Flyway for test migrations -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <arg>-Amicronaut.processing.group=com.acme</arg>
-            <arg>-Amicronaut.processing.module=msg-platform-persistence-jdbc</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.11</version>
-        <executions>
-          <execution>
-            <id>prepare-agent</id>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <goals>
-              <goal>report</goal>
-            </goals>
-            <phase>test</phase>
-          </execution>
-          <execution>
-            <id>check</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <rule>
-                  <element>PACKAGE</element>
-                  <limits>
-                    <limit>
-                      <counter>LINE</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                    <limit>
-                      <counter>BRANCH</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                  </limits>
-                </rule>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Amicronaut.processing.group=com.acme</arg>
+                        <arg>-Amicronaut.processing.module=msg-platform-persistence-jdbc</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <phase>test</phase>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

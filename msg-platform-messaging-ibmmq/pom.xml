@@ -1,149 +1,150 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>com.acme</groupId>
-    <artifactId>messaging-platform</artifactId>
-    <version>2.0.0</version>
-  </parent>
+    <parent>
+        <groupId>com.acme</groupId>
+        <artifactId>messaging-platform</artifactId>
+        <version>2.0.0</version>
+    </parent>
 
-  <artifactId>msg-platform-messaging-ibmmq</artifactId>
-  <packaging>jar</packaging>
+    <artifactId>msg-platform-messaging-ibmmq</artifactId>
+    <packaging>jar</packaging>
 
-  <name>Messaging Platform Messaging - IBM MQ</name>
-  <description>IBM MQ command messaging adapter (JMS producer/consumer)</description>
+    <name>Messaging Platform Messaging - IBM MQ</name>
+    <description>IBM MQ command messaging adapter (JMS producer/consumer)</description>
 
-  <dependencies>
-    <!-- Core module (domain + SPI) -->
-    <dependency>
-      <groupId>com.acme</groupId>
-      <artifactId>msg-platform-core</artifactId>
-    </dependency>
+    <dependencies>
+        <!-- Core module (domain + SPI) -->
+        <dependency>
+            <groupId>com.acme</groupId>
+            <artifactId>msg-platform-core</artifactId>
+        </dependency>
 
-    <!-- Micronaut JMS -->
-    <dependency>
-      <groupId>io.micronaut.jms</groupId>
-      <artifactId>micronaut-jms-core</artifactId>
-      <scope>compile</scope>
-    </dependency>
+        <!-- Micronaut JMS -->
+        <dependency>
+            <groupId>io.micronaut.jms</groupId>
+            <artifactId>micronaut-jms-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- Jakarta JMS API -->
-    <dependency>
-      <groupId>jakarta.jms</groupId>
-      <artifactId>jakarta.jms-api</artifactId>
-      <version>3.1.0</version>
-    </dependency>
+        <!-- Jakarta JMS API -->
+        <dependency>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
 
-    <!-- IBM MQ Client -->
-    <dependency>
-      <groupId>com.ibm.mq</groupId>
-      <artifactId>com.ibm.mq.jakarta.client</artifactId>
-    </dependency>
+        <!-- IBM MQ Client -->
+        <dependency>
+            <groupId>com.ibm.mq</groupId>
+            <artifactId>com.ibm.mq.jakarta.client</artifactId>
+        </dependency>
 
-    <!-- Testing -->
-    <dependency>
-      <groupId>io.micronaut.test</groupId>
-      <artifactId>micronaut-test-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <scope>test</scope>
-    </dependency>
+        <!-- Testing -->
+        <dependency>
+            <groupId>io.micronaut.test</groupId>
+            <artifactId>micronaut-test-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-    <!-- ActiveMQ 6.1.7 Embedded for Testing (natively Jakarta-based) -->
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-broker</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-client</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+        <!-- ActiveMQ 6.1.7 Embedded for Testing (natively Jakarta-based) -->
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-broker</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <arg>-Amicronaut.processing.group=com.acme</arg>
-            <arg>-Amicronaut.processing.module=msg-platform-messaging-ibmmq</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.11</version>
-        <executions>
-          <execution>
-            <id>prepare-agent</id>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <goals>
-              <goal>report</goal>
-            </goals>
-            <phase>test</phase>
-          </execution>
-          <execution>
-            <id>check</id>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <rule>
-                  <element>PACKAGE</element>
-                  <limits>
-                    <limit>
-                      <counter>LINE</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                    <limit>
-                      <counter>BRANCH</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                  </limits>
-                </rule>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Amicronaut.processing.group=com.acme</arg>
+                        <arg>-Amicronaut.processing.module=msg-platform-messaging-ibmmq</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <phase>test</phase>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

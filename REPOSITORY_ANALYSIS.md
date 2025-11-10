@@ -1,17 +1,24 @@
 # JDBC Persistence Repository Analysis
 
 ## Overview
-The codebase implements a Template Method pattern for database-agnostic JDBC repositories. Each repository has an abstract base class (e.g., `JdbcOutboxRepository`) with database-specific implementations for H2 and PostgreSQL (e.g., `H2OutboxRepository`, `PostgresOutboxRepository`).
+
+The codebase implements a Template Method pattern for database-agnostic JDBC repositories. Each repository has an
+abstract base class (e.g., `JdbcOutboxRepository`) with database-specific implementations for H2 and PostgreSQL (e.g.,
+`H2OutboxRepository`, `PostgresOutboxRepository`).
 
 ---
 
 ## 1. OUTBOX REPOSITORY
 
 ### Interface: OutboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/OutboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/OutboxRepository.java`
 
 #### Key Methods:
-- `long insertReturningId(String category, String topic, String key, String type, String payload, String headers)` - Insert and return generated ID
+
+- `long insertReturningId(String category, String topic, String key, String type, String payload, String headers)` -
+  Insert and return generated ID
 - `void markPublished(long id)` - Mark entry as published
 - `void markFailed(long id, String error, Instant nextAttempt)` - Mark failed with error and reschedule
 - `void reschedule(long id, long backoffMs, String error)` - Reschedule with backoff
@@ -22,9 +29,12 @@ The codebase implements a Template Method pattern for database-agnostic JDBC rep
 - `int recoverStuck(Duration olderThan)` - Recover entries stuck in SENDING
 
 ### Domain Object: Outbox
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/domain/Outbox.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/domain/Outbox.java`
 
 #### Fields:
+
 - `Long id` - Primary key
 - `String category` - Message category (command, event, reply)
 - `String topic` - Kafka topic or MQ queue name
@@ -41,14 +51,18 @@ The codebase implements a Template Method pattern for database-agnostic JDBC rep
 - `String lastError` - Last error message
 
 #### Factory Methods:
+
 - `newCommandRequested()` - Create command outbox entry
 - `newKafkaEvent()` - Create Kafka event entry
 - `newMqReply()` - Create MQ reply entry
 
 ### Abstract Base: JdbcOutboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/outbox/JdbcOutboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/outbox/JdbcOutboxRepository.java`
 
 #### Implementation Methods:
+
 - `long insertReturningId()` - Uses RETURN_GENERATED_KEYS
 - `Optional<Outbox> claimIfNew()` - Update status to CLAIMED, fetch entry
 - `List<Outbox> sweepBatch()` - Select batch with status filtering, update to CLAIMED
@@ -59,6 +73,7 @@ The codebase implements a Template Method pattern for database-agnostic JDBC rep
 - `Outbox mapResultSetToOutbox()` - ResultSet to domain object mapping
 
 #### Template Methods (Abstract):
+
 - `getInsertSql()` - INSERT statement
 - `getClaimIfNewSql()` - UPDATE with CLAIM logic
 - `getSweepBatchSql()` - SELECT batch with claiming
@@ -68,15 +83,19 @@ The codebase implements a Template Method pattern for database-agnostic JDBC rep
 - `getRecoverStuckSql()` - UPDATE stuck recovery
 
 ### H2 Implementation: H2OutboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/outbox/H2OutboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/outbox/H2OutboxRepository.java`
 
 #### Key Differences from Abstract:
+
 - **Custom sweepBatch()**: Overrides to handle H2 limitations (no RETURNING in UPDATE)
-  - Two-phase approach: SELECT first, then UPDATE IN with list of IDs
-  - Builds dynamic IN clause for batch updates
+    - Two-phase approach: SELECT first, then UPDATE IN with list of IDs
+    - Builds dynamic IN clause for batch updates
 - **SQL Dialect**: H2 specific SQL without RETURNING clause
 
 #### Database-Specific SQL:
+
 ```sql
 -- Insert
 INSERT INTO outbox (category, topic, key, type, payload, headers, status, attempts, created_at)
@@ -98,14 +117,18 @@ WHERE status = 'CLAIMED' AND created_at < ?
 ```
 
 ### PostgreSQL Implementation: PostgresOutboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/outbox/PostgresOutboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/outbox/PostgresOutboxRepository.java`
 
 #### Key Differences:
+
 - Uses RETURNING clause in UPDATE statements for atomic read-after-write
 - Uses CTE (WITH clause) for sweep batch with FOR UPDATE SKIP LOCKED
 - Handles headers as JSONB type
 
 #### Database-Specific SQL:
+
 ```sql
 -- Insert with JSONB
 INSERT INTO outbox (category, topic, key, type, payload, headers, status, attempts, created_at)
@@ -132,36 +155,49 @@ RETURNING o.id, o.category, ...
 ## 2. INBOX REPOSITORY
 
 ### Interface: InboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/InboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/InboxRepository.java`
 
 #### Key Methods:
+
 - `int insertIfAbsent(String messageId, String handler)` - Insert if not duplicate (idempotency check)
-  - Returns 1 if inserted, 0 if duplicate exists
+    - Returns 1 if inserted, 0 if duplicate exists
 
 ### Domain Object: Inbox
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/domain/Inbox.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/domain/Inbox.java`
 
 #### Fields:
+
 - `InboxId id` - Composite key
-  - `String messageId` - Unique message identifier
-  - `String handler` - Handler processing this message
+    - `String messageId` - Unique message identifier
+    - `String handler` - Handler processing this message
 - `Instant processedAt` - Processing timestamp
 
 ### Abstract Base: JdbcInboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/inbox/JdbcInboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/inbox/JdbcInboxRepository.java`
 
 #### Implementation Methods:
+
 - `int insertIfAbsent()` - Insert with duplicate detection
-  - Uses SQL-specific syntax for idempotent insert
-  - Returns count of rows inserted (0 for duplicates)
+    - Uses SQL-specific syntax for idempotent insert
+    - Returns count of rows inserted (0 for duplicates)
 
 #### Template Methods (Abstract):
+
 - `getInsertIfAbsentSql()` - Database-specific idempotent insert
 
 ### H2 Implementation: H2InboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/inbox/H2InboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/inbox/H2InboxRepository.java`
 
 #### Database-Specific SQL:
+
 ```sql
 -- H2 uses INSERT IGNORE
 INSERT IGNORE INTO inbox (message_id, handler, processed_at)
@@ -169,9 +205,12 @@ VALUES (?, ?, ?)
 ```
 
 ### PostgreSQL Implementation: PostgresInboxRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/inbox/PostgresInboxRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/inbox/PostgresInboxRepository.java`
 
 #### Database-Specific SQL:
+
 ```sql
 -- PostgreSQL uses ON CONFLICT DO NOTHING
 INSERT INTO inbox (message_id, handler, processed_at)
@@ -184,26 +223,38 @@ ON CONFLICT DO NOTHING
 ## 3. DLQ (DEAD LETTER QUEUE) REPOSITORY
 
 ### Interface: DlqRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/DlqRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/DlqRepository.java`
 
 #### Key Methods:
-- `void insertDlqEntry(UUID commandId, String commandName, String businessKey, String payload, String failedStatus, String errorClass, String errorMessage, int attempts, String parkedBy)` - Park failed command for manual intervention
+
+-
+`void insertDlqEntry(UUID commandId, String commandName, String businessKey, String payload, String failedStatus, String errorClass, String errorMessage, int attempts, String parkedBy)` -
+Park failed command for manual intervention
 
 ### Abstract Base: JdbcDlqRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dlq/JdbcDlqRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dlq/JdbcDlqRepository.java`
 
 #### Implementation Methods:
+
 - `void insertDlqEntry()` - Insert DLQ entry with all failure details
-  - Generates UUID for DLQ ID
-  - Records timestamp when parked
+    - Generates UUID for DLQ ID
+    - Records timestamp when parked
 
 #### Template Methods (Abstract):
+
 - `getInsertDlqEntrySql()` - Database-specific insert
 
 ### H2 Implementation: H2DlqRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dlq/H2DlqRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/dlq/H2DlqRepository.java`
 
 #### Database-Specific SQL:
+
 ```sql
 INSERT INTO dlq
 (id, command_id, command_name, business_key, payload, failed_status, error_class, error_message, attempts, parked_by, parked_at)
@@ -215,13 +266,17 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ## 4. PROCESS REPOSITORY
 
 ### Interface: ProcessRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/ProcessRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/repository/ProcessRepository.java`
 
 #### Key Methods:
+
 - `void insert(ProcessInstance instance, ProcessEvent initialEvent)` - Create new process with initial event
 - `Optional<ProcessInstance> findById(UUID processId)` - Find by process ID
 - `List<ProcessInstance> findByStatus(ProcessStatus status, int limit)` - Find by status
-- `List<ProcessInstance> findByTypeAndStatus(String processType, ProcessStatus status, int limit)` - Find by type and status
+- `List<ProcessInstance> findByTypeAndStatus(String processType, ProcessStatus status, int limit)` - Find by type and
+  status
 - `void update(ProcessInstance instance, ProcessEvent event)` - Update instance and log event
 - `List<ProcessLogEntry> getLog(UUID processId)` - Get event log (unlimited)
 - `List<ProcessLogEntry> getLog(UUID processId, int limit)` - Get event log with limit
@@ -230,9 +285,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ### Domain Objects: Process
 
 #### ProcessInstance (Record)
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessInstance.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessInstance.java`
 
 **Immutable record with copy-on-write updates:**
+
 - `UUID processId` - Unique process identifier
 - `String processType` - Process type/name
 - `String businessKey` - Business domain key
@@ -244,6 +302,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 - `Instant updatedAt` - Last update timestamp
 
 **Factory & Update Methods:**
+
 - `create()` - Create new process instance
 - `withStatus()` - Create copy with new status
 - `withCurrentStep()` - Create copy with new step
@@ -252,9 +311,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 - `update()` - Create copy with multiple field updates
 
 #### ProcessStatus (Enum)
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessStatus.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessStatus.java`
 
 Values:
+
 - `NEW` - Created but not started
 - `RUNNING` - Actively executing steps
 - `SUCCEEDED` - Completed successfully
@@ -264,9 +326,12 @@ Values:
 - `PAUSED` - Paused by operator
 
 #### ProcessEvent (Sealed Interface)
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessEvent.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessEvent.java`
 
 Event Types:
+
 - `ProcessStarted(String processType, String businessKey, Map<String, Object> initialData)`
 - `StepStarted(String step, String commandId)`
 - `StepCompleted(String step, String commandId, Map<String, Object> resultData)`
@@ -281,7 +346,9 @@ Event Types:
 - `ProcessResumed(String reason, String resumedBy)`
 
 #### ProcessLogEntry (Record)
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessLogEntry.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-core/src/main/java/com/acme/reliable/process/ProcessLogEntry.java`
 
 - `UUID processId` - Process identifier
 - `long sequence` - Event sequence number
@@ -289,9 +356,12 @@ Event Types:
 - `ProcessEvent event` - The event itself
 
 ### Abstract Base: JdbcProcessRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/process/JdbcProcessRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/process/JdbcProcessRepository.java`
 
 #### Implementation Methods:
+
 - `void insert()` - Insert process instance and initial event
 - `Optional<ProcessInstance> findById()` - Find by process ID
 - `List<ProcessInstance> findByStatus()` - Query by status
@@ -303,11 +373,13 @@ Event Types:
 - `ProcessLogEntry mapResultSetToLogEntry()` - Log entry mapping
 
 **Key Features:**
+
 - Uses JSON serialization for data and events
 - Maintains separate process and process_log tables
 - Event sourcing with immutable log entries
 
 #### Template Methods (Abstract):
+
 - `getInsertSql()` - Process insert
 - `getFindByIdSql()` - Find by ID query
 - `getFindByStatusSql()` - Find by status query
@@ -318,9 +390,12 @@ Event Types:
 - `getInsertLogEntrySql()` - Log entry insert
 
 ### H2 Implementation: H2ProcessRepository
-**Location:** `/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/process/H2ProcessRepository.java`
+
+**Location:**
+`/Users/igormusic/code/messaging-platform/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/process/H2ProcessRepository.java`
 
 #### Database-Specific SQL:
+
 ```sql
 -- Insert process
 INSERT INTO process
@@ -360,179 +435,184 @@ INSERT INTO process_log (process_id, event) VALUES (?, ?)
 ### OutboxRepository Test Scenarios
 
 #### H2OutboxRepository & PostgresOutboxRepository:
+
 1. **insertReturningId()**
-   - Insert entry with valid data, verify returned ID is positive
-   - Verify entry created with NEW status
-   - Verify timestamps are set to current time
-   - Verify headers default to empty JSON object
+    - Insert entry with valid data, verify returned ID is positive
+    - Verify entry created with NEW status
+    - Verify timestamps are set to current time
+    - Verify headers default to empty JSON object
 
 2. **claimIfNew()**
-   - Claim NEW entry, verify returns Optional with entry
-   - Attempt to claim already claimed entry, verify empty Optional
-   - Attempt to claim non-existent entry, verify empty Optional
-   - Verify status changes from NEW to CLAIMED
+    - Claim NEW entry, verify returns Optional with entry
+    - Attempt to claim already claimed entry, verify empty Optional
+    - Attempt to claim non-existent entry, verify empty Optional
+    - Verify status changes from NEW to CLAIMED
 
 3. **sweepBatch()**
-   - Insert multiple NEW entries, sweep batch with limit, verify correct count returned
-   - Insert mix of NEW and CLAIMED entries, verify only NEW are claimed
-   - Insert CLAIMED entry older than 5 minutes, verify included in sweep
-   - Insert CLAIMED entry younger than 5 minutes, verify excluded from sweep
-   - Insert entries with next_at in future, verify excluded
-   - Insert entries with next_at in past, verify included
-   - Verify entries are transitioned to CLAIMED status
+    - Insert multiple NEW entries, sweep batch with limit, verify correct count returned
+    - Insert mix of NEW and CLAIMED entries, verify only NEW are claimed
+    - Insert CLAIMED entry older than 5 minutes, verify included in sweep
+    - Insert CLAIMED entry younger than 5 minutes, verify excluded from sweep
+    - Insert entries with next_at in future, verify excluded
+    - Insert entries with next_at in past, verify included
+    - Verify entries are transitioned to CLAIMED status
 
 4. **markPublished()**
-   - Mark entry as published, verify status changes to PUBLISHED
-   - Verify published_at timestamp is set
-   - Mark non-existent entry, verify no exception (warn logged)
+    - Mark entry as published, verify status changes to PUBLISHED
+    - Verify published_at timestamp is set
+    - Mark non-existent entry, verify no exception (warn logged)
 
 5. **markFailed()**
-   - Mark entry as failed, verify error message stored
-   - Verify next_at is set to future time
-   - Mark entry multiple times, verify error accumulates or overwrites
+    - Mark entry as failed, verify error message stored
+    - Verify next_at is set to future time
+    - Mark entry multiple times, verify error accumulates or overwrites
 
 6. **reschedule()**
-   - Reschedule with various backoff values (1000ms, 5000ms, 60000ms)
-   - Verify next_at is set correctly
-   - Verify error message is stored
-   - Verify status does NOT change (remains CLAIMED or FAILED)
+    - Reschedule with various backoff values (1000ms, 5000ms, 60000ms)
+    - Verify next_at is set correctly
+    - Verify error message is stored
+    - Verify status does NOT change (remains CLAIMED or FAILED)
 
 7. **recoverStuck()**
-   - Insert CLAIMED entry older than threshold
-   - Call recoverStuck with duration
-   - Verify status changes to NEW
-   - Verify next_at is cleared (NULL)
-   - Verify newer CLAIMED entries are not affected
+    - Insert CLAIMED entry older than threshold
+    - Call recoverStuck with duration
+    - Verify status changes to NEW
+    - Verify next_at is cleared (NULL)
+    - Verify newer CLAIMED entries are not affected
 
 #### H2-Specific:
+
 8. **sweepBatch H2 implementation** (two-phase approach)
-   - Test with large batch (100+ entries) to verify IN clause building works
-   - Verify no SQL injection vulnerabilities in dynamic IN clause
-   - Test with concurrent claims to ensure consistency
+    - Test with large batch (100+ entries) to verify IN clause building works
+    - Verify no SQL injection vulnerabilities in dynamic IN clause
+    - Test with concurrent claims to ensure consistency
 
 #### PostgreSQL-Specific:
+
 9. **sweepBatch Postgres implementation** (FOR UPDATE SKIP LOCKED)
-   - Test concurrent sweeps to verify SKIP LOCKED prevents blocking
-   - Verify WITH clause CTE correctly filters available entries
-   - Verify RETURNING clause provides immediate result without second query
+    - Test concurrent sweeps to verify SKIP LOCKED prevents blocking
+    - Verify WITH clause CTE correctly filters available entries
+    - Verify RETURNING clause provides immediate result without second query
 
 ### InboxRepository Test Scenarios
 
 1. **insertIfAbsent() - First Insert**
-   - Insert new message ID with handler
-   - Verify returns 1 (one row inserted)
-   - Verify inbox table contains entry
+    - Insert new message ID with handler
+    - Verify returns 1 (one row inserted)
+    - Verify inbox table contains entry
 
 2. **insertIfAbsent() - Duplicate**
-   - Insert same message ID and handler twice
-   - First insert returns 1
-   - Second insert returns 0 (duplicate, not inserted)
-   - Verify only one entry exists
+    - Insert same message ID and handler twice
+    - First insert returns 1
+    - Second insert returns 0 (duplicate, not inserted)
+    - Verify only one entry exists
 
 3. **insertIfAbsent() - Idempotency**
-   - Insert same message with different handlers (should be allowed)
-   - Both inserts return 1
-   - Verify both entries exist
+    - Insert same message with different handlers (should be allowed)
+    - Both inserts return 1
+    - Verify both entries exist
 
 4. **insertIfAbsent() - Edge Cases**
-   - Insert with null/empty message ID (should fail or return 0)
-   - Insert with very long message ID (1000+ chars)
-   - Insert with special characters in handler name
+    - Insert with null/empty message ID (should fail or return 0)
+    - Insert with very long message ID (1000+ chars)
+    - Insert with special characters in handler name
 
 #### H2-Specific:
+
 5. **H2 INSERT IGNORE syntax**
-   - Verify INSERT IGNORE correctly handles duplicates
-   - Verify no exception thrown on duplicate
+    - Verify INSERT IGNORE correctly handles duplicates
+    - Verify no exception thrown on duplicate
 
 #### PostgreSQL-Specific:
+
 6. **PostgreSQL ON CONFLICT DO NOTHING**
-   - Verify ON CONFLICT DO NOTHING correctly handles duplicates
-   - Verify returns 0 for conflict case
+    - Verify ON CONFLICT DO NOTHING correctly handles duplicates
+    - Verify returns 0 for conflict case
 
 ### DlqRepository Test Scenarios
 
 1. **insertDlqEntry()**
-   - Insert entry with all required fields
-   - Verify entry created with generated UUID
-   - Verify parked_at timestamp is set
-   - Verify all fields stored correctly:
-     - command_id
-     - command_name
-     - business_key
-     - payload (JSON preserved)
-     - failed_status (FAILED, TIMED_OUT, etc.)
-     - error_class (exception class name)
-     - error_message
-     - attempts (number of failures)
-     - parked_by (component name)
+    - Insert entry with all required fields
+    - Verify entry created with generated UUID
+    - Verify parked_at timestamp is set
+    - Verify all fields stored correctly:
+        - command_id
+        - command_name
+        - business_key
+        - payload (JSON preserved)
+        - failed_status (FAILED, TIMED_OUT, etc.)
+        - error_class (exception class name)
+        - error_message
+        - attempts (number of failures)
+        - parked_by (component name)
 
 2. **insertDlqEntry() - Long Values**
-   - Insert with very long error messages (1000+ chars)
-   - Insert with large JSON payload (10KB+)
-   - Verify truncation or storage handling
+    - Insert with very long error messages (1000+ chars)
+    - Insert with large JSON payload (10KB+)
+    - Verify truncation or storage handling
 
 3. **insertDlqEntry() - NULL Handling**
-   - Insert with null error message
-   - Insert with null business key
-   - Verify database constraints allow/reject appropriately
+    - Insert with null error message
+    - Insert with null business key
+    - Verify database constraints allow/reject appropriately
 
 ### ProcessRepository Test Scenarios
 
 1. **insert() - New Process**
-   - Create new ProcessInstance with all fields
-   - Insert with ProcessStarted event
-   - Verify process table contains entry with correct status (NEW)
-   - Verify process_log contains initial event
-   - Verify event log entry has sequence number
+    - Create new ProcessInstance with all fields
+    - Insert with ProcessStarted event
+    - Verify process table contains entry with correct status (NEW)
+    - Verify process_log contains initial event
+    - Verify event log entry has sequence number
 
 2. **findById()**
-   - Find existing process by ID
-   - Verify all fields match (including data map)
-   - Find non-existent process
-   - Verify returns empty Optional
+    - Find existing process by ID
+    - Verify all fields match (including data map)
+    - Find non-existent process
+    - Verify returns empty Optional
 
 3. **findByStatus()**
-   - Insert processes with different statuses (NEW, RUNNING, SUCCEEDED, FAILED)
-   - Query by RUNNING status with limit of 2
-   - Verify returns only RUNNING processes
-   - Verify result count respects limit
-   - Verify ordered by created_at DESC
+    - Insert processes with different statuses (NEW, RUNNING, SUCCEEDED, FAILED)
+    - Query by RUNNING status with limit of 2
+    - Verify returns only RUNNING processes
+    - Verify result count respects limit
+    - Verify ordered by created_at DESC
 
 4. **findByTypeAndStatus()**
-   - Insert processes of different types (OrderProcess, PaymentProcess)
-   - Insert with different statuses
-   - Query for specific type and status combination
-   - Verify only matching entries returned
-   - Verify limit is respected
+    - Insert processes of different types (OrderProcess, PaymentProcess)
+    - Insert with different statuses
+    - Query for specific type and status combination
+    - Verify only matching entries returned
+    - Verify limit is respected
 
 5. **update() - Status Change**
-   - Insert process in NEW status
-   - Update to RUNNING with StepStarted event
-   - Verify status changed
-   - Verify event logged
-   - Find by ID and verify state
+    - Insert process in NEW status
+    - Update to RUNNING with StepStarted event
+    - Verify status changed
+    - Verify event logged
+    - Find by ID and verify state
 
 6. **update() - Step Change**
-   - Update currentStep from "step1" to "step2"
-   - Verify in log via getLog()
-   - Log should contain StepCompleted event
+    - Update currentStep from "step1" to "step2"
+    - Verify in log via getLog()
+    - Log should contain StepCompleted event
 
 7. **update() - Data Modification**
-   - Update data map with new key-value pairs
-   - Verify JSON serialization/deserialization
-   - Verify data persisted and retrievable
+    - Update data map with new key-value pairs
+    - Verify JSON serialization/deserialization
+    - Verify data persisted and retrievable
 
 8. **getLog() - Event Sourcing**
-   - Insert process with ProcessStarted
-   - Update multiple times with various events
-   - Call getLog() without limit
-   - Verify all events in sequence
-   - Verify events in correct order (DESC by sequence)
+    - Insert process with ProcessStarted
+    - Update multiple times with various events
+    - Call getLog() without limit
+    - Verify all events in sequence
+    - Verify events in correct order (DESC by sequence)
 
 9. **getLog() - Limit**
-   - Insert process with 10 events
-   - Call getLog(processId, 3)
-   - Verify returns exactly 3 most recent events
+    - Insert process with 10 events
+    - Call getLog(processId, 3)
+    - Verify returns exactly 3 most recent events
 
 10. **findByBusinessKey()**
     - Insert multiple processes with same type, different business keys
@@ -562,9 +642,9 @@ INSERT INTO process_log (process_id, event) VALUES (?, ?)
 
 14. **Process Lifecycle Events**
     - Test all event types can be logged:
-      - ProcessStarted, StepStarted, StepCompleted, StepFailed, StepTimedOut
-      - CompensationStarted, CompensationCompleted, CompensationFailed
-      - ProcessCompleted, ProcessFailed, ProcessPaused, ProcessResumed
+        - ProcessStarted, StepStarted, StepCompleted, StepFailed, StepTimedOut
+        - CompensationStarted, CompensationCompleted, CompensationFailed
+        - ProcessCompleted, ProcessFailed, ProcessPaused, ProcessResumed
     - Verify event type information preserved through serialization
 
 ---
@@ -572,26 +652,31 @@ INSERT INTO process_log (process_id, event) VALUES (?, ?)
 ## ARCHITECTURAL PATTERNS
 
 ### Template Method Pattern
+
 - **Abstract Base Classes:** `JdbcOutboxRepository`, `JdbcInboxRepository`, `JdbcDlqRepository`, `JdbcProcessRepository`
 - **Concrete Implementations:** H2 and PostgreSQL variants
 - **Benefit:** Centralize business logic, only override database-specific SQL
 
 ### Database Abstraction
+
 - **Property-based Selection:** `@Requires(property = "db.dialect", value = "H2")`
 - **Configuration Driven:** Database selection at application startup
 - **Singleton Scope:** Single instance per database implementation
 
 ### Transaction Management
+
 - **@Transactional Annotation:** Methods marked with transaction boundaries
 - **Read-only Operations:** `@Transactional(readOnly = true)` for queries
 - **Consistency:** All reads/writes within transaction for ACID compliance
 
 ### ResultSet Mapping
+
 - **Centralized Mapping:** `mapResultSetToOutbox()`, `mapResultSetToInstance()`, etc.
 - **Type Conversion:** Handles Timestamp -> Instant, JSON strings -> objects
 - **Null Safety:** Proper null checks for nullable columns
 
 ### Event Sourcing (Process Repository)
+
 - **Immutable Events:** ProcessEvent sealed interface with record implementations
 - **Event Log:** Separate table for complete audit trail
 - **Replay Capability:** Events can be replayed to reconstruct state
@@ -602,17 +687,19 @@ INSERT INTO process_log (process_id, event) VALUES (?, ?)
 
 ### H2 vs PostgreSQL
 
-| Feature | H2 | PostgreSQL |
-|---------|----|----|
-| **Upsert/Conflict** | INSERT IGNORE | ON CONFLICT DO NOTHING |
-| **RETURNING clause** | Not supported | Supported (UPDATE ... RETURNING) |
+| Feature                | H2                                   | PostgreSQL                                 |
+|------------------------|--------------------------------------|--------------------------------------------|
+| **Upsert/Conflict**    | INSERT IGNORE                        | ON CONFLICT DO NOTHING                     |
+| **RETURNING clause**   | Not supported                        | Supported (UPDATE ... RETURNING)           |
 | **Query optimization** | FOR UPDATE SKIP LOCKED not available | FOR UPDATE SKIP LOCKED (prevents blocking) |
-| **CTE support** | Basic | Full WITH clause support |
-| **JSON type** | String | JSONB with type casting |
-| **Generated keys** | RETURN_GENERATED_KEYS | Standard approach |
+| **CTE support**        | Basic                                | Full WITH clause support                   |
+| **JSON type**          | String                               | JSONB with type casting                    |
+| **Generated keys**     | RETURN_GENERATED_KEYS                | Standard approach                          |
 
 ### H2OutboxRepository Special Handling
+
 The H2 implementation of `sweepBatch()` overrides the abstract method entirely because:
+
 1. H2's UPDATE doesn't support RETURNING clause
 2. H2 doesn't support FOR UPDATE SKIP LOCKED
 3. Solution: Two-phase approach (SELECT then UPDATE IN)
@@ -624,6 +711,7 @@ This requires dynamic SQL string building and careful handling of parameter bind
 ## DATABASE SCHEMA REQUIREMENTS
 
 ### Outbox Table
+
 ```sql
 CREATE TABLE outbox (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -644,6 +732,7 @@ CREATE TABLE outbox (
 ```
 
 ### Inbox Table
+
 ```sql
 CREATE TABLE inbox (
   message_id VARCHAR(255) NOT NULL,
@@ -654,6 +743,7 @@ CREATE TABLE inbox (
 ```
 
 ### DLQ Table
+
 ```sql
 CREATE TABLE dlq (
   id UUID PRIMARY KEY,
@@ -671,6 +761,7 @@ CREATE TABLE dlq (
 ```
 
 ### Process Table
+
 ```sql
 CREATE TABLE process (
   process_id UUID PRIMARY KEY,
@@ -686,6 +777,7 @@ CREATE TABLE process (
 ```
 
 ### Process Log Table
+
 ```sql
 CREATE TABLE process_log (
   process_id UUID NOT NULL,

@@ -17,23 +17,29 @@ import jakarta.inject.Singleton;
 @Factory
 public class CoreBeansFactory {
 
-  /** Creates TimeoutConfig bean populated from application.yml timeout.* properties */
-  @Singleton
-  @ConfigurationProperties("timeout")
-  public TimeoutConfig timeoutConfig() {
-    return new TimeoutConfig();
-  }
+    /**
+     * Creates TimeoutConfig bean populated from application.yml timeout.* properties
+     */
+    @Singleton
+    @ConfigurationProperties("timeout")
+    public TimeoutConfig timeoutConfig() {
+        return new TimeoutConfig();
+    }
 
-  /** Creates MessagingConfig bean populated from application.yml messaging.* properties */
-  @Singleton
-  @ConfigurationProperties("messaging")
-  public MessagingConfig messagingConfig() {
-    return new MessagingConfig();
-  }
+    /**
+     * Creates MessagingConfig bean populated from application.yml messaging.* properties
+     */
+    @Singleton
+    @ConfigurationProperties("messaging")
+    public MessagingConfig messagingConfig() {
+        return new MessagingConfig();
+    }
 
-  /** Creates CommandHandlerRegistry singleton */
-  @Singleton
-  public CommandHandlerRegistry commandHandlerRegistry() {
-    return new CommandHandlerRegistry();
-  }
+    /**
+     * Creates CommandHandlerRegistry singleton
+     */
+    @Singleton
+    public CommandHandlerRegistry commandHandlerRegistry() {
+        return new CommandHandlerRegistry();
+    }
 }

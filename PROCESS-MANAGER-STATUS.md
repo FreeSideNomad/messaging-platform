@@ -1,4 +1,5 @@
 # Process Manager Implementation Status
+
 **Date:** 2025-11-04
 **Version:** Sprint 1-3 Complete (with ProcessGraph & Parallel Execution)
 
@@ -9,6 +10,7 @@
 ### Sprint 1: Foundation (100% Complete)
 
 #### 1. Domain Objects (`msg-platform-core/src/main/java/com/acme/reliable/process/`)
+
 - ✅ **ProcessStatus.java** - Enum for process lifecycle states
 - ✅ **ProcessEvent.java** - Sealed interface with 12 event types for event sourcing
 - ✅ **ProcessInstance.java** - Immutable value object with copy-on-write semantics
@@ -17,26 +19,29 @@
 - ✅ **CommandReply.java** - Reply from command execution
 
 **Key Features:**
+
 - Immutable domain model with functional updates
 - Event-sourced process log for full audit trail
 - Sealed interfaces for type safety (Java 17+)
 - Separation of concerns: framework vs business logic
 
 #### 2. Persistence Layer (`msg-platform-persistence-jdbc/`)
+
 - ✅ **V2__process_manager.sql** - Flyway migration
-  - `process_instance` table (current state)
-  - `process_log` table (immutable event log)
-  - Optimized indexes for queries
-  - JSONB for flexible data storage
+    - `process_instance` table (current state)
+    - `process_log` table (immutable event log)
+    - Optimized indexes for queries
+    - JSONB for flexible data storage
 
 - ✅ **ProcessRepository.java** - Repository interface
 - ✅ **JdbcProcessRepository.java** - JDBC implementation
-  - Transaction-aware using Micronaut `@Transactional`
-  - Event sourcing with automatic log append
-  - Optimized queries with proper indexing
-  - JSON serialization via existing `Jsons` utility
+    - Transaction-aware using Micronaut `@Transactional`
+    - Event sourcing with automatic log append
+    - Optimized queries with proper indexing
+    - JSON serialization via existing `Jsons` utility
 
 **Key Features:**
+
 - Transactional consistency (process state + event log atomically updated)
 - Event sourcing for complete audit trail
 - Efficient queries by status, type, business key
@@ -45,22 +50,24 @@
 ### Sprint 2: Process Manager Engine (100% Complete)
 
 #### 3. Process Manager (`msg-platform-processor/src/main/java/com/acme/reliable/processor/process/`)
+
 - ✅ **ProcessManager.java** - Core orchestration engine
-  - Process lifecycle management
-  - Step-by-step execution
-  - Compensation logic
-  - Retry with exponential backoff
-  - Integration with CommandBus
-  - **ProcessGraph caching** for performance
-  - **Parallel execution support** with join synchronization
-  - **Fail-fast parallel branch handling**
+    - Process lifecycle management
+    - Step-by-step execution
+    - Compensation logic
+    - Retry with exponential backoff
+    - Integration with CommandBus
+    - **ProcessGraph caching** for performance
+    - **Parallel execution support** with join synchronization
+    - **Fail-fast parallel branch handling**
 
 - ✅ **ProcessReplyConsumer.java** - MQ reply consumer
-  - Listens to `APP.CMD.REPLY.Q`
-  - Routes replies to ProcessManager
-  - Parses CommandCompleted/Failed/TimedOut messages
+    - Listens to `APP.CMD.REPLY.Q`
+    - Routes replies to ProcessManager
+    - Parses CommandCompleted/Failed/TimedOut messages
 
 **Key Features:**
+
 - Generic, reusable orchestration framework
 - Automatic step progression based on ProcessDefinition
 - Retry logic with configurable backoff
@@ -74,25 +81,27 @@
 #### 4. ProcessGraph - Declarative Process Definition (`msg-platform-core/`)
 
 **Core Components:**
+
 - ✅ **ProcessGraph.java** - DAG representation of process
-  - Query methods: `getNextStep()`, `isParallelStep()`, `getParallelBranches()`, `getJoinStep()`
-  - Compensation queries: `requiresCompensation()`, `getCompensationStep()`
+    - Query methods: `getNextStep()`, `isParallelStep()`, `getParallelBranches()`, `getJoinStep()`
+    - Compensation queries: `requiresCompensation()`, `getCompensationStep()`
 
 - ✅ **ProcessStep.java** - Individual step in DAG
-  - Strategy pattern for next step determination
-  - `DirectNext` - unconditional progression
-  - `ConditionalNext` - branching based on predicate
-  - `ParallelNext` - spawn multiple concurrent branches
-  - `Terminal` - end of process
+    - Strategy pattern for next step determination
+    - `DirectNext` - unconditional progression
+    - `ConditionalNext` - branching based on predicate
+    - `ParallelNext` - spawn multiple concurrent branches
+    - `Terminal` - end of process
 
 - ✅ **ProcessGraphBuilder.java** - Fluent builder API
-  - Type-safe step definition using command classes
-  - Conditional branching: `thenIf().whenTrue().then()`
-  - Optional branches: `thenIf().whenTrue().then(continuation)`
-  - **Parallel execution: `thenParallel().branch().branch().joinAt()`**
-  - Compensation support on every step
+    - Type-safe step definition using command classes
+    - Conditional branching: `thenIf().whenTrue().then()`
+    - Optional branches: `thenIf().whenTrue().then(continuation)`
+    - **Parallel execution: `thenParallel().branch().branch().joinAt()`**
+    - Compensation support on every step
 
 **Parallel Execution Features:**
+
 - Spawn multiple commands concurrently
 - Join point waits for all branches to complete
 - Per-branch compensation configuration
@@ -100,6 +109,7 @@
 - State tracking in process data
 
 **Example Usage:**
+
 ```java
 ProcessGraph graph = process()
     .startWith(InitiatePayment.class)
@@ -113,6 +123,7 @@ ProcessGraph graph = process()
 ```
 
 **Benefits:**
+
 1. **Type Safety** - Compile-time verification of step names
 2. **Readability** - Process flow visible at a glance
 3. **Maintainability** - Easy to modify flow structure
@@ -121,6 +132,7 @@ ProcessGraph graph = process()
 6. **Parallel Execution** - True concurrency with join synchronization
 
 **Test Coverage:**
+
 - ✅ 21 comprehensive tests in `ProcessGraphBuilderTest`
 - Sequential flows
 - Conditional branching (if-else, optional branches)
@@ -133,11 +145,13 @@ ProcessGraph graph = process()
 ## 📊 Test Results
 
 ### ProcessGraphBuilderTest
+
 ```
 [INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 **Test Categories:**
+
 1. Basic sequential flows (5 tests)
 2. Conditional branching (6 tests)
 3. Parallel execution (7 tests)
@@ -148,6 +162,7 @@ ProcessGraph graph = process()
 ## 🎯 Current State Summary
 
 ### What Works Now
+
 1. ✅ **Generic Process Manager Framework** - Fully functional and reusable
 2. ✅ **Event-Sourced Persistence** - Complete audit trail with transactional consistency
 3. ✅ **MQ Integration** - Reply routing from MQ to Process Manager
@@ -158,7 +173,9 @@ ProcessGraph graph = process()
 8. ✅ **Comprehensive Testing** - 21 tests covering all patterns
 
 ### Integration Points
+
 The Process Manager integrates with existing infrastructure:
+
 - ✅ **CommandBus** - Uses existing command bus for sending commands
 - ✅ **Outbox/Inbox** - Leverages existing reliable messaging patterns
 - ✅ **Transaction Management** - Uses Micronaut `@Transactional`
@@ -170,6 +187,7 @@ The Process Manager integrates with existing infrastructure:
 ## 📋 Implementation Architecture
 
 ### Module Structure
+
 ```
 msg-platform-core/
 └── src/main/java/com/acme/reliable/process/
@@ -191,6 +209,7 @@ msg-platform-processor/
 ```
 
 ### Parallel Execution Flow
+
 1. ProcessManager detects parallel step via `graph.isParallelStep()`
 2. Retrieves branches via `graph.getParallelBranches()`
 3. Initializes parallel state tracking: `{branch1: "PENDING", branch2: "PENDING", ...}`
@@ -205,6 +224,7 @@ msg-platform-processor/
 ## 💡 Design Decisions
 
 ### Why ProcessGraph + Fluent Builder
+
 1. **Type Safety** - Command classes used directly, no string typos
 2. **Compile-Time Validation** - Process structure verified at compile time
 3. **Self-Documenting** - Process flow is the documentation
@@ -213,6 +233,7 @@ msg-platform-processor/
 6. **Maintainable** - Changes to flow are localized and clear
 
 ### Why Parallel Execution Support
+
 1. **Performance** - Independent validations can run concurrently
 2. **Reduced Latency** - Total process time = max(branch times) not sum
 3. **Real-World Need** - Payments require fraud check, balance check, risk scoring in parallel
@@ -220,12 +241,14 @@ msg-platform-processor/
 5. **Clean API** - Simple, declarative syntax for complex orchestration
 
 ### Trade-offs
+
 1. **Complexity** - More moving parts than simple choreography
 2. **Latency** - Each step involves DB write + MQ round trip
 3. **State Management** - Parallel state tracking adds overhead
 4. **Learning Curve** - Developers must understand DAG concepts
 
 ### Why These Trade-offs Are Acceptable
+
 - **Payments require orchestration** - Too complex for choreography
 - **Audit trail is mandatory** - Event sourcing provides this
 - **Compensation is critical** - Centralized orchestrator makes this reliable
@@ -237,6 +260,7 @@ msg-platform-processor/
 ## 📊 Metrics & Observability
 
 ### Current Logging
+
 - Process lifecycle events (start, complete, fail)
 - Step transitions with step names
 - Parallel branch spawning (count, branches)
@@ -246,6 +270,7 @@ msg-platform-processor/
 - All events logged with processId, type, businessKey for correlation
 
 ### Recommended Metrics (To Be Added)
+
 - `process_active_total{type}` - Active processes by type
 - `process_completed_total{type}` - Completed processes
 - `process_failed_total{type,reason}` - Failed processes
@@ -260,18 +285,21 @@ msg-platform-processor/
 ## 🚀 Next Steps
 
 ### Immediate
+
 1. Update `SimplePaymentProcessDefinition` to use ProcessGraph fluent API
 2. Add parallel execution for fraud/balance/risk validations
 3. Integration test with actual command execution
 4. Performance test parallel execution vs sequential
 
 ### Short Term
+
 1. Complete all payment command handlers
 2. Add comprehensive integration tests
 3. Performance testing with existing load test infrastructure
 4. Documentation and examples
 
 ### Long Term
+
 1. Batch processing support
 2. Operator admin UI/REST API
 3. Process definition versioning
@@ -283,6 +311,7 @@ msg-platform-processor/
 ## 📝 Code Quality
 
 ### Standards Met
+
 - ✅ Java 17 features (records, sealed interfaces, text blocks, pattern matching)
 - ✅ Immutable domain objects
 - ✅ Comprehensive logging with SLF4J
@@ -295,6 +324,7 @@ msg-platform-processor/
 - ✅ Builder pattern for complex construction
 
 ### Testing Strategy
+
 - ✅ **Unit Tests** - ProcessGraphBuilder (21 tests passing)
 - ⏳ **Integration Tests** - ProcessManager with ProcessGraph
 - ⏳ **E2E Tests** - Full parallel execution flow
@@ -314,6 +344,7 @@ msg-platform-processor/
 ## ✨ Ready for Production
 
 The foundation is solid and production-ready. Sprints 1-3 deliver:
+
 - ✅ Complete Process Manager framework
 - ✅ Event-sourced persistence
 - ✅ MQ integration

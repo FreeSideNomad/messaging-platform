@@ -1,4 +1,5 @@
 # Complete Implementation Guide - Process Manager & Payments Worker
+
 **Date:** 2025-11-03
 **Status:** Sprints 1-2 Complete, Sprints 3-5 Detailed Guide
 
@@ -9,23 +10,25 @@
 All foundation and core engine components are **complete and production-ready**:
 
 ### Sprint 1: Foundation
+
 - `msg-platform-core/src/main/java/com/acme/reliable/process/`
-  - ✅ ProcessStatus.java
-  - ✅ ProcessEvent.java (12 event types)
-  - ✅ ProcessInstance.java
-  - ✅ ProcessLogEntry.java
-  - ✅ ProcessDefinition.java
-  - ✅ CommandReply.java
+    - ✅ ProcessStatus.java
+    - ✅ ProcessEvent.java (12 event types)
+    - ✅ ProcessInstance.java
+    - ✅ ProcessLogEntry.java
+    - ✅ ProcessDefinition.java
+    - ✅ CommandReply.java
 
 - `msg-platform-persistence-jdbc/`
-  - ✅ V2__process_manager.sql (Flyway migration)
-  - ✅ ProcessRepository.java (interface)
-  - ✅ JdbcProcessRepository.java (JDBC implementation)
+    - ✅ V2__process_manager.sql (Flyway migration)
+    - ✅ ProcessRepository.java (interface)
+    - ✅ JdbcProcessRepository.java (JDBC implementation)
 
 ### Sprint 2: Engine
+
 - `msg-platform-processor/src/main/java/com/acme/reliable/processor/process/`
-  - ✅ ProcessManager.java (core orchestration)
-  - ✅ ProcessReplyConsumer.java (MQ listener)
+    - ✅ ProcessManager.java (core orchestration)
+    - ✅ ProcessReplyConsumer.java (MQ listener)
 
 **All code is committed and ready to use.**
 
@@ -36,13 +39,16 @@ All foundation and core engine components are **complete and production-ready**:
 Given token constraints and the need for comprehensive implementation, I recommend:
 
 ### Approach A: Iterative Implementation (Recommended)
+
 Complete each component fully before moving to next:
+
 1. Create minimal working example with 1-2 entities
 2. Test end-to-end
 3. Add remaining entities incrementally
 4. Expand test coverage
 
 ### Approach B: Full Upfront Implementation
+
 Implement all components from the detailed specifications in `process-implementation-plan.md`.
 
 ---
@@ -145,6 +151,7 @@ Implement all components from the detailed specifications in `process-implementa
 ### Task 2: Update parent pom.xml
 
 Add to `<modules>` section:
+
 ```xml
 <module>msg-platform-payments-worker</module>
 ```
@@ -152,6 +159,7 @@ Add to `<modules>` section:
 ### Task 3: Implement domain model (see `process-implementation-plan.md` for complete specifications)
 
 All code patterns are in the plan. Key files to create:
+
 - Value Objects: TransactionType, CurrencyCode, Amount, Beneficiary
 - Entities: Account, Transaction, AccountLimit, FxContract, Payment
 - Repositories: Interfaces + JDBC implementations
@@ -172,16 +180,20 @@ application.yml, Application.java, ProcessDefinition registration.
 ## 🚀 Recommended Next Steps
 
 ### Option 1: Continue Implementation with Claude Code
-Request: "Continue Sprint 3: implement domain model value objects and entities for payments worker following process-implementation-plan.md"
+
+Request: "Continue Sprint 3: implement domain model value objects and entities for payments worker following
+process-implementation-plan.md"
 
 Claude will systematically create all remaining files.
 
 ### Option 2: Review & Validate Current Implementation
+
 Request: "Review the Process Manager implementation for Sprint 1-2 and validate it compiles and integrates correctly"
 
 This ensures the foundation is solid before building on it.
 
 ### Option 3: Create Minimal Working Example
+
 Request: "Create a minimal end-to-end example: simple payment process with 2 steps, test it works"
 
 This proves the architecture before full implementation.
@@ -191,6 +203,7 @@ This proves the architecture before full implementation.
 ## 📚 All Specifications Are Complete
 
 Everything needed for Sprints 3-5 is documented in:
+
 - **process-implementation-plan.md** - Complete technical specifications
 - **reliable-payments-combined-blueprint.md** - Architecture and patterns
 - **process-manager-prompt.md** - Business requirements
@@ -215,6 +228,7 @@ This ensures quality while managing scope effectively.
 ## ✨ Current Achievement
 
 **Major milestone reached:**
+
 - ✅ Generic, reusable Process Manager framework
 - ✅ Event-sourced persistence
 - ✅ MQ integration

@@ -2,7 +2,9 @@
 
 ## Overview
 
-This guide provides detailed instructions for implementing an in-memory embedded ActiveMQ testing environment for your Micronaut messaging platform. This allows for comprehensive integration testing of message flow across modules **without requiring Docker, external message brokers, or Testcontainers**.
+This guide provides detailed instructions for implementing an in-memory embedded ActiveMQ testing environment for your
+Micronaut messaging platform. This allows for comprehensive integration testing of message flow across modules **without
+requiring Docker, external message brokers, or Testcontainers**.
 
 ### Context
 
@@ -14,7 +16,8 @@ This guide provides detailed instructions for implementing an in-memory embedded
 
 ### Key Benefit
 
-Real JMS semantics and message flow testing without external infrastructure. When component A sends a message, it will actually be queued and component B will actually receive it—all in-memory.
+Real JMS semantics and message flow testing without external infrastructure. When component A sends a message, it will
+actually be queued and component B will actually receive it—all in-memory.
 
 ---
 
@@ -58,12 +61,12 @@ Messages actually queue and deliver across modules
 
 ### Key Components
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| **Production Factory** | `IbmMqFactoryProvider.java` | Creates IBM MQ ConnectionFactory |
-| **Test Factory** | `TestMqFactoryProvider.java` | Creates embedded ActiveMQ ConnectionFactory |
-| **Conditional Loading** | `@Requires` annotation | Micronaut activates correct factory based on environment |
-| **Test Configuration** | `application-test.yml` | Test-specific settings (H2 DB, disable flyway, etc.) |
+| Component               | File                         | Purpose                                                  |
+|-------------------------|------------------------------|----------------------------------------------------------|
+| **Production Factory**  | `IbmMqFactoryProvider.java`  | Creates IBM MQ ConnectionFactory                         |
+| **Test Factory**        | `TestMqFactoryProvider.java` | Creates embedded ActiveMQ ConnectionFactory              |
+| **Conditional Loading** | `@Requires` annotation       | Micronaut activates correct factory based on environment |
+| **Test Configuration**  | `application-test.yml`       | Test-specific settings (H2 DB, disable flyway, etc.)     |
 
 ---
 
@@ -73,7 +76,8 @@ Messages actually queue and deliver across modules
 
 Edit: `msg-platform-messaging-ibmmq/pom.xml`
 
-Find the `<dependencies>` section and add the following **before the closing `</dependencies>` tag** (near the other test dependencies):
+Find the `<dependencies>` section and add the following **before the closing `</dependencies>` tag** (near the other
+test dependencies):
 
 ```xml
     <!-- ActiveMQ Embedded for Testing -->
@@ -180,6 +184,7 @@ public class TestMqFactoryProvider {
 ### Step 3: Verify/Update Test Configuration
 
 Check if `application-test.yml` exists in **each module** that has tests. The file should be located at:
+
 - `msg-platform-api/src/test/resources/application-test.yml`
 - `msg-platform-worker/src/test/resources/application-test.yml`
 - `msg-platform-processor/src/test/resources/application-test.yml`
@@ -305,17 +310,18 @@ class CrossModuleMessagingTest {
 
 ### Step 5: Update Existing Tests (If Using Mocks)
 
-If you have existing unit tests that mock `ConnectionFactory`, they should continue to work unchanged. The test environment will:
+If you have existing unit tests that mock `ConnectionFactory`, they should continue to work unchanged. The test
+environment will:
 
 1. **For integration tests** annotated with `@MicronautTest(environments = {"test"})`:
-   - Loads `TestMqFactoryProvider`
-   - Uses embedded ActiveMQ
-   - Real message flow is tested
+    - Loads `TestMqFactoryProvider`
+    - Uses embedded ActiveMQ
+    - Real message flow is tested
 
 2. **For unit tests** without special annotation:
-   - Can still use Mockito/mocks
-   - Can still inject `ConnectionFactory` if needed
-   - Can coexist with integration tests
+    - Can still use Mockito/mocks
+    - Can still inject `ConnectionFactory` if needed
+    - Can coexist with integration tests
 
 ### Step 6: Configure Maven for Test Execution
 
@@ -354,13 +360,13 @@ The embedded broker is configured via the URI: `vm://localhost?broker.persistent
 
 **Key parameters:**
 
-| Parameter | Value | Purpose |
-|-----------|-------|---------|
-| `vm://` | Protocol | Creates/connects to embedded broker in same JVM |
-| `localhost` | Hostname | Can use any hostname; localhost is conventional |
-| `broker.persistent` | false | Messages not written to disk (memory only) |
-| `broker.useShutdownHook` | true (default) | Cleans up broker on JVM shutdown |
-| `broker.transportConnectors.server.transport` | vm | Use only VM transport (recommended for testing) |
+| Parameter                                     | Value          | Purpose                                         |
+|-----------------------------------------------|----------------|-------------------------------------------------|
+| `vm://`                                       | Protocol       | Creates/connects to embedded broker in same JVM |
+| `localhost`                                   | Hostname       | Can use any hostname; localhost is conventional |
+| `broker.persistent`                           | false          | Messages not written to disk (memory only)      |
+| `broker.useShutdownHook`                      | true (default) | Cleans up broker on JVM shutdown                |
+| `broker.transportConnectors.server.transport` | vm             | Use only VM transport (recommended for testing) |
 
 **Optional advanced options:**
 
@@ -410,7 +416,8 @@ public class TestMqFactoryProvider { ... }
 
 ### ConnectionFactory Isolation
 
-**Important**: Each JVM process gets its own embedded broker instance when connecting to `vm://localhost?broker.persistent=false`.
+**Important**: Each JVM process gets its own embedded broker instance when connecting to
+`vm://localhost?broker.persistent=false`.
 
 - **Same test JVM**: All connections share one broker (messages flow correctly)
 - **Different test JVM**: Separate brokers (messages don't flow between)
@@ -494,6 +501,7 @@ mvn dependency:tree | grep activemq
 ```
 
 Expected output:
+
 ```
 [INFO] org.apache.activemq:activemq-broker:jar:5.18.3:test
 [INFO] org.apache.activemq:activemq-client:jar:5.18.3:test
@@ -517,6 +525,7 @@ MICRONAUT_ENVIRONMENTS=test mvn test -Dtest=TestMqFactoryProvider -pl msg-platfo
 ```
 
 Or in your IDE:
+
 - Set environment variable: `MICRONAUT_ENVIRONMENTS=test`
 - Run any `@MicronautTest(environments = {"test"})` test
 
@@ -525,6 +534,7 @@ Or in your IDE:
 Add logging to see which factory loads:
 
 In `TestMqFactoryProvider.java`:
+
 ```java
 @JMSConnectionFactory("mqConnectionFactory")
 public ConnectionFactory mqConnectionFactory() {
@@ -534,6 +544,7 @@ public ConnectionFactory mqConnectionFactory() {
 ```
 
 In `IbmMqFactoryProvider.java`:
+
 ```java
 @JMSConnectionFactory("mqConnectionFactory")
 public jakarta.jms.ConnectionFactory mqConnectionFactory() throws Exception {
@@ -543,6 +554,7 @@ public jakarta.jms.ConnectionFactory mqConnectionFactory() throws Exception {
 ```
 
 When running tests, you should see:
+
 ```
 ✓ Loaded TestMqFactoryProvider (EMBEDDED ACTIVEMQ)
 ```
@@ -556,6 +568,7 @@ When running tests, you should see:
 **Cause**: Neither `IbmMqFactoryProvider` nor `TestMqFactoryProvider` was loaded.
 
 **Solution**:
+
 - Verify `MICRONAUT_ENVIRONMENTS=test` is set
 - Verify `@Requires(env = "test")` is on `TestMqFactoryProvider`
 - Check Micronaut logs for bean loading info
@@ -565,6 +578,7 @@ When running tests, you should see:
 **Cause**: `IbmMqFactoryProvider` loaded instead of `TestMqFactoryProvider`.
 
 **Solution**:
+
 ```bash
 # Explicitly set test environment
 export MICRONAUT_ENVIRONMENTS=test
@@ -579,6 +593,7 @@ mvn test
 **Cause**: Code is trying to reach external IBM MQ instead of using embedded broker.
 
 **Solution**:
+
 1. Verify test environment is active
 2. Verify `TestMqFactoryProvider` exists
 3. Verify `@Requires(env = "test")` annotation is present
@@ -589,6 +604,7 @@ mvn test
 **Cause**: Tests running in different JVM processes.
 
 **Solution**:
+
 - Ensure tests run in same process (standard Maven behavior)
 - Check if parallel test execution is enabled; if so, message isolation might be expected
 
@@ -597,6 +613,7 @@ mvn test
 **Cause**: ActiveMQ dependencies not in classpath.
 
 **Solution**:
+
 ```bash
 # Add to msg-platform-messaging-ibmmq/pom.xml as shown in Step 1
 mvn clean install
@@ -650,14 +667,14 @@ Cross-module communication successful
 
 ## Performance Characteristics
 
-| Aspect | Embedded ActiveMQ | External IBM MQ |
-|--------|------------------|-----------------|
-| **Startup** | < 100ms | 5-30s (network) |
-| **Message latency** | < 1ms (in-process) | 10-50ms (network) |
-| **Memory per test** | ~10-20MB | None (external) |
-| **Test isolation** | Via shutdown hook | Via external cleanup |
-| **Parallel tests** | Possible (separate brokers) | Possible (but shared) |
-| **CI/CD friendly** | ✅ Yes (no Docker) | ❌ No (needs broker) |
+| Aspect              | Embedded ActiveMQ           | External IBM MQ       |
+|---------------------|-----------------------------|-----------------------|
+| **Startup**         | < 100ms                     | 5-30s (network)       |
+| **Message latency** | < 1ms (in-process)          | 10-50ms (network)     |
+| **Memory per test** | ~10-20MB                    | None (external)       |
+| **Test isolation**  | Via shutdown hook           | Via external cleanup  |
+| **Parallel tests**  | Possible (separate brokers) | Possible (but shared) |
+| **CI/CD friendly**  | ✅ Yes (no Docker)           | ❌ No (needs broker)   |
 
 ---
 
@@ -702,6 +719,7 @@ public class EmbeddedActiveMQExtension implements BeforeAllCallback, AfterAllCal
 ```
 
 Usage:
+
 ```java
 @MicronautTest(environments = {"test"})
 @ExtendWith(EmbeddedActiveMQExtension.class)
@@ -714,12 +732,12 @@ class MyIntegrationTest {
 
 ## Comparison: Test Approaches
 
-| Approach | Dependencies | CI/CD | Real JMS | Cross-Module |
-|----------|--------------|-------|----------|--------------|
-| **Mocking** | Mockito | ✅ | ❌ | ❌ |
-| **Embedded ActiveMQ** | ActiveMQ jars | ✅ | ✅ | ✅ |
-| **Testcontainers** | Docker | ❌ | ✅ | ✅ |
-| **External IBM MQ** | Network | ❌ | ✅ | ✅ |
+| Approach              | Dependencies  | CI/CD | Real JMS | Cross-Module |
+|-----------------------|---------------|-------|----------|--------------|
+| **Mocking**           | Mockito       | ✅     | ❌        | ❌            |
+| **Embedded ActiveMQ** | ActiveMQ jars | ✅     | ✅        | ✅            |
+| **Testcontainers**    | Docker        | ❌     | ✅        | ✅            |
+| **External IBM MQ**   | Network       | ❌     | ✅        | ✅            |
 
 **Recommendation for your constraint**: Embedded ActiveMQ (✅ all columns except Docker-specific)
 
@@ -749,6 +767,7 @@ class MyIntegrationTest {
 ## Summary
 
 You now have:
+
 - ✅ In-memory JMS broker for testing (no Docker needed)
 - ✅ Real message flow testing across modules
 - ✅ CI/CD compatible (runs in JVM only)

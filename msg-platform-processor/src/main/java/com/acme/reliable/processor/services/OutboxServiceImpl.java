@@ -6,6 +6,7 @@ import com.acme.reliable.repository.OutboxRepository;
 import com.acme.reliable.service.OutboxService;
 import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -18,49 +19,49 @@ import java.util.Optional;
  */
 @Singleton
 public class OutboxServiceImpl implements OutboxService {
-  private final OutboxRepository repository;
+    private final OutboxRepository repository;
 
-  public OutboxServiceImpl(OutboxRepository repository) {
-    this.repository = repository;
-  }
+    public OutboxServiceImpl(OutboxRepository repository) {
+        this.repository = repository;
+    }
 
-  @Override
-  @Transactional
-  public long addReturningId(Outbox outbox) {
-    var headersJson =
-        outbox.getHeaders() != null && !outbox.getHeaders().isEmpty()
-            ? Jsons.toJson(outbox.getHeaders())
-            : "{}";
-    return repository.insertReturningId(
-        outbox.getCategory(),
-        outbox.getTopic(),
-        outbox.getKey(),
-        outbox.getType(),
-        outbox.getPayload(),
-        headersJson);
-  }
+    @Override
+    @Transactional
+    public long addReturningId(Outbox outbox) {
+        var headersJson =
+                outbox.getHeaders() != null && !outbox.getHeaders().isEmpty()
+                        ? Jsons.toJson(outbox.getHeaders())
+                        : "{}";
+        return repository.insertReturningId(
+                outbox.getCategory(),
+                outbox.getTopic(),
+                outbox.getKey(),
+                outbox.getType(),
+                outbox.getPayload(),
+                headersJson);
+    }
 
-  @Override
-  @Transactional
-  public Optional<Outbox> claimOne(long id) {
-    return repository.claimOne(id);
-  }
+    @Override
+    @Transactional
+    public Optional<Outbox> claimOne(long id) {
+        return repository.claimOne(id);
+    }
 
-  @Override
-  @Transactional
-  public List<Outbox> claim(int max, String claimer) {
-    return repository.claim(max, claimer);
-  }
+    @Override
+    @Transactional
+    public List<Outbox> claim(int max, String claimer) {
+        return repository.claim(max, claimer);
+    }
 
-  @Override
-  @Transactional
-  public void markPublished(long id) {
-    repository.markPublished(id);
-  }
+    @Override
+    @Transactional
+    public void markPublished(long id) {
+        repository.markPublished(id);
+    }
 
-  @Override
-  @Transactional
-  public void reschedule(long id, long backoffMs, String error) {
-    repository.reschedule(id, backoffMs, error);
-  }
+    @Override
+    @Transactional
+    public void reschedule(long id, long backoffMs, String error) {
+        repository.reschedule(id, backoffMs, error);
+    }
 }

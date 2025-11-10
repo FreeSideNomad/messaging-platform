@@ -9,16 +9,15 @@ import com.acme.payments.domain.service.LimitService;
 import com.acme.payments.domain.service.PaymentService;
 import com.acme.payments.infrastructure.persistence.H2RepositoryTestBase;
 import io.micronaut.context.ApplicationContext;
-import io.micronaut.data.connection.jdbc.advice.DelegatingDataSource;
 import io.micronaut.transaction.TransactionOperations;
 import jakarta.jms.ConnectionFactory;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * Base class for payment integration tests that uses Micronaut ApplicationContext for proper DI
@@ -74,285 +73,281 @@ import org.junit.jupiter.api.TestInstance;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class PaymentsIntegrationTestBase extends H2RepositoryTestBase {
 
-  /**
-   * Intentionally empty - setupContext() manages the ApplicationContext lifecycle for the entire test class.
-   * In @TestInstance(PER_CLASS) mode, setupContext() should be called once and tearDownContext()
-   * should be called once, not per test method. Individual test subclasses override this if needed.
-   *
-   * @throws Exception if schema setup fails
-   */
-  @BeforeEach
-  public void setupDatabaseForTest() throws Exception {
-    // Intentionally empty - per-class setup is handled in subclasses
-  }
+    protected ApplicationContext context;
 
-  // ============================================================================
-  // Micronaut ApplicationContext (provides DI and AOP)
-  // ============================================================================
+    // ============================================================================
+    // Micronaut ApplicationContext (provides DI and AOP)
+    // ============================================================================
+    protected ConnectionFactory connectionFactory;
 
-  protected ApplicationContext context;
+    // ============================================================================
+    // JMS Resources (from ApplicationContext)
+    // ============================================================================
+    protected AccountService accountService;
 
-  // ============================================================================
-  // JMS Resources (from ApplicationContext)
-  // ============================================================================
+    // ============================================================================
+    // Service Instances (from ApplicationContext - with AOP and DI)
+    // ============================================================================
+    protected LimitService limitService;
+    protected PaymentService paymentService;
+    protected AccountRepository accountRepository;
 
-  protected ConnectionFactory connectionFactory;
+    // ============================================================================
+    // Repository Instances (from ApplicationContext - with DI)
+    // ============================================================================
+    protected AccountLimitRepository accountLimitRepository;
+    protected PaymentRepository paymentRepository;
+    protected FxContractRepository fxContractRepository;
+    protected TransactionOperations<?> transactionOperations;
 
-  // ============================================================================
-  // Service Instances (from ApplicationContext - with AOP and DI)
-  // ============================================================================
+    // ============================================================================
+    // Transaction Management (for test repository access)
+    // ============================================================================
 
-  protected AccountService accountService;
-  protected LimitService limitService;
-  protected PaymentService paymentService;
-
-  // ============================================================================
-  // Repository Instances (from ApplicationContext - with DI)
-  // ============================================================================
-
-  protected AccountRepository accountRepository;
-  protected AccountLimitRepository accountLimitRepository;
-  protected PaymentRepository paymentRepository;
-  protected FxContractRepository fxContractRepository;
-
-  // ============================================================================
-  // Transaction Management (for test repository access)
-  // ============================================================================
-
-  protected TransactionOperations<?> transactionOperations;
-
-  // ============================================================================
-  // Setup Methods
-  // ============================================================================
-
-  /**
-   * Sets up the Micronaut ApplicationContext with hardwired H2 datasource configuration.
-   *
-   * <p>This must be called after setupSchema() to ensure the H2 database is initialized.
-   * The ApplicationContext will:
-   * <ul>
-   *   <li>Run with "test" environment (enables TestMqFactoryProvider for embedded ActiveMQ)</li>
-   *   <li>Override datasource URL to use the H2 database initialized via Flyway</li>
-   *   <li>Provide beans with proper DI and AOP interceptors</li>
-   *   <li>Create embedded ActiveMQ broker via TestMqFactoryProvider</li>
-   * </ul>
-   *
-   * @throws Exception if context creation fails
-   */
-  protected void setupContext() throws Exception {
-    log.info("Setting up Micronaut ApplicationContext with hardwired H2 datasource");
-
-    // Build configuration map with hardwired H2 datasource
-    Map<String, Object> configuration = new HashMap<>();
-
-    // H2 datasource configuration - must match the database initialized by setupSchema()
-    configuration.put("datasource.url", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
-    configuration.put("datasource.driver-class-name", "org.h2.Driver");
-    configuration.put("datasource.username", "sa");
-    configuration.put("datasource.password", "");
-
-    // HikariCP pool configuration
-    configuration.put("datasource.hikari.maximum-pool-size", "5");
-    configuration.put("datasource.hikari.minimum-idle", "1");
-
-    // Disable automatic schema creation (we use Flyway)
-    configuration.put("jpa.default.properties.hibernate.hbm2ddl.auto", "none");
-
-    // Enable Flyway auto-migration at startup
-    // This ensures the ApplicationContext's database has migrations applied
-    configuration.put("flyway.enabled", "true");
-
-    // Package scanning for test components (like TestMqFactoryProvider)
-    configuration.put("micronaut.packages.enabled", "true");
-
-    // Create ApplicationContext with test environment
-    // "test" environment activates TestMqFactoryProvider for embedded ActiveMQ
-    context =
-        ApplicationContext.run(
-            configuration, "test"); // "test" env activates TestMqFactoryProvider
-
-    log.info("ApplicationContext created with test environment");
-
-    // Get beans from context (with proper DI and AOP)
-    accountService = context.getBean(AccountService.class);
-    limitService = context.getBean(LimitService.class);
-    paymentService = context.getBean(PaymentService.class);
-    accountRepository = context.getBean(AccountRepository.class);
-    accountLimitRepository = context.getBean(AccountLimitRepository.class);
-    paymentRepository = context.getBean(PaymentRepository.class);
-    fxContractRepository = context.getBean(FxContractRepository.class);
-
-    // Get TransactionOperations for wrapping repository access in transactions
-    try {
-      transactionOperations = context.getBean(TransactionOperations.class);
-      log.info("TransactionOperations injected from ApplicationContext");
-    } catch (Exception e) {
-      log.error("Failed to inject TransactionOperations", e);
-      throw new RuntimeException("TransactionOperations must be available for repository access", e);
+    /**
+     * Intentionally empty - setupContext() manages the ApplicationContext lifecycle for the entire test class.
+     * In @TestInstance(PER_CLASS) mode, setupContext() should be called once and tearDownContext()
+     * should be called once, not per test method. Individual test subclasses override this if needed.
+     *
+     * @throws Exception if schema setup fails
+     */
+    @BeforeEach
+    public void setupDatabaseForTest() throws Exception {
+        // Intentionally empty - per-class setup is handled in subclasses
     }
 
-    // Get or create JMS ConnectionFactory for test environment
-    // Note: Tries to get from context first, then creates embedded ActiveMQ if needed
-    try {
-      connectionFactory = context.getBean(ConnectionFactory.class);
-      log.info("ConnectionFactory injected from ApplicationContext");
-    } catch (Exception e) {
-      log.info("ConnectionFactory not found in context, creating embedded ActiveMQ");
-      connectionFactory = createEmbeddedActiveMQConnectionFactory();
+    // ============================================================================
+    // Setup Methods
+    // ============================================================================
+
+    /**
+     * Sets up the Micronaut ApplicationContext with hardwired H2 datasource configuration.
+     *
+     * <p>This must be called after setupSchema() to ensure the H2 database is initialized.
+     * The ApplicationContext will:
+     * <ul>
+     *   <li>Run with "test" environment (enables TestMqFactoryProvider for embedded ActiveMQ)</li>
+     *   <li>Override datasource URL to use the H2 database initialized via Flyway</li>
+     *   <li>Provide beans with proper DI and AOP interceptors</li>
+     *   <li>Create embedded ActiveMQ broker via TestMqFactoryProvider</li>
+     * </ul>
+     *
+     * @throws Exception if context creation fails
+     */
+    protected void setupContext() throws Exception {
+        log.info("Setting up Micronaut ApplicationContext with hardwired H2 datasource");
+
+        // Build configuration map with hardwired H2 datasource
+        Map<String, Object> configuration = new HashMap<>();
+
+        // H2 datasource configuration - must match the database initialized by setupSchema()
+        configuration.put("datasource.url", "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        configuration.put("datasource.driver-class-name", "org.h2.Driver");
+        configuration.put("datasource.username", "sa");
+        configuration.put("datasource.password", "");
+
+        // HikariCP pool configuration
+        configuration.put("datasource.hikari.maximum-pool-size", "5");
+        configuration.put("datasource.hikari.minimum-idle", "1");
+
+        // Disable automatic schema creation (we use Flyway)
+        configuration.put("jpa.default.properties.hibernate.hbm2ddl.auto", "none");
+
+        // Enable Flyway auto-migration at startup
+        // This ensures the ApplicationContext's database has migrations applied
+        configuration.put("flyway.enabled", "true");
+
+        // Package scanning for test components (like TestMqFactoryProvider)
+        configuration.put("micronaut.packages.enabled", "true");
+
+        // Create ApplicationContext with test environment
+        // "test" environment activates TestMqFactoryProvider for embedded ActiveMQ
+        context =
+                ApplicationContext.run(
+                        configuration, "test"); // "test" env activates TestMqFactoryProvider
+
+        log.info("ApplicationContext created with test environment");
+
+        // Get beans from context (with proper DI and AOP)
+        accountService = context.getBean(AccountService.class);
+        limitService = context.getBean(LimitService.class);
+        paymentService = context.getBean(PaymentService.class);
+        accountRepository = context.getBean(AccountRepository.class);
+        accountLimitRepository = context.getBean(AccountLimitRepository.class);
+        paymentRepository = context.getBean(PaymentRepository.class);
+        fxContractRepository = context.getBean(FxContractRepository.class);
+
+        // Get TransactionOperations for wrapping repository access in transactions
+        try {
+            transactionOperations = context.getBean(TransactionOperations.class);
+            log.info("TransactionOperations injected from ApplicationContext");
+        } catch (Exception e) {
+            log.error("Failed to inject TransactionOperations", e);
+            throw new RuntimeException("TransactionOperations must be available for repository access", e);
+        }
+
+        // Get or create JMS ConnectionFactory for test environment
+        // Note: Tries to get from context first, then creates embedded ActiveMQ if needed
+        try {
+            connectionFactory = context.getBean(ConnectionFactory.class);
+            log.info("ConnectionFactory injected from ApplicationContext");
+        } catch (Exception e) {
+            log.info("ConnectionFactory not found in context, creating embedded ActiveMQ");
+            connectionFactory = createEmbeddedActiveMQConnectionFactory();
+        }
+
+        log.info("All services and repositories injected from ApplicationContext");
     }
 
-    log.info("All services and repositories injected from ApplicationContext");
-  }
-
-  /**
-   * Stops the Micronaut ApplicationContext cleanly.
-   *
-   * <p>Should be called in @AfterEach or @AfterAll to ensure proper resource cleanup.
-   */
-  protected void tearDownContext() {
-    if (context != null) {
-      log.info("Stopping ApplicationContext");
-      context.close();
-      log.info("ApplicationContext stopped");
+    /**
+     * Stops the Micronaut ApplicationContext cleanly.
+     *
+     * <p>Should be called in @AfterEach or @AfterAll to ensure proper resource cleanup.
+     */
+    protected void tearDownContext() {
+        if (context != null) {
+            log.info("Stopping ApplicationContext");
+            context.close();
+            log.info("ApplicationContext stopped");
+        }
     }
-  }
 
-  /**
-   * Creates an embedded ActiveMQ ConnectionFactory for JMS tests.
-   *
-   * <p>Used as fallback when TestMqFactoryProvider bean is not available. Creates an embedded
-   * ActiveMQ broker using VM transport (in-process).
-   *
-   * @return ConnectionFactory configured for embedded ActiveMQ
-   */
-  private ConnectionFactory createEmbeddedActiveMQConnectionFactory() {
-    try {
-      log.debug("Attempting to create embedded ActiveMQ ConnectionFactory");
+    /**
+     * Creates an embedded ActiveMQ ConnectionFactory for JMS tests.
+     *
+     * <p>Used as fallback when TestMqFactoryProvider bean is not available. Creates an embedded
+     * ActiveMQ broker using VM transport (in-process).
+     *
+     * @return ConnectionFactory configured for embedded ActiveMQ
+     */
+    private ConnectionFactory createEmbeddedActiveMQConnectionFactory() {
+        try {
+            log.debug("Attempting to create embedded ActiveMQ ConnectionFactory");
 
-      // Load ActiveMQ factory using reflection to avoid hard dependency
-      Class<?> activeMqFactoryClass =
-          Class.forName("org.apache.activemq.ActiveMQConnectionFactory");
-      log.debug("ActiveMQConnectionFactory class found in classpath");
+            // Load ActiveMQ factory using reflection to avoid hard dependency
+            Class<?> activeMqFactoryClass =
+                    Class.forName("org.apache.activemq.ActiveMQConnectionFactory");
+            log.debug("ActiveMQConnectionFactory class found in classpath");
 
-      // VM transport: runs broker in-process
-      String brokerUrl =
-          "vm://localhost?broker.persistent=false&broker.useShutdownHook=false";
+            // VM transport: runs broker in-process
+            String brokerUrl =
+                    "vm://localhost?broker.persistent=false&broker.useShutdownHook=false";
 
-      // Create factory instance using the string constructor
-      Object factory =
-          activeMqFactoryClass.getConstructor(String.class).newInstance(brokerUrl);
-      log.debug("ActiveMQConnectionFactory instance created with URL: {}", brokerUrl);
+            // Create factory instance using the string constructor
+            Object factory =
+                    activeMqFactoryClass.getConstructor(String.class).newInstance(brokerUrl);
+            log.debug("ActiveMQConnectionFactory instance created with URL: {}", brokerUrl);
 
-      // Set disable timestamps
-      activeMqFactoryClass
-          .getMethod("setDisableTimeStampsByDefault", boolean.class)
-          .invoke(factory, true);
-      log.debug("Disabled timestamps on ActiveMQConnectionFactory");
+            // Set disable timestamps
+            activeMqFactoryClass
+                    .getMethod("setDisableTimeStampsByDefault", boolean.class)
+                    .invoke(factory, true);
+            log.debug("Disabled timestamps on ActiveMQConnectionFactory");
 
-      log.info("Successfully created embedded ActiveMQ ConnectionFactory: {}", brokerUrl);
-      return (ConnectionFactory) factory;
-    } catch (ClassNotFoundException e) {
-      log.error(
-          "ActiveMQ ActiveMQConnectionFactory class not found in classpath. "
-              + "Add org.apache.activemq:activemq-client dependency to enable JMS tests.");
-      throw new RuntimeException(
-          "ActiveMQ not available. Add activemq-client dependency to classpath.", e);
-    } catch (Exception e) {
-      log.error(
-          "Failed to create embedded ActiveMQ ConnectionFactory. Exception: {}",
-          e.getClass().getSimpleName() + ": " + e.getMessage(),
-          e);
-      throw new RuntimeException("Could not create ActiveMQ ConnectionFactory: " + e.getMessage(), e);
+            log.info("Successfully created embedded ActiveMQ ConnectionFactory: {}", brokerUrl);
+            return (ConnectionFactory) factory;
+        } catch (ClassNotFoundException e) {
+            log.error(
+                    "ActiveMQ ActiveMQConnectionFactory class not found in classpath. "
+                            + "Add org.apache.activemq:activemq-client dependency to enable JMS tests.");
+            throw new RuntimeException(
+                    "ActiveMQ not available. Add activemq-client dependency to classpath.", e);
+        } catch (Exception e) {
+            log.error(
+                    "Failed to create embedded ActiveMQ ConnectionFactory. Exception: {}",
+                    e.getClass().getSimpleName() + ": " + e.getMessage(),
+                    e);
+            throw new RuntimeException("Could not create ActiveMQ ConnectionFactory: " + e.getMessage(), e);
+        }
     }
-  }
 
-  // ============================================================================
-  // Helper Methods for Transactional Repository Access
-  // ============================================================================
+    // ============================================================================
+    // Helper Methods for Transactional Repository Access
+    // ============================================================================
 
-  /**
-   * Executes a read operation within a transaction context.
-   *
-   * <p>Use this to wrap repository read calls (like findById, find*) that need transaction context.
-   *
-   * <p>Example:
-   *
-   * <pre>
-   * Account account = readInTransaction(() -> accountRepository.findById(accountId).orElseThrow());
-   * </pre>
-   *
-   * @param <T> the type of object being read
-   * @param callable the operation to execute
-   * @return the result of the operation
-   */
-  protected <T> T readInTransaction(Callable<T> callable) {
-    try {
-      return transactionOperations.executeRead(
-          tx -> {
-            try {
-              return callable.call();
-            } catch (Exception e) {
-              throw new RuntimeException(e);
-            }
-          });
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to execute read operation in transaction", e);
+    /**
+     * Executes a read operation within a transaction context.
+     *
+     * <p>Use this to wrap repository read calls (like findById, find*) that need transaction context.
+     *
+     * <p>Example:
+     *
+     * <pre>
+     * Account account = readInTransaction(() -> accountRepository.findById(accountId).orElseThrow());
+     * </pre>
+     *
+     * @param <T>      the type of object being read
+     * @param callable the operation to execute
+     * @return the result of the operation
+     */
+    protected <T> T readInTransaction(Callable<T> callable) {
+        try {
+            return transactionOperations.executeRead(
+                    tx -> {
+                        try {
+                            return callable.call();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute read operation in transaction", e);
+        }
     }
-  }
 
-  /**
-   * Executes a write operation within a transaction context.
-   *
-   * <p>Use this to wrap repository write calls (like save, delete) that need transaction context.
-   *
-   * <p>Example:
-   *
-   * <pre>
-   * writeInTransaction(() -> accountRepository.save(account));
-   * </pre>
-   *
-   * @param runnable the operation to execute
-   */
-  protected void writeInTransaction(Runnable runnable) {
-    try {
-      transactionOperations.executeWrite(
-          tx -> {
-            runnable.run();
-            return null;
-          });
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to execute write operation in transaction", e);
+    /**
+     * Executes a write operation within a transaction context.
+     *
+     * <p>Use this to wrap repository write calls (like save, delete) that need transaction context.
+     *
+     * <p>Example:
+     *
+     * <pre>
+     * writeInTransaction(() -> accountRepository.save(account));
+     * </pre>
+     *
+     * @param runnable the operation to execute
+     */
+    protected void writeInTransaction(Runnable runnable) {
+        try {
+            transactionOperations.executeWrite(
+                    tx -> {
+                        runnable.run();
+                        return null;
+                    });
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute write operation in transaction", e);
+        }
     }
-  }
 
-  /**
-   * Executes a write operation within a transaction context and returns a result.
-   *
-   * <p>Use this to wrap repository write calls that need to return a value.
-   *
-   * <p>Example:
-   *
-   * <pre>
-   * Account saved = writeInTransaction(() -> accountRepository.save(account));
-   * </pre>
-   *
-   * @param <T> the type of object being returned
-   * @param callable the operation to execute
-   * @return the result of the operation
-   */
-  protected <T> T writeInTransaction(Callable<T> callable) {
-    try {
-      return transactionOperations.executeWrite(
-          tx -> {
-            try {
-              return callable.call();
-            } catch (Exception e) {
-              throw new RuntimeException(e);
-            }
-          });
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to execute write operation in transaction", e);
+    /**
+     * Executes a write operation within a transaction context and returns a result.
+     *
+     * <p>Use this to wrap repository write calls that need to return a value.
+     *
+     * <p>Example:
+     *
+     * <pre>
+     * Account saved = writeInTransaction(() -> accountRepository.save(account));
+     * </pre>
+     *
+     * @param <T>      the type of object being returned
+     * @param callable the operation to execute
+     * @return the result of the operation
+     */
+    protected <T> T writeInTransaction(Callable<T> callable) {
+        try {
+            return transactionOperations.executeWrite(
+                    tx -> {
+                        try {
+                            return callable.call();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute write operation in transaction", e);
+        }
     }
-  }
 
 }

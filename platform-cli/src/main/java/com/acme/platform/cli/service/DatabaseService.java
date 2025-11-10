@@ -123,9 +123,9 @@ public class DatabaseService implements AutoCloseable {
         List<Map<String, String>> columns = new ArrayList<>();
         String columnSql = String.format(
                 "SELECT column_name, data_type, is_nullable " +
-                "FROM information_schema.columns " +
-                "WHERE table_schema = 'public' AND table_name = '%s' " +
-                "ORDER BY ordinal_position", tableName);
+                        "FROM information_schema.columns " +
+                        "WHERE table_schema = 'public' AND table_name = '%s' " +
+                        "ORDER BY ordinal_position", tableName);
 
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement();

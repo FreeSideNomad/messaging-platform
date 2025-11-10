@@ -1,15 +1,16 @@
 package com.acme.reliable.persistence.jdbc.inbox;
 
-import static org.assertj.core.api.Assertions.*;
-
 import com.acme.reliable.persistence.jdbc.PostgresInboxRepository;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.lang.reflect.Method;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * SQL verification tests for PostgresInboxRepository.
@@ -19,69 +20,69 @@ import org.junit.jupiter.api.Test;
 @DisplayName("PostgreSQL Inbox Repository SQL Verification")
 class PostgresInboxRepositorySqlTest {
 
-  private PostgresInboxRepository repository;
-  private HikariDataSource dataSource;
+    private PostgresInboxRepository repository;
+    private HikariDataSource dataSource;
 
-  @BeforeEach
-  void setup() {
-    HikariConfig config = new HikariConfig();
-    config.setJdbcUrl("jdbc:h2:mem:test");
-    config.setUsername("sa");
-    config.setPassword("");
-    dataSource = new HikariDataSource(config);
+    @BeforeEach
+    void setup() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:h2:mem:test");
+        config.setUsername("sa");
+        config.setPassword("");
+        dataSource = new HikariDataSource(config);
 
-    repository = new PostgresInboxRepository(dataSource);
-  }
-
-  @AfterEach
-  void tearDown() {
-    if (dataSource != null) {
-      dataSource.close();
+        repository = new PostgresInboxRepository(dataSource);
     }
-  }
 
-  @Test
-  @DisplayName("Insert if absent SQL should use ON CONFLICT DO NOTHING for idempotency")
-  void testInsertIfAbsentSql() {
-    String sql = invokeProtectedMethod("getInsertIfAbsentSql");
-
-    assertThat(sql)
-        .as("Should use PostgreSQL ON CONFLICT DO NOTHING clause for idempotent inserts")
-        .isNotNull()
-        .isNotEmpty()
-        .contains("INSERT INTO inbox")
-        .contains("(message_id, handler, processed_at)")
-        .contains("VALUES (?, ?, ?)")
-        .contains("ON CONFLICT DO NOTHING");
-  }
-
-  /**
-   * Verify that the SQL uses PostgreSQL's conflict resolution rather than other dialects.
-   */
-  @Test
-  @DisplayName("Insert if absent SQL should not use H2-specific syntax")
-  void testInsertIfAbsentSqlNotH2() {
-    String sql = invokeProtectedMethod("getInsertIfAbsentSql");
-
-    assertThat(sql)
-        .as("Should not contain H2 or other dialect-specific syntax")
-        .isNotNull()
-        .isNotEmpty()
-        .doesNotContain("IGNORE")
-        .doesNotContain("MERGE")
-        .doesNotContain("PRAGMA");
-  }
-
-  /**
-   * Helper method to invoke protected SQL methods via reflection.
-   */
-  private String invokeProtectedMethod(String methodName) {
-    try {
-      Method method = PostgresInboxRepository.class.getDeclaredMethod(methodName);
-      method.setAccessible(true);
-      return (String) method.invoke(repository);
-    } catch (Exception e) {
-      throw new AssertionError("Failed to invoke method: " + methodName, e);
+    @AfterEach
+    void tearDown() {
+        if (dataSource != null) {
+            dataSource.close();
+        }
     }
-  }
+
+    @Test
+    @DisplayName("Insert if absent SQL should use ON CONFLICT DO NOTHING for idempotency")
+    void testInsertIfAbsentSql() {
+        String sql = invokeProtectedMethod("getInsertIfAbsentSql");
+
+        assertThat(sql)
+                .as("Should use PostgreSQL ON CONFLICT DO NOTHING clause for idempotent inserts")
+                .isNotNull()
+                .isNotEmpty()
+                .contains("INSERT INTO inbox")
+                .contains("(message_id, handler, processed_at)")
+                .contains("VALUES (?, ?, ?)")
+                .contains("ON CONFLICT DO NOTHING");
+    }
+
+    /**
+     * Verify that the SQL uses PostgreSQL's conflict resolution rather than other dialects.
+     */
+    @Test
+    @DisplayName("Insert if absent SQL should not use H2-specific syntax")
+    void testInsertIfAbsentSqlNotH2() {
+        String sql = invokeProtectedMethod("getInsertIfAbsentSql");
+
+        assertThat(sql)
+                .as("Should not contain H2 or other dialect-specific syntax")
+                .isNotNull()
+                .isNotEmpty()
+                .doesNotContain("IGNORE")
+                .doesNotContain("MERGE")
+                .doesNotContain("PRAGMA");
+    }
+
+    /**
+     * Helper method to invoke protected SQL methods via reflection.
+     */
+    private String invokeProtectedMethod(String methodName) {
+        try {
+            Method method = PostgresInboxRepository.class.getDeclaredMethod(methodName);
+            method.setAccessible(true);
+            return (String) method.invoke(repository);
+        } catch (Exception e) {
+            throw new AssertionError("Failed to invoke method: " + methodName, e);
+        }
+    }
 }

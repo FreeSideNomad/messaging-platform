@@ -2,65 +2,72 @@
 
 ## Executive Summary
 
-This analysis covers three interconnected modules in a distributed payment processing system using IBM MQ, Kafka, PostgreSQL, and Redis. The architecture implements a saga pattern with process orchestration, transactional outbox, and command-driven event sourcing.
+This analysis covers three interconnected modules in a distributed payment processing system using IBM MQ, Kafka,
+PostgreSQL, and Redis. The architecture implements a saga pattern with process orchestration, transactional outbox, and
+command-driven event sourcing.
 
 ---
 
 ## 1. MSG-PLATFORM-PROCESSOR Module
 
 ### Overview
-Core orchestration and publishing engine for commands, replies, and events. Manages workflow processes, outbox transactional guarantees, and message distribution.
+
+Core orchestration and publishing engine for commands, replies, and events. Manages workflow processes, outbox
+transactional guarantees, and message distribution.
 
 ### Key Responsibilities
 
 #### 1.1 OutboxRelay (Primary Message Publisher)
+
 **File:** `OutboxRelay.java` (92 lines)
 
 - **Role:** Main outbox relay mechanism - publishes messages from DB to external systems
-- **Mechanism:** 
-  - Scheduled polling every 1 second (configurable via `timeout.outbox-sweep-interval`)
-  - Atomically claims batches of messages within transactions
-  - Publishes outside transactions to avoid holding DB connections during slow I/O
-  - Automatic backoff with exponential retry logic (2^n * 1000ms, capped at maxBackoffMillis)
-  
+- **Mechanism:**
+    - Scheduled polling every 1 second (configurable via `timeout.outbox-sweep-interval`)
+    - Atomically claims batches of messages within transactions
+    - Publishes outside transactions to avoid holding DB connections during slow I/O
+    - Automatic backoff with exponential retry logic (2^n * 1000ms, capped at maxBackoffMillis)
+
 - **Message Flow:**
   ```
   Database (PENDING) → [Atomic Claim] → Publish to MQ/Kafka → Mark PUBLISHED
                                       ↓ [Exception]
                                    Reschedule with backoff
   ```
-  
+
 - **Database Operations:**
-  - `store.claim(batchSize, host())` - Atomic claim of PENDING messages
-  - `store.markPublished(id)` - Mark as successfully published
-  - `store.reschedule(id, backoff, error)` - Reschedule failed messages
+    - `store.claim(batchSize, host())` - Atomic claim of PENDING messages
+    - `store.markPublished(id)` - Mark as successfully published
+    - `store.reschedule(id, backoff, error)` - Reschedule failed messages
 
 - **Category Routing:**
-  - `"command"`, `"reply"` → IBM MQ via `mq.send()`
-  - `"event"` → Kafka via `kafka.publish()`
+    - `"command"`, `"reply"` → IBM MQ via `mq.send()`
+    - `"event"` → Kafka via `kafka.publish()`
 
 #### 1.2 OutboxSweeper (Legacy Alternative - DEPRECATED)
+
 **File:** `OutboxSweeper.java` (66 lines)
 
 - **Role:** Legacy background sweeper (appears to be alternative implementation)
 - **Difference from Relay:**
-  - Uses `outbox.sweepBatch()` instead of atomic claim
-  - Has explicit recovery for STUCK messages (10-second timeout)
-  - Uses `markFailed()` with explicit retry timestamps
-  - Direct scheduling approach without transaction coordination
+    - Uses `outbox.sweepBatch()` instead of atomic claim
+    - Has explicit recovery for STUCK messages (10-second timeout)
+    - Uses `markFailed()` with explicit retry timestamps
+    - Direct scheduling approach without transaction coordination
 
 - **Status:** Dual implementation suggests migration in progress
 
 #### 1.3 NotifyPublisher (Fast-Path Publisher via Redis)
+
 **File:** `NotifyPublisher.java` (103 lines)
 
 - **Role:** Optimized real-time publisher for immediate message distribution
 - **Implementation:**
-  - Uses Redis blocking queue (`outbox:notify`) for events
-  - Async message consumption with concurrent processing (Semaphore with 32 permits)
-  - Republishes to MQ/Kafka in parallel paths
-  - Automatic resubscription on completion/error
-  
+    - Uses Redis blocking queue (`outbox:notify`) for events
+    - Async message consumption with concurrent processing (Semaphore with 32 permits)
+    - Republishes to MQ/Kafka in parallel paths
+    - Automatic resubscription on completion/error
+
 - **Concurrency Pattern:**
   ```
   Redis Queue (blocking) → Async handlers (32 concurrent)
@@ -77,6 +84,7 @@ Core orchestration and publishing engine for commands, replies, and events. Mana
 - **Lifecycle:** Implements AutoCloseable, graceful shutdown with AtomicBoolean flag
 
 #### 1.4 TransactionalCommandBus (Command Entry Point)
+
 **File:** `TransactionalCommandBus.java` (42 lines)
 
 - **Role:** Primary entry point for new commands from API
@@ -85,34 +93,35 @@ Core orchestration and publishing engine for commands, replies, and events. Mana
   @Transactional
   UUID accept(String name, String idem, String bizKey, String payload, Map<String, String> reply)
   ```
-  
+
 - **Responsibilities:**
-  1. Idempotency check: `commands.existsByIdempotencyKey(idem)`
-  2. Save command as PENDING: `commands.savePending()`
-  3. Create outbox entry: `outboxStore.addReturningId()`
-  
+    1. Idempotency check: `commands.existsByIdempotencyKey(idem)`
+    2. Save command as PENDING: `commands.savePending()`
+    3. Create outbox entry: `outboxStore.addReturningId()`
+
 - **Transaction Safety:**
-  - All database operations in single transaction
-  - Fast path publishing DISABLED (comment: "causing transaction leak")
-  - Returns command UUID for API response
-  
+    - All database operations in single transaction
+    - Fast path publishing DISABLED (comment: "causing transaction leak")
+    - Returns command UUID for API response
+
 - **Note:** Reply channel configuration passed via `MessagingConfig`
 
 #### 1.5 ProcessManager (Workflow Orchestration)
+
 **File:** `ProcessManager.java` (76 lines)
 
 - **Role:** Main saga/process orchestration engine
 - **Capabilities:**
-  1. Auto-discovery of ProcessConfiguration beans at startup
-  2. Transaction-per-action execution model
-  3. Process state persistence to DB
-  4. Step-by-step command emission
-  
+    1. Auto-discovery of ProcessConfiguration beans at startup
+    2. Transaction-per-action execution model
+    3. Process state persistence to DB
+    4. Step-by-step command emission
+
 - **Architecture Pattern:**
-  - Extends `BaseProcessManager` (domain logic)
-  - Implements `ApplicationEventListener<ServerStartupEvent>` (auto-registration)
-  - Transactional execution wrapper
-  
+    - Extends `BaseProcessManager` (domain logic)
+    - Implements `ApplicationEventListener<ServerStartupEvent>` (auto-registration)
+    - Transactional execution wrapper
+
 - **Auto-Discovery Mechanism:**
   ```
   Application Startup Event
@@ -125,42 +134,45 @@ Core orchestration and publishing engine for commands, replies, and events. Mana
   ```
 
 - **Error Handling:**
-  - Ambiguous configuration detection (multiple configs for same type)
-  - Startup failure if configuration conflicts detected
+    - Ambiguous configuration detection (multiple configs for same type)
+    - Startup failure if configuration conflicts detected
 
 #### 1.6 ProcessReplyConsumer (Reply Routing)
+
 **File:** `ProcessReplyConsumer.java` (78 lines)
 
 - **Role:** Consumes replies from worker queues and routes to ProcessManager
 - **Status:** STUB IMPLEMENTATION
-  - Commented out @JMSListener annotation
-  - Method signature defined but listener not wired
-  - Placeholder for future JMS integration
-  
+    - Commented out @JMSListener annotation
+    - Method signature defined but listener not wired
+    - Placeholder for future JMS integration
+
 - **Reply Types Supported:**
-  - `CommandCompleted` → Extract payload
-  - `CommandFailed` → Extract error message
-  - `CommandTimedOut` → Extract timeout error
-  
+    - `CommandCompleted` → Extract payload
+    - `CommandFailed` → Extract error message
+    - `CommandTimedOut` → Extract timeout error
+
 - **Route to ProcessManager:**
   ```
   processManager.handleReply(correlationId, commandId, reply)
   ```
 
 #### 1.7 ResponseRegistry (In-Memory Response Tracking)
+
 **File:** `ResponseRegistry.java` (40 lines)
 
 - **Role:** Maps command IDs to CompletableFutures for synchronous response waiting
 - **Data Structure:** `ConcurrentHashMap<UUID, CompletableFuture<String>>`
 - **Lifetime:** Auto-cleanup on timeout (2 seconds default)
 - **Methods:**
-  - `register(UUID)` → CompletableFuture
-  - `complete(UUID, String response)` → Complete future
-  - `fail(UUID, String error)` → Complete exceptionally
+    - `register(UUID)` → CompletableFuture
+    - `complete(UUID, String response)` → Complete future
+    - `fail(UUID, String error)` → Complete exceptionally
 
 - **Use Case:** Real-time API response waiting (polling outbox results)
 
 #### 1.8 FastPathPublisher (Transaction-Aware Publishing)
+
 **File:** `FastPathPublisher.java` (36 lines)
 
 - **Role:** Registers outbox publishing to occur after transaction commit
@@ -215,19 +227,19 @@ ProcessReplyConsumer (STUB)
 
 ### Database Operations Summary
 
-| Component | Operation | Method | Transactional |
-|-----------|-----------|--------|----------------|
-| OutboxRelay | Claim | `store.claim()` | YES |
-| OutboxRelay | Mark published | `store.markPublished()` | YES |
-| OutboxRelay | Reschedule | `store.reschedule()` | YES |
-| OutboxSweeper | Sweep | `outbox.sweepBatch()` | NO |
-| OutboxSweeper | Recover stuck | `outbox.recoverStuck()` | NO |
-| TransactionalCommandBus | Check duplicate | `commands.existsByIdempotencyKey()` | YES |
-| TransactionalCommandBus | Save command | `commands.savePending()` | YES |
-| TransactionalCommandBus | Create outbox | `outboxStore.addReturningId()` | YES |
-| NotifyPublisher | Claim | `outbox.claimIfNew()` | NO |
-| NotifyPublisher | Mark published | `outbox.markPublished()` | NO |
-| NotifyPublisher | Mark failed | `outbox.markFailed()` | NO |
+| Component               | Operation       | Method                              | Transactional |
+|-------------------------|-----------------|-------------------------------------|---------------|
+| OutboxRelay             | Claim           | `store.claim()`                     | YES           |
+| OutboxRelay             | Mark published  | `store.markPublished()`             | YES           |
+| OutboxRelay             | Reschedule      | `store.reschedule()`                | YES           |
+| OutboxSweeper           | Sweep           | `outbox.sweepBatch()`               | NO            |
+| OutboxSweeper           | Recover stuck   | `outbox.recoverStuck()`             | NO            |
+| TransactionalCommandBus | Check duplicate | `commands.existsByIdempotencyKey()` | YES           |
+| TransactionalCommandBus | Save command    | `commands.savePending()`            | YES           |
+| TransactionalCommandBus | Create outbox   | `outboxStore.addReturningId()`      | YES           |
+| NotifyPublisher         | Claim           | `outbox.claimIfNew()`               | NO            |
+| NotifyPublisher         | Mark published  | `outbox.markPublished()`            | NO            |
+| NotifyPublisher         | Mark failed     | `outbox.markFailed()`               | NO            |
 
 ### Current Test Coverage
 
@@ -239,6 +251,7 @@ ProcessReplyConsumer (STUB)
 4. **SimpleRedisQueueTest** - Redis integration
 
 **Coverage Gaps:**
+
 - [ ] OutboxRelay transaction behavior under failure
 - [ ] OutboxSweeper recovery logic
 - [ ] NotifyPublisher concurrency limits and backpressure
@@ -270,19 +283,22 @@ timeout:
 ## 2. MSG-PLATFORM-PAYMENTS-WORKER Module
 
 ### Overview
-Domain-specific payment processing worker implementing saga orchestration, limit management, and FX operations for banking workflow.
+
+Domain-specific payment processing worker implementing saga orchestration, limit management, and FX operations for
+banking workflow.
 
 ### Key Responsibilities
 
 #### 2.1 PaymentCommandConsumer (JMS Entry Point)
+
 **File:** `PaymentCommandConsumer.java` (92 lines)
 
 - **Role:** JMS listener for payment-specific commands
 - **Configuration:**
-  - Requires: `beans = IbmMqFactoryProvider`
-  - Enabled by: `jms.consumers.enabled=true`
-  - Disabled in test environment
-  
+    - Requires: `beans = IbmMqFactoryProvider`
+    - Enabled by: `jms.consumers.enabled=true`
+    - Disabled in test environment
+
 - **Listeners (11 queue handlers):**
   ```
   APP.CMD.BOOKFX.Q              → onBookFxCommand()
@@ -302,23 +318,24 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
   @MessageBody String → processCommand(commandType, body, jmsMessage)
   ```
-  - Extends `BaseCommandConsumer` for common logic
-  - Reply queue: `APP.CMD.REPLY.Q`
+    - Extends `BaseCommandConsumer` for common logic
+    - Reply queue: `APP.CMD.REPLY.Q`
 
 #### 2.2 Domain Services Layer
 
 ##### 2.2.1 AccountService
+
 **File:** `AccountService.java` (174 lines)
 
 - **Responsibilities:**
-  1. Account creation with properties
-  2. Transaction management (CREATE, DEBIT, CREDIT)
-  3. Transaction reversal for compensation
-  
+    1. Account creation with properties
+    2. Transaction management (CREATE, DEBIT, CREDIT)
+    3. Transaction reversal for compensation
+
 - **Command Handlers (Auto-discovered):**
-  - `handleCreateAccount(CreateAccountCommand)` → Account created, returns accountId + accountNumber
-  - `handleCompleteAccountCreation(CompleteAccountCreationCommand)` → No-op terminal step
-  - `handleReverseTransaction(ReverseTransactionCommand)` → Creates opposite transaction
+    - `handleCreateAccount(CreateAccountCommand)` → Account created, returns accountId + accountNumber
+    - `handleCompleteAccountCreation(CompleteAccountCreationCommand)` → No-op terminal step
+    - `handleReverseTransaction(ReverseTransactionCommand)` → Creates opposite transaction
 
 - **Data Model:**
   ```
@@ -344,22 +361,23 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 - **Database Operations:**
-  - `accountRepository.save(account)` - Persist account with transactions
-  - `accountRepository.findById(accountId)` - Read account aggregate
-  - All operations within @Transactional boundaries
+    - `accountRepository.save(account)` - Persist account with transactions
+    - `accountRepository.findById(accountId)` - Read account aggregate
+    - All operations within @Transactional boundaries
 
 - **Compensation Pattern:**
-  - Reverse transaction creates opposite type transaction
-  - Maintains audit trail with reference to original
+    - Reverse transaction creates opposite type transaction
+    - Maintains audit trail with reference to original
 
 ##### 2.2.2 PaymentService
+
 **File:** `PaymentService.java` (61 lines)
 
 - **Responsibilities:**
-  1. Payment creation (debit/credit pair)
-  2. Payment state updates
-  3. Payment retrieval
-  
+    1. Payment creation (debit/credit pair)
+    2. Payment state updates
+    3. Payment retrieval
+
 - **Data Model:**
   ```
   Payment {
@@ -374,18 +392,19 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 - **Methods:**
-  - `createPayment(CreatePaymentCommand)` → Payment aggregate
-  - `updatePayment(Payment)` → Persisted payment
-  - `getPaymentById(UUID)` → Payment aggregate
+    - `createPayment(CreatePaymentCommand)` → Payment aggregate
+    - `updatePayment(Payment)` → Persisted payment
+    - `getPaymentById(UUID)` → Payment aggregate
 
 ##### 2.2.3 FxService
+
 **File:** `FxService.java` (79 lines)
 
 - **Responsibilities:**
-  1. FX contract booking (debit/credit currencies)
-  2. FX contract unwinding for compensation
-  3. Rate calculation
-  
+    1. FX contract booking (debit/credit currencies)
+    2. FX contract unwinding for compensation
+    3. Rate calculation
+
 - **Data Model:**
   ```
   FxContract {
@@ -401,8 +420,8 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 - **Command Handlers:**
-  - `bookFx(BookFxCommand)` → Calculates rate (creditAmount / debitAmount)
-  - `handleUnwindFx(UnwindFxCommand)` → Marks contract unwound
+    - `bookFx(BookFxCommand)` → Calculates rate (creditAmount / debitAmount)
+    - `handleUnwindFx(UnwindFxCommand)` → Marks contract unwound
 
 - **Rate Calculation:**
   ```java
@@ -410,13 +429,14 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 ##### 2.2.4 LimitService
+
 **File:** `LimitService.java` (123 lines)
 
 - **Responsibilities:**
-  1. Create time-bucketed limits (HOUR, DAY, WEEK, MONTH)
-  2. Book amount against active limits
-  3. Reverse (unbook) amounts for compensation
-  
+    1. Create time-bucketed limits (HOUR, DAY, WEEK, MONTH)
+    2. Book amount against active limits
+    3. Reverse (unbook) amounts for compensation
+
 - **Data Model:**
   ```
   AccountLimit {
@@ -434,14 +454,14 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 - **Command Handlers:**
-  - `handleCreateLimits(CreateLimitsCommand)` → Creates limit bucket per PeriodType
-  - `handleReverseLimits(ReverseLimitsCommand)` → Reduces utilized amount
+    - `handleCreateLimits(CreateLimitsCommand)` → Creates limit bucket per PeriodType
+    - `handleReverseLimits(ReverseLimitsCommand)` → Reduces utilized amount
 
 - **Key Logic:**
-  - Time bucket alignment to period boundaries
-  - Multi-period support (hour + day + week + month)
-  - Booking against all active limits atomically
-  - Automatic expiration detection
+    - Time bucket alignment to period boundaries
+    - Multi-period support (hour + day + week + month)
+    - Booking against all active limits atomically
+    - Automatic expiration detection
 
 - **Period Type Alignment:**
   ```
@@ -455,6 +475,7 @@ Domain-specific payment processing worker implementing saga orchestration, limit
 #### 2.3 Process Definitions (Orchestration)
 
 ##### 2.3.1 CreateAccountProcessDefinition
+
 **File:** `CreateAccountProcessDefinition.java` (99 lines)
 
 - **Process Type:** `InitiateCreateAccountProcess`
@@ -473,8 +494,8 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 - **Idempotency:** All steps retryable on transient errors
-  - Retry on: timeout, connection, temporary errors
-  - Max retries: 3 per step
+    - Retry on: timeout, connection, temporary errors
+    - Max retries: 3 per step
 
 - **Compensation:** None (creation is idempotent)
 
@@ -488,6 +509,7 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 ##### 2.3.2 SimplePaymentProcessDefinition
+
 **File:** `SimplePaymentProcessDefinition.java` (86 lines)
 
 - **Process Type:** `InitiateSimplePaymentCommand`
@@ -506,34 +528,38 @@ Domain-specific payment processing worker implementing saga orchestration, limit
   ```
 
 - **Conditional Logic:**
-  - FX booking only if `requiresFx = true` in command data
-  - Falls back to CreateTransaction if FX not required
+    - FX booking only if `requiresFx = true` in command data
+    - Falls back to CreateTransaction if FX not required
 
 - **Compensation Chain:**
-  - Automatic unwind on any step failure
-  - Compensation executed in reverse order
-  - All compensation steps are idempotent
+    - Automatic unwind on any step failure
+    - Compensation executed in reverse order
+    - All compensation steps are idempotent
 
 - **Error Recovery:**
-  - Retry on transient: timeout, connection, temporary
-  - Max retries: 3
+    - Retry on transient: timeout, connection, temporary
+    - Max retries: 3
 
 ### Data Model - Repositories
 
 **Account Repositories:**
+
 - `AccountRepository.findById(UUID)` → Optional<Account>
 - `AccountRepository.save(Account)` → void
 
 **Limit Repositories:**
+
 - `AccountLimitRepository.findActiveByAccountId(UUID)` → List<AccountLimit>
 - `AccountLimitRepository.findByAccountIdAndPeriodType(UUID, PeriodType)` → List<AccountLimit>
 - `AccountLimitRepository.save(AccountLimit)` → void
 
 **Payment Repositories:**
+
 - `PaymentRepository.findById(UUID)` → Optional<Payment>
 - `PaymentRepository.save(Payment)` → void
 
 **FX Repositories:**
+
 - `FxContractRepository.findById(UUID)` → Optional<FxContract>
 - `FxContractRepository.save(FxContract)` → void
 
@@ -581,6 +607,7 @@ Step 4: CreatePaymentCommand
 **Test Files:** ~90 files, 8911 total lines
 
 **Coverage Areas:**
+
 - Unit tests for domain models: Account, Payment, FxContract, Limit, Money, Beneficiary, TransactionType, PeriodType
 - Unit tests for services: AccountService, PaymentService, FxService, LimitService
 - Integration tests for repositories: JdbcAccountRepository, JdbcPaymentRepository, etc.
@@ -589,6 +616,7 @@ Step 4: CreatePaymentCommand
 - E2E scenario tests: CreateAccountWithLimitsE2ETest, PaymentFlowE2ETest
 
 **Test Framework:**
+
 - Testcontainers for PostgreSQL
 - @MicronautTest with transactional=false
 - Data generators for accounts, payments, transactions
@@ -596,6 +624,7 @@ Step 4: CreatePaymentCommand
 - Scenario builders with configurable metrics
 
 **Coverage Gaps:**
+
 - [ ] Integration: Processor ← PaymentCommandConsumer → Services → Database
 - [ ] Integration: ProcessManager → Service handlers → Compensation on failure
 - [ ] Integration: Multi-step process with real orchestration
@@ -608,6 +637,7 @@ Step 4: CreatePaymentCommand
 ### Configuration & Dependencies
 
 **Dependencies:**
+
 - msg-platform-core (domain)
 - msg-platform-persistence-jdbc (repositories)
 - msg-platform-processor (orchestration)
@@ -615,6 +645,7 @@ Step 4: CreatePaymentCommand
 - Lombok, Micronaut (runtime)
 
 **Test Dependencies:**
+
 - Testcontainers, PostgreSQL
 - JUnit 5, Mockito, AssertJ
 - JavaFaker (test data)
@@ -624,19 +655,22 @@ Step 4: CreatePaymentCommand
 ## 3. MSG-PLATFORM-WORKER Module
 
 ### Overview
-Generic worker for command processing with simple UserService example. Minimal domain logic focused on framework integration testing.
+
+Generic worker for command processing with simple UserService example. Minimal domain logic focused on framework
+integration testing.
 
 ### Key Responsibilities
 
 #### 3.1 CommandConsumers (Generic MQ Listener)
+
 **File:** `CommandConsumers.java` (39 lines)
 
 - **Role:** JMS listeners for generic worker commands
 - **Configuration:**
-  - Requires: `beans = IbmMqFactoryProvider`
-  - Enabled by: `jms.consumers.enabled=true`
-  - Disabled in test environment
-  
+    - Requires: `beans = IbmMqFactoryProvider`
+    - Enabled by: `jms.consumers.enabled=true`
+    - Disabled in test environment
+
 - **Listeners (2 handlers):**
   ```
   APP.CMD.CREATEUSER.Q → onCreateUser()
@@ -670,6 +704,7 @@ Generic worker for command processing with simple UserService example. Minimal d
   ```
 
 #### 3.2 UserService (Example Domain Service)
+
 **File:** `UserService.java` (39 lines)
 
 - **Role:** Simple user creation handler (example/reference implementation)
@@ -680,11 +715,11 @@ Generic worker for command processing with simple UserService example. Minimal d
   ```
 
 - **Implementation:**
-  - Check for test failure scenarios:
-    - username contains "failPermanent" → throw PermanentException
-    - username contains "failTransient" → throw TransientException
-  - Simulate user creation: userId = "u-123"
-  - Return result map: {userId, username}
+    - Check for test failure scenarios:
+        - username contains "failPermanent" → throw PermanentException
+        - username contains "failTransient" → throw TransientException
+    - Simulate user creation: userId = "u-123"
+    - Return result map: {userId, username}
 
 - **Result Format:**
   ```
@@ -699,23 +734,24 @@ Generic worker for command processing with simple UserService example. Minimal d
 ### E2E Testing Framework
 
 #### 3.3 WorkerE2ETestBase
+
 **File:** `WorkerE2ETestBase.java` (155 lines)
 
 - **Purpose:** Base class for end-to-end testing of full stack
 - **Scope:** API → Worker → Database
 
 - **Infrastructure Setup:**
-  1. HTTP client initialization (10s timeout)
-  2. Service availability polling (API health check)
-  3. Database connection establishment
-  4. Test data cleanup
-  
+    1. HTTP client initialization (10s timeout)
+    2. Service availability polling (API health check)
+    3. Database connection establishment
+    4. Test data cleanup
+
 - **Utilities:**
-  - `waitForService(url, timeout)` - Poll until 200 OK
-  - `submitCommand(commandName, idempotencyKey, payload)` - POST to API
-  - `cleanupTestData()` - DELETE test records
-  - `waitForCommandStatus(commandId, expectedStatus, timeout)` - Poll command status
-  - `countCommands(statusFilter)` - Query command table
+    - `waitForService(url, timeout)` - Poll until 200 OK
+    - `submitCommand(commandName, idempotencyKey, payload)` - POST to API
+    - `cleanupTestData()` - DELETE test records
+    - `waitForCommandStatus(commandId, expectedStatus, timeout)` - Poll command status
+    - `countCommands(statusFilter)` - Query command table
 
 - **Database Schema Assumptions:**
   ```
@@ -726,12 +762,13 @@ Generic worker for command processing with simple UserService example. Minimal d
   ```
 
 - **API Assumptions:**
-  - POST /commands/{commandName}
-  - Header: Idempotency-Key
-  - Response: X-Command-Id header
-  - Status: 202 Accepted
+    - POST /commands/{commandName}
+    - Header: Idempotency-Key
+    - Response: X-Command-Id header
+    - Status: 202 Accepted
 
 #### 3.4 SingleCommandE2ETest
+
 **File:** `SingleCommandE2ETest.java` (102 lines)
 
 - **Test Scope:** Single command submission and persistence
@@ -811,6 +848,7 @@ Reply Reception
 2. **WorkerE2ETestBase** - Base infrastructure
 
 **Coverage Gaps:**
+
 - [ ] Multiple concurrent commands
 - [ ] Idempotency validation (duplicate keys)
 - [ ] Error scenarios (invalid payload, missing fields)
@@ -825,12 +863,14 @@ Reply Reception
 ### Configuration & Dependencies
 
 **Dependencies:**
+
 - msg-platform-core (domain)
 - msg-platform-persistence-jdbc (repositories)
 - msg-platform-processor (orchestration, ResponseRegistry)
 - msg-platform-messaging-ibmmq (JMS consumer)
 
 **E2E Requirements:**
+
 - Docker Compose: PostgreSQL, IBM MQ, Kafka, Redis
 - API service running on localhost:8080
 - Database on localhost:5432
@@ -1044,76 +1084,89 @@ Step 4 (CreatePayment) - Terminal
 #### msg-platform-processor
 
 **Current (1120 lines):**
+
 - ✓ ProcessManager auto-discovery
 - ✓ Process step execution
 - ✓ Process state persistence
 - Missing:
-  - [ ] OutboxRelay failure scenarios
-  - [ ] OutboxSweeper recovery
-  - [ ] NotifyPublisher backpressure (>32 concurrent)
-  - [ ] ProcessReplyConsumer (STUB - requires JMS setup)
-  - [ ] Cross-module: Processor ← Worker reply → ProcessManager
-  - [ ] Message corruption handling
-  - [ ] Database constraint violations
+    - [ ] OutboxRelay failure scenarios
+    - [ ] OutboxSweeper recovery
+    - [ ] NotifyPublisher backpressure (>32 concurrent)
+    - [ ] ProcessReplyConsumer (STUB - requires JMS setup)
+    - [ ] Cross-module: Processor ← Worker reply → ProcessManager
+    - [ ] Message corruption handling
+    - [ ] Database constraint violations
 
 #### msg-platform-payments-worker
 
 **Current (8911 lines):**
+
 - ✓ Domain model tests (many)
 - ✓ Service unit tests
 - ✓ Repository integration tests
 - ✓ E2E framework (extensive)
 - Missing:
-  - [ ] Multi-step process execution (real orchestration)
-  - [ ] Limit expiration and rollover
-  - [ ] FX rate edge cases
-  - [ ] Concurrent payments on same account
-  - [ ] Compensation flow (happy path only)
-  - [ ] Timeout/retry behavior
-  - [ ] ProcessManager integration
+    - [ ] Multi-step process execution (real orchestration)
+    - [ ] Limit expiration and rollover
+    - [ ] FX rate edge cases
+    - [ ] Concurrent payments on same account
+    - [ ] Compensation flow (happy path only)
+    - [ ] Timeout/retry behavior
+    - [ ] ProcessManager integration
 
 #### msg-platform-worker
 
 **Current (257 lines):**
+
 - ✓ E2E test base infrastructure
 - ✓ Single command flow
 - Missing:
-  - [ ] Multiple concurrent commands
-  - [ ] Idempotency (duplicate key rejection)
-  - [ ] Response polling
-  - [ ] Error scenarios (failPermanent/failTransient)
-  - [ ] Message deserialization errors
-  - [ ] Reply consumption
-  - [ ] Full saga orchestration
-  - [ ] Integration: CommandConsumers → ProcessManager
+    - [ ] Multiple concurrent commands
+    - [ ] Idempotency (duplicate key rejection)
+    - [ ] Response polling
+    - [ ] Error scenarios (failPermanent/failTransient)
+    - [ ] Message deserialization errors
+    - [ ] Reply consumption
+    - [ ] Full saga orchestration
+    - [ ] Integration: CommandConsumers → ProcessManager
 
 ### Recommended E2E Test Coverage
 
 #### Test 1: Single Command E2E (Worker)
+
 **Focus:** Basic flow
+
 - API submission → DB persistence → Worker processing → Reply
 - Status: PENDING → COMPLETED
 
 #### Test 2: Payments Account Creation with Limits (Payments-Worker)
+
 **Focus:** Multi-step orchestration
+
 - InitiateCreateAccountProcess → CreateAccount → CreateLimits → Complete
 - Verify account created, limits created, process completed
 - Database state validation
 
 #### Test 3: Simple Payment with FX (Payments-Worker)
+
 **Focus:** Conditional branching + compensation
+
 - InitiateSimplePayment → BookLimits → BookFx → CreateTransaction → CreatePayment
 - Verify all aggregates created
 - Verify outbox entries for reply
 
 #### Test 4: Payment Compensation Flow (Payments-Worker)
+
 **Focus:** Error handling
+
 - InitiateSimplePayment → BookLimits → BookFx → FAIL on CreateTransaction
 - Compensation: UnwindFx → ReverseLimits
 - Verify state rolled back
 
 #### Test 5: Processor to Worker Integration (Cross-module)
+
 **Focus:** Full saga coordination
+
 - Payments command via API → Processor routes → Worker executes
 - Multi-worker orchestration
 - Reply routing back to ProcessManager
@@ -1123,6 +1176,7 @@ Step 4 (CreatePayment) - Terminal
 ## Configuration & Infrastructure
 
 ### Docker Stack
+
 ```
 PostgreSQL:16      port 5432
 IBM MQ:9.4.4       port 1414, 9443
@@ -1131,6 +1185,7 @@ Redis:7            port 6379
 ```
 
 ### Timeouts & Tuning
+
 ```yaml
 timeout:
   outbox-sweep-interval: 1s      # OutboxRelay polling
@@ -1149,6 +1204,7 @@ process:
 ### Dependencies Summary
 
 **Internal modules:**
+
 - msg-platform-core: Domain, ports/SPIs, utilities
 - msg-platform-persistence-jdbc: Repository implementations
 - msg-platform-processor: Orchestration, command bus, outbox relay
@@ -1157,6 +1213,7 @@ process:
 - msg-platform-api: HTTP API endpoints
 
 **External libraries:**
+
 - Micronaut 4.x (DI, transactions, scheduling, JMS)
 - PostgreSQL JDBC driver
 - IBM MQ client library
@@ -1170,6 +1227,7 @@ process:
 ## Summary: Key Findings
 
 ### Architecture Strengths
+
 1. Clear separation: Processor (infrastructure) vs. Worker (domain)
 2. Saga pattern with automatic compensation
 3. Transactional outbox ensures exactly-once delivery
@@ -1178,6 +1236,7 @@ process:
 6. Comprehensive E2E test framework (payments module)
 
 ### Critical Gaps
+
 1. **ProcessReplyConsumer STUB** - Not implemented, JMS listener commented out
 2. **FastPathPublisher disabled** - Disabled due to "transaction leak"
 3. **Limited cross-module E2E** - Processor ← Worker → ProcessManager
@@ -1185,6 +1244,7 @@ process:
 5. **Error scenarios sparse** - Timeout, network failures, partial rollback
 
 ### Testing Priorities
+
 1. **Implement ProcessReplyConsumer** with tests
 2. **Fix FastPathPublisher transaction leak**
 3. **Add payment compensation E2E tests**

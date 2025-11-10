@@ -40,6 +40,7 @@
 ## Repository Pattern Comparison
 
 ### Messaging Framework (Micronaut Data JDBC)
+
 ```
 Domain Layer
    ↓
@@ -55,6 +56,7 @@ Runtime: Auto-wired as Singleton bean
 ```
 
 **Key Characteristics**:
+
 - Entity classes with @MappedEntity annotations
 - Declarative @Query methods with native SQL
 - No DataSource injection (automatic handling)
@@ -66,6 +68,7 @@ Runtime: Auto-wired as Singleton bean
 ---
 
 ### Payments Domain (Raw JDBC)
+
 ```
 Domain Layer
    ↓
@@ -81,6 +84,7 @@ Custom mapping to domain models (Account, Payment)
 ```
 
 **Key Characteristics**:
+
 - NO entity classes (uses domain models directly)
 - Raw JDBC: Connection, PreparedStatement, ResultSet
 - Direct DataSource injection
@@ -95,25 +99,27 @@ Custom mapping to domain models (Account, Payment)
 ## Entity/Table Mapping
 
 ### Reliable Database (Messaging Framework)
-| Entity Class | Table Name | Module | Pattern |
-|---|---|---|---|
-| OutboxEntity | outbox | persistence-jdbc | @MappedEntity |
-| InboxEntity | inbox | persistence-jdbc | @MappedEntity |
-| CommandEntity | command | persistence-jdbc | @MappedEntity |
-| DlqEntity | command_dlq | persistence-jdbc | @MappedEntity |
-| (none) | process_instance | persistence-jdbc | Raw SQL (V2 migration) |
-| (none) | process_log | persistence-jdbc | Raw SQL (V2 migration) |
+
+| Entity Class  | Table Name       | Module           | Pattern                |
+|---------------|------------------|------------------|------------------------|
+| OutboxEntity  | outbox           | persistence-jdbc | @MappedEntity          |
+| InboxEntity   | inbox            | persistence-jdbc | @MappedEntity          |
+| CommandEntity | command          | persistence-jdbc | @MappedEntity          |
+| DlqEntity     | command_dlq      | persistence-jdbc | @MappedEntity          |
+| (none)        | process_instance | persistence-jdbc | Raw SQL (V2 migration) |
+| (none)        | process_log      | persistence-jdbc | Raw SQL (V2 migration) |
 
 ### Payments Database (Domain Entities)
-| Domain Model | Table Name | Repository | Pattern |
-|---|---|---|---|
-| Account | account | JdbcAccountRepository | Raw JDBC |
-| Transaction | transaction | JdbcAccountRepository | Raw JDBC |
-| AccountLimit | account_limit | JdbcAccountLimitRepository | Raw JDBC |
-| FxContract | fx_contract | JdbcFxContractRepository | Raw JDBC |
-| Payment | payment | JdbcPaymentRepository | Raw JDBC |
-| (none) | inbox_bc | (none) | Raw SQL (V3 migration) |
-| (none) | outbox_bc | (none) | Raw SQL (V3 migration) |
+
+| Domain Model | Table Name    | Repository                 | Pattern                |
+|--------------|---------------|----------------------------|------------------------|
+| Account      | account       | JdbcAccountRepository      | Raw JDBC               |
+| Transaction  | transaction   | JdbcAccountRepository      | Raw JDBC               |
+| AccountLimit | account_limit | JdbcAccountLimitRepository | Raw JDBC               |
+| FxContract   | fx_contract   | JdbcFxContractRepository   | Raw JDBC               |
+| Payment      | payment       | JdbcPaymentRepository      | Raw JDBC               |
+| (none)       | inbox_bc      | (none)                     | Raw SQL (V3 migration) |
+| (none)       | outbox_bc     | (none)                     | Raw SQL (V3 migration) |
 
 ---
 
@@ -139,12 +145,14 @@ Custom mapping to domain models (Account, Payment)
 ```
 
 **Advantages**:
+
 - Clear separation per database
 - Independent migration history
 - Different baseline versions possible
 - Decoupled from application startup
 
 **Disadvantages**:
+
 - Extra Docker orchestration overhead
 - Must coordinate migration versions (V3 vs V4 timing)
 - Two independent Flyway tracking tables
@@ -159,6 +167,7 @@ Custom mapping to domain models (Account, Payment)
 Each application points to single database:
 
 **API** (msg-platform-api/application.yml):
+
 ```yaml
 datasources:
   default:
@@ -166,6 +175,7 @@ datasources:
 ```
 
 **Payments Worker** (msg-platform-payments-worker/application.yml):
+
 ```yaml
 datasources:
   default:
@@ -173,6 +183,7 @@ datasources:
 ```
 
 **Environment Variables** (docker-compose.yml):
+
 - API: `POSTGRES_DB=reliable` (default)
 - Payments-Worker: `POSTGRES_DB=payments` (explicit)
 
@@ -182,21 +193,22 @@ datasources:
 
 ## Key Design Decisions
 
-| Aspect | Decision | Rationale |
-|--------|----------|-----------|
-| **Databases** | 2 (reliable + payments) | Bounded context isolation |
-| **Schemas** | public (default) | Simplified, each DB is isolated |
-| **Connection** | Environment-based | Clean deployment separation |
-| **Repositories** | 2 patterns | Pragmatic per use-case |
-| **Migrations** | Orchestrated | Manual control, Docker-native |
-| **Entities** | Only for ORM tables | Raw JDBC for complex aggregates |
-| **Transactions** | Mixed approach | Framework implicit + explicit @Transactional |
+| Aspect           | Decision                | Rationale                                    |
+|------------------|-------------------------|----------------------------------------------|
+| **Databases**    | 2 (reliable + payments) | Bounded context isolation                    |
+| **Schemas**      | public (default)        | Simplified, each DB is isolated              |
+| **Connection**   | Environment-based       | Clean deployment separation                  |
+| **Repositories** | 2 patterns              | Pragmatic per use-case                       |
+| **Migrations**   | Orchestrated            | Manual control, Docker-native                |
+| **Entities**     | Only for ORM tables     | Raw JDBC for complex aggregates              |
+| **Transactions** | Mixed approach          | Framework implicit + explicit @Transactional |
 
 ---
 
 ## To Support Single-Schema Architecture
 
 ### Option A: PostgreSQL Schemas (Recommended)
+
 ```sql
 CREATE SCHEMA platform;  -- cmd_*, process_*
 CREATE SCHEMA payments;  -- pmt_*, account_*, transaction_*
@@ -206,6 +218,7 @@ CREATE SCHEMA payments;  -- pmt_*, account_*, transaction_*
 ```
 
 ### Option B: Table Prefixes (Simplest)
+
 ```java
 @MappedEntity("cmd_command")      // Instead of "command"
 @MappedEntity("cmd_outbox")       // Instead of "outbox"
@@ -214,6 +227,7 @@ CREATE SCHEMA payments;  -- pmt_*, account_*, transaction_*
 ```
 
 ### Option C: Keep Current (No Changes)
+
 - Continue with 2 databases
 - Already well-designed
 - Questionable if consolidation is needed
@@ -223,50 +237,56 @@ CREATE SCHEMA payments;  -- pmt_*, account_*, transaction_*
 ## Migration File Reference
 
 ### Reliable Database
+
 - `/msg-platform-persistence-jdbc/src/main/resources/db/migration/V1__baseline.sql` (1,720 bytes)
-  - command, command_status ENUM, inbox, outbox, command_dlq tables
-  
+    - command, command_status ENUM, inbox, outbox, command_dlq tables
+
 - `/msg-platform-persistence-jdbc/src/main/resources/db/migration/V2__process_manager.sql` (2,283 bytes)
-  - process_instance, process_log tables for event sourcing
-  
+    - process_instance, process_log tables for event sourcing
+
 - `/msg-platform-persistence-jdbc/src/main/resources/db/migration/V4__redis_fastpublish_outbox.sql` (1,444 bytes)
-  - Add claimed_at, claimed_by columns to outbox
+    - Add claimed_at, claimed_by columns to outbox
 
 ### Payments Database
+
 - `/msg-platform-payments-worker/src/main/resources/db/migration/V3__payments_schema.sql` (4,491 bytes)
-  - account, transaction, account_limit, fx_contract, payment, inbox_bc, outbox_bc tables
-  
+    - account, transaction, account_limit, fx_contract, payment, inbox_bc, outbox_bc tables
+
 - `/msg-platform-payments-worker/src/main/resources/db/migration/V4__add_claimed_at_column.sql` (1,174 bytes)
-  - Add claimed_at, claimed_by columns to outbox_bc
+    - Add claimed_at, claimed_by columns to outbox_bc
 
 ---
 
 ## Code Location Reference
 
 ### Entities & Repository Interfaces
+
 - `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/model/`
-  - OutboxEntity.java
-  - InboxEntity.java
-  - CommandEntity.java
-  - DlqEntity.java
+    - OutboxEntity.java
+    - InboxEntity.java
+    - CommandEntity.java
+    - DlqEntity.java
 
 ### JDBC Repositories (Messaging Framework)
+
 - `/msg-platform-persistence-jdbc/src/main/java/com/acme/reliable/persistence/jdbc/`
-  - JdbcOutboxRepository.java
-  - JdbcOutboxDao.java
-  - JdbcCommandRepository.java
-  - JdbcInboxRepository.java
-  - JdbcDlqRepository.java
-  - process/JdbcProcessRepository.java (raw JDBC)
+    - JdbcOutboxRepository.java
+    - JdbcOutboxDao.java
+    - JdbcCommandRepository.java
+    - JdbcInboxRepository.java
+    - JdbcDlqRepository.java
+    - process/JdbcProcessRepository.java (raw JDBC)
 
 ### JDBC Repositories (Payments Domain)
+
 - `/msg-platform-payments-worker/src/main/java/com/acme/payments/infrastructure/persistence/`
-  - JdbcAccountRepository.java
-  - JdbcPaymentRepository.java
-  - JdbcAccountLimitRepository.java
-  - JdbcFxContractRepository.java
+    - JdbcAccountRepository.java
+    - JdbcPaymentRepository.java
+    - JdbcAccountLimitRepository.java
+    - JdbcFxContractRepository.java
 
 ### Configuration
+
 - `/scripts/init-databases.sh` - Database creation
 - `/scripts/run-flyway-migrations.sh` - Migration orchestration
 - `/scripts/flyway-config/flyway-reliable.conf` - Reliable DB migration config

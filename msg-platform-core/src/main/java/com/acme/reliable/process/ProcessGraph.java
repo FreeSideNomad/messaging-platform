@@ -9,55 +9,61 @@ import java.util.Optional;
  * process definition initialization and then navigated during process execution.
  */
 public class ProcessGraph {
-  private final String initialStep;
-  private final Map<String, ProcessStep> steps;
+    private final String initialStep;
+    private final Map<String, ProcessStep> steps;
 
-  public ProcessGraph(String initialStep, Map<String, ProcessStep> steps) {
-    this.initialStep = initialStep;
-    this.steps = new HashMap<>(steps);
-  }
-
-  public String getInitialStep() {
-    return initialStep;
-  }
-
-  public ProcessStep getStep(String stepName) {
-    return steps.get(stepName);
-  }
-
-  public Optional<String> getNextStep(String currentStep, Map<String, Object> data) {
-    ProcessStep step = steps.get(currentStep);
-    if (step == null) {
-      return Optional.empty();
+    public ProcessGraph(String initialStep, Map<String, ProcessStep> steps) {
+        this.initialStep = initialStep;
+        this.steps = new HashMap<>(steps);
     }
-    return step.getNextStep(data);
-  }
 
-  public boolean requiresCompensation(String stepName) {
-    ProcessStep step = steps.get(stepName);
-    return step != null && step.getCompensationStep().isPresent();
-  }
+    public String getInitialStep() {
+        return initialStep;
+    }
 
-  public Optional<String> getCompensationStep(String stepName) {
-    ProcessStep step = steps.get(stepName);
-    return step != null ? step.getCompensationStep() : Optional.empty();
-  }
+    public ProcessStep getStep(String stepName) {
+        return steps.get(stepName);
+    }
 
-  /** Check if a step spawns parallel execution */
-  public boolean isParallelStep(String stepName) {
-    ProcessStep step = steps.get(stepName);
-    return step != null && step.isParallel();
-  }
+    public Optional<String> getNextStep(String currentStep, Map<String, Object> data) {
+        ProcessStep step = steps.get(currentStep);
+        if (step == null) {
+            return Optional.empty();
+        }
+        return step.getNextStep(data);
+    }
 
-  /** Get the parallel branches for a parallel step */
-  public java.util.List<String> getParallelBranches(String stepName) {
-    ProcessStep step = steps.get(stepName);
-    return step != null ? step.getParallelBranches() : java.util.List.of();
-  }
+    public boolean requiresCompensation(String stepName) {
+        ProcessStep step = steps.get(stepName);
+        return step != null && step.getCompensationStep().isPresent();
+    }
 
-  /** Get the join step for a parallel execution */
-  public Optional<String> getJoinStep(String stepName) {
-    ProcessStep step = steps.get(stepName);
-    return step != null ? step.getJoinStep() : Optional.empty();
-  }
+    public Optional<String> getCompensationStep(String stepName) {
+        ProcessStep step = steps.get(stepName);
+        return step != null ? step.getCompensationStep() : Optional.empty();
+    }
+
+    /**
+     * Check if a step spawns parallel execution
+     */
+    public boolean isParallelStep(String stepName) {
+        ProcessStep step = steps.get(stepName);
+        return step != null && step.isParallel();
+    }
+
+    /**
+     * Get the parallel branches for a parallel step
+     */
+    public java.util.List<String> getParallelBranches(String stepName) {
+        ProcessStep step = steps.get(stepName);
+        return step != null ? step.getParallelBranches() : java.util.List.of();
+    }
+
+    /**
+     * Get the join step for a parallel execution
+     */
+    public Optional<String> getJoinStep(String stepName) {
+        ProcessStep step = steps.get(stepName);
+        return step != null ? step.getJoinStep() : Optional.empty();
+    }
 }
