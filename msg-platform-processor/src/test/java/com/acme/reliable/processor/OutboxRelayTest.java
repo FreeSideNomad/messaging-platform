@@ -819,4 +819,355 @@ class OutboxRelayTest {
       verify(outboxService).claim(eq(10), anyString());
     }
   }
+
+  @Nested
+  @DisplayName("Edge Cases and Additional Branch Coverage")
+  class EdgeCasesTests {
+
+    @Test
+    @DisplayName("should handle negative attempts in backoff calculation")
+    void testBackoff_NegativeAttempts() {
+      // Given - edge case with negative attempts (should be treated as 0)
+      Outbox outbox =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", -1);
+
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+      doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      ArgumentCaptor<Long> backoffCaptor = ArgumentCaptor.forClass(Long.class);
+      verify(outboxService).reschedule(eq(1L), backoffCaptor.capture(), any());
+
+      // Backoff = 2^(max(1, -1+1)) * 1000 = 2^1 * 1000 = 2000ms
+      assertThat(backoffCaptor.getValue()).isEqualTo(2000L);
+    }
+
+    @Test
+    @DisplayName("should handle intermediate backoff values correctly")
+    void testBackoff_IntermediateAttempts() {
+      // Given - test attempts 3-5 to ensure exponential growth
+      Outbox outbox3 =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 2);
+      Outbox outbox4 =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 3);
+      Outbox outbox5 =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 4);
+
+      when(outboxService.claimOne(1L))
+          .thenReturn(Optional.of(outbox3))
+          .thenReturn(Optional.of(outbox4))
+          .thenReturn(Optional.of(outbox5));
+
+      doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
+
+      ArgumentCaptor<Long> backoffCaptor = ArgumentCaptor.forClass(Long.class);
+
+      // When/Then - Attempt 3
+      outboxRelay.publishNow(1L);
+      verify(outboxService, times(1)).reschedule(eq(1L), backoffCaptor.capture(), any());
+      assertThat(backoffCaptor.getValue()).isEqualTo(8000L); // 2^3 * 1000
+
+      // Attempt 4
+      outboxRelay.publishNow(1L);
+      verify(outboxService, times(2)).reschedule(eq(1L), backoffCaptor.capture(), any());
+      assertThat(backoffCaptor.getValue()).isEqualTo(16000L); // 2^4 * 1000
+
+      // Attempt 5
+      outboxRelay.publishNow(1L);
+      verify(outboxService, times(3)).reschedule(eq(1L), backoffCaptor.capture(), any());
+      assertThat(backoffCaptor.getValue()).isEqualTo(32000L); // 2^5 * 1000
+    }
+
+    @Test
+    @DisplayName("should handle max backoff boundary correctly")
+    void testBackoff_BoundaryConditions() {
+      // Given - test that backoff exactly at maxBackoffMillis is handled
+      TimeoutConfig customConfig = new TimeoutConfig();
+      customConfig.setMaxBackoff(java.time.Duration.ofMillis(10000L)); // 10 seconds
+      customConfig.setOutboxBatchSize(10);
+      OutboxRelay relay =
+          new OutboxRelay(
+              outboxService, commandQueue, eventPublisher, customConfig, transactionOps);
+
+      // Attempt 4 would give 2^4 * 1000 = 16000ms, should be capped at 10000ms
+      Outbox outbox =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 3);
+
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+      doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
+
+      // When
+      relay.publishNow(1L);
+
+      // Then
+      ArgumentCaptor<Long> backoffCaptor = ArgumentCaptor.forClass(Long.class);
+      verify(outboxService).reschedule(eq(1L), backoffCaptor.capture(), any());
+      assertThat(backoffCaptor.getValue()).isEqualTo(10000L); // Capped at maxBackoffMillis
+    }
+
+    @Test
+    @DisplayName("should handle event publish failure with reschedule")
+    void testPublishFailure_Event() {
+      // Given
+      Outbox outbox =
+          new Outbox(
+              1L,
+              "event",
+              "events.topic",
+              "key",
+              "Type",
+              "{}",
+              Map.of("header", "value"),
+              "CLAIMED",
+              0);
+
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+      doThrow(new RuntimeException("Kafka unavailable")).when(eventPublisher).publish(any(), any(), any(), any());
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      verify(eventPublisher).publish("events.topic", "key", "{}", Map.of("header", "value"));
+      verify(outboxService, never()).markPublished(anyLong());
+      verify(outboxService).reschedule(eq(1L), anyLong(), contains("Kafka unavailable"));
+    }
+
+    @Test
+    @DisplayName("should handle reply publish failure with reschedule")
+    void testPublishFailure_Reply() {
+      // Given
+      Outbox outbox =
+          new Outbox(
+              1L, "reply", "APP.REPLY.Q", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
+
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+      doThrow(new RuntimeException("MQ connection lost"))
+          .when(commandQueue)
+          .send(any(), any(), any());
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      verify(commandQueue).send("APP.REPLY.Q", "{}", Map.of());
+      verify(outboxService, never()).markPublished(anyLong());
+      verify(outboxService).reschedule(eq(1L), anyLong(), contains("MQ connection lost"));
+    }
+
+    @Test
+    @DisplayName("should handle empty JSON object payload")
+    void testPayload_EmptyObject() {
+      // Given
+      Outbox outbox =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      verify(commandQueue).send("queue", "{}", Map.of());
+      verify(outboxService).markPublished(1L);
+    }
+
+    @Test
+    @DisplayName("should handle JSON array payload")
+    void testPayload_JsonArray() {
+      // Given
+      String arrayPayload = "[{\"id\":1},{\"id\":2},{\"id\":3}]";
+      Outbox outbox =
+          new Outbox(1L, "event", "topic", "key", "Type", arrayPayload, Map.of(), "CLAIMED", 0);
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      verify(eventPublisher).publish("topic", "key", arrayPayload, Map.of());
+      verify(outboxService).markPublished(1L);
+    }
+
+    @Test
+    @DisplayName("should handle special characters in category gracefully")
+    void testCategory_SpecialCharacters() {
+      // Given - test with unexpected category value
+      Outbox outbox =
+          new Outbox(
+              1L, "COMMAND", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0); // Uppercase
+
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then - should trigger unknown category branch
+      verify(outboxService).reschedule(eq(1L), anyLong(), contains("Unknown category"));
+    }
+
+    @Test
+    @DisplayName("should handle null payload gracefully in error scenario")
+    void testErrorHandling_NullPayload() {
+      // Given - outbox with special values
+      Outbox outbox =
+          new Outbox(1L, "command", "queue", "key", "Type", null, Map.of(), "CLAIMED", 0);
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+      doThrow(new RuntimeException("Null payload error"))
+          .when(commandQueue)
+          .send(any(), any(), any());
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      verify(outboxService).reschedule(eq(1L), anyLong(), contains("Null payload error"));
+    }
+
+    @Test
+    @DisplayName("should handle transaction exception during markPublished")
+    void testTransaction_MarkPublishedFailure() {
+      // Given
+      Outbox outbox =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+
+      // Mock transaction to throw on second call (markPublished)
+      AtomicInteger callCount = new AtomicInteger(0);
+      when(transactionOps.executeWrite(any()))
+          .thenAnswer(
+              invocation -> {
+                if (callCount.getAndIncrement() == 0) {
+                  // First call - claim
+                  @SuppressWarnings("unchecked")
+                  Function<TransactionStatus<Connection>, Object> callback =
+                      invocation.getArgument(0);
+                  return callback.apply(mock(TransactionStatus.class));
+                } else {
+                  // Second call - markPublished should fail
+                  throw new RuntimeException("Transaction commit failed");
+                }
+              });
+
+      // When/Then - should not throw, exception handled internally
+      assertThatCode(() -> outboxRelay.publishNow(1L)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("should handle batch with all categories")
+    void testSweep_AllCategoriesMixed() {
+      // Given
+      Outbox command =
+          new Outbox(1L, "command", "cmd.q", "k1", "T1", "{}", Map.of(), "CLAIMED", 0);
+      Outbox reply =
+          new Outbox(2L, "reply", "reply.q", "k2", "T2", "{}", Map.of(), "CLAIMED", 0);
+      Outbox event =
+          new Outbox(3L, "event", "evt.topic", "k3", "T3", "{}", Map.of(), "CLAIMED", 0);
+
+      when(outboxService.claim(eq(10), anyString())).thenReturn(List.of(command, reply, event));
+
+      // When
+      outboxRelay.sweepOnce();
+
+      // Then
+      verify(commandQueue).send("cmd.q", "{}", Map.of());
+      verify(commandQueue).send("reply.q", "{}", Map.of());
+      verify(eventPublisher).publish("evt.topic", "k3", "{}", Map.of());
+      verify(outboxService).markPublished(1L);
+      verify(outboxService).markPublished(2L);
+      verify(outboxService).markPublished(3L);
+    }
+
+    @Test
+    @DisplayName("should handle high attempt count boundary")
+    void testBackoff_HighAttemptBoundary() {
+      // Given - 15 attempts to test high boundary
+      Outbox outbox =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 15);
+
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+      doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then - should be capped at maxBackoffMillis
+      ArgumentCaptor<Long> backoffCaptor = ArgumentCaptor.forClass(Long.class);
+      verify(outboxService).reschedule(eq(1L), backoffCaptor.capture(), any());
+      assertThat(backoffCaptor.getValue()).isEqualTo(timeoutConfig.getMaxBackoffMillis());
+    }
+
+    @Test
+    @DisplayName("should handle zero attempts correctly")
+    void testBackoff_ZeroAttempts() {
+      // Given
+      Outbox outbox =
+          new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
+
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+      doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      ArgumentCaptor<Long> backoffCaptor = ArgumentCaptor.forClass(Long.class);
+      verify(outboxService).reschedule(eq(1L), backoffCaptor.capture(), any());
+      // Backoff = 2^(max(1, 0+1)) * 1000 = 2^1 * 1000 = 2000ms
+      assertThat(backoffCaptor.getValue()).isEqualTo(2000L);
+    }
+
+    @Test
+    @DisplayName("should handle very large payload without errors")
+    void testPayload_VeryLarge() {
+      // Given - 100KB payload
+      String veryLargePayload = "{\"data\":\"" + "x".repeat(100000) + "\"}";
+      Outbox outbox =
+          new Outbox(
+              1L, "command", "queue", "key", "Type", veryLargePayload, Map.of(), "CLAIMED", 0);
+      when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+
+      // When
+      outboxRelay.publishNow(1L);
+
+      // Then
+      verify(commandQueue).send("queue", veryLargePayload, Map.of());
+      verify(outboxService).markPublished(1L);
+    }
+
+    @Test
+    @DisplayName("should handle mixed success and failure in large batch")
+    void testSweep_LargeBatchMixedResults() {
+      // Given - create batch where every other message fails
+      List<Outbox> batch = new java.util.ArrayList<>();
+      for (int i = 1; i <= 20; i++) {
+        batch.add(
+            new Outbox((long) i, "command", "queue", "key" + i, "Type", "{}", Map.of(), "CLAIMED", 0));
+      }
+
+      when(outboxService.claim(eq(10), anyString())).thenReturn(batch);
+
+      // Make every other publish fail
+      AtomicInteger publishCount = new AtomicInteger(0);
+      doAnswer(
+              invocation -> {
+                if (publishCount.getAndIncrement() % 2 == 1) {
+                  throw new RuntimeException("Intermittent failure");
+                }
+                return null;
+              })
+          .when(commandQueue)
+          .send(any(), any(), any());
+
+      // When
+      outboxRelay.sweepOnce();
+
+      // Then - half should succeed, half should fail
+      verify(commandQueue, times(20)).send(any(), any(), any());
+      verify(outboxService, times(10)).markPublished(anyLong());
+      verify(outboxService, times(10)).reschedule(anyLong(), anyLong(), contains("Intermittent"));
+    }
+  }
 }

@@ -8,6 +8,7 @@ import com.acme.reliable.command.CommandBus;
 import com.acme.reliable.command.DomainCommand;
 import com.acme.reliable.process.*;
 import com.acme.reliable.repository.ProcessRepository;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -423,6 +424,478 @@ class ProcessManagerTest {
     verify(mockCommandBus, never()).accept(any(), any(), any(), any(), any());
   }
 
+  @Test
+  void testStartProcess_DuplicateProcessType_ThrowsException() {
+    // Given
+    TestProcessConfiguration duplicateConfig = new TestProcessConfiguration();
+
+    // When/Then
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          processManager.register(duplicateConfig);
+        },
+        "Should not allow duplicate process type registration");
+  }
+
+  @Test
+  void testHandleReply_EmptyPayload_ProcessesSuccessfully() {
+    // Given
+    UUID processId = UUID.randomUUID();
+    UUID commandId = UUID.randomUUID();
+
+    ProcessInstance runningInstance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-123",
+            ProcessStatus.RUNNING,
+            "Step2",
+            Map.of("existingData", "value"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(runningInstance));
+
+    CommandReply reply = CommandReply.completed(commandId, processId, Map.of());
+
+    // When
+    processManager.handleReply(processId, commandId, reply);
+
+    // Then
+    ArgumentCaptor<ProcessInstance> instanceCaptor = ArgumentCaptor.forClass(ProcessInstance.class);
+    verify(mockRepo).update(instanceCaptor.capture(), any());
+
+    ProcessInstance completed = instanceCaptor.getValue();
+    assertEquals(ProcessStatus.SUCCEEDED, completed.status());
+    assertTrue(completed.data().containsKey("existingData"));
+  }
+
+  @Test
+  void testHandleReply_ProcessInNewStatus_CompletesNormally() {
+    // Given
+    UUID processId = UUID.randomUUID();
+    UUID commandId = UUID.randomUUID();
+
+    ProcessInstance newInstance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-123",
+            ProcessStatus.NEW,
+            "Step1",
+            Map.of("data", "value"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(newInstance));
+    when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+
+    CommandReply reply = CommandReply.completed(commandId, processId, Map.of("result", "ok"));
+
+    // When
+    processManager.handleReply(processId, commandId, reply);
+
+    // Then
+    verify(mockRepo, times(2)).update(any(), any());
+  }
+
+  @Test
+  void testHandleReply_RetryWithMultipleBackoffs() throws InterruptedException {
+    // Given
+    UUID processId = UUID.randomUUID();
+    UUID commandId = UUID.randomUUID();
+
+    for (int retry = 0; retry < 3; retry++) {
+      ProcessInstance runningInstance =
+          new ProcessInstance(
+              processId,
+              "TestProcess",
+              "test-123",
+              ProcessStatus.RUNNING,
+              "Step1",
+              Map.of("data", "value"),
+              retry,
+              java.time.Instant.now(),
+              java.time.Instant.now());
+
+      when(mockRepo.findById(processId)).thenReturn(Optional.of(runningInstance));
+      when(mockCommandBus.accept(any(), any(), any(), any(), any()))
+          .thenReturn(UUID.randomUUID());
+
+      CommandReply reply = CommandReply.failed(commandId, processId, "Connection timeout error");
+
+      long start = System.currentTimeMillis();
+      processManager.handleReply(processId, commandId, reply);
+      long duration = System.currentTimeMillis() - start;
+
+      // Verify backoff delay increases with each retry (exponential backoff)
+      long expectedMinDelay = (long) Math.pow(2, retry) * 1000;
+      assertTrue(
+          duration >= expectedMinDelay,
+          "Expected backoff delay of at least "
+              + expectedMinDelay
+              + "ms for retry "
+              + retry
+              + ", but was "
+              + duration
+              + "ms");
+    }
+
+    // After max retries, should fail permanently
+    ProcessInstance maxRetriesInstance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-123",
+            ProcessStatus.RUNNING,
+            "Step1",
+            Map.of("data", "value"),
+            3,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(maxRetriesInstance));
+
+    CommandReply finalReply = CommandReply.failed(commandId, processId, "Still failing timeout");
+    processManager.handleReply(processId, commandId, finalReply);
+
+    ArgumentCaptor<ProcessInstance> instanceCaptor = ArgumentCaptor.forClass(ProcessInstance.class);
+    verify(mockRepo, atLeastOnce()).update(instanceCaptor.capture(), any());
+
+    ProcessInstance failed = instanceCaptor.getValue();
+    assertEquals(ProcessStatus.FAILED, failed.status());
+  }
+
+  @Test
+  void testStartProcess_ProcessExecutionFailure_MarksAsFailed() {
+    // Given
+    when(mockCommandBus.accept(any(), any(), any(), any(), any()))
+        .thenThrow(new RuntimeException("Command bus unavailable"));
+
+    // When/Then
+    assertThrows(
+        RuntimeException.class,
+        () -> {
+          processManager.startProcess("TestProcess", "test-key", Map.of("data", "value"));
+        });
+
+    // Verify process was marked as failed
+    ArgumentCaptor<ProcessInstance> instanceCaptor = ArgumentCaptor.forClass(ProcessInstance.class);
+    verify(mockRepo).update(instanceCaptor.capture(), any());
+
+    ProcessInstance failed = instanceCaptor.getValue();
+    assertEquals(ProcessStatus.FAILED, failed.status());
+  }
+
+  @Test
+  void testHandleReply_SuccessiveStepsWithAccumulatingData() {
+    // Given
+    UUID processId = UUID.randomUUID();
+
+    // Create a 3-step process configuration
+    ThreeStepProcessConfiguration threeStepConfig = new ThreeStepProcessConfiguration();
+    processManager.register(threeStepConfig);
+
+    // Start with step1 data
+    ProcessInstance step1Instance =
+        new ProcessInstance(
+            processId,
+            "ThreeStepProcess",
+            "test-key",
+            ProcessStatus.RUNNING,
+            "StepA",
+            Map.of("step1Data", "valueA"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(step1Instance));
+    when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+
+    // Step 1 completion
+    CommandReply reply1 =
+        CommandReply.completed(
+            UUID.randomUUID(), processId, Map.of("step2Data", "valueB", "stepCount", 1));
+    processManager.handleReply(processId, UUID.randomUUID(), reply1);
+
+    // Update to step2
+    ProcessInstance step2Instance =
+        new ProcessInstance(
+            processId,
+            "ThreeStepProcess",
+            "test-key",
+            ProcessStatus.RUNNING,
+            "StepB",
+            Map.of("step1Data", "valueA", "step2Data", "valueB", "stepCount", 1),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(step2Instance));
+
+    // Step 2 completion
+    CommandReply reply2 =
+        CommandReply.completed(
+            UUID.randomUUID(), processId, Map.of("step3Data", "valueC", "stepCount", 2));
+    processManager.handleReply(processId, UUID.randomUUID(), reply2);
+
+    // Update to step3
+    ProcessInstance step3Instance =
+        new ProcessInstance(
+            processId,
+            "ThreeStepProcess",
+            "test-key",
+            ProcessStatus.RUNNING,
+            "StepC",
+            Map.of(
+                "step1Data", "valueA",
+                "step2Data", "valueB",
+                "step3Data", "valueC",
+                "stepCount", 2),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(step3Instance));
+
+    // Step 3 completion (final)
+    CommandReply reply3 =
+        CommandReply.completed(UUID.randomUUID(), processId, Map.of("finalData", "done"));
+    processManager.handleReply(processId, UUID.randomUUID(), reply3);
+
+    // Then - verify final state has all accumulated data
+    ArgumentCaptor<ProcessInstance> instanceCaptor = ArgumentCaptor.forClass(ProcessInstance.class);
+    verify(mockRepo, atLeastOnce()).update(instanceCaptor.capture(), any());
+
+    // Get the last update (completed state)
+    ProcessInstance completed = instanceCaptor.getValue();
+    assertEquals(ProcessStatus.SUCCEEDED, completed.status());
+    assertTrue(completed.data().containsKey("step1Data"));
+    assertTrue(completed.data().containsKey("step2Data"));
+    assertTrue(completed.data().containsKey("step3Data"));
+    assertTrue(completed.data().containsKey("finalData"));
+  }
+
+  @Test
+  void testHandleReply_MixedSuccessAndRetryScenario() {
+    // Given
+    UUID processId = UUID.randomUUID();
+
+    // Step 1 completes successfully
+    ProcessInstance step1Instance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-key",
+            ProcessStatus.RUNNING,
+            "Step1",
+            Map.of("initial", "data"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(step1Instance));
+    when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+
+    CommandReply successReply =
+        CommandReply.completed(UUID.randomUUID(), processId, Map.of("step1Result", "success"));
+    processManager.handleReply(processId, UUID.randomUUID(), successReply);
+
+    // Step 2 fails with retryable error
+    ProcessInstance step2Instance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-key",
+            ProcessStatus.RUNNING,
+            "Step2",
+            Map.of("initial", "data", "step1Result", "success"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(step2Instance));
+
+    CommandReply retryableFailure =
+        CommandReply.failed(UUID.randomUUID(), processId, "Temporary timeout");
+    processManager.handleReply(processId, UUID.randomUUID(), retryableFailure);
+
+    // Then verify retry was attempted
+    verify(mockCommandBus, atLeast(2)).accept(eq("Step2"), any(), any(), any(), any());
+  }
+
+  @Test
+  void testHandleReply_ProcessAlreadyInSucceededStatus_NoOp() {
+    // Given
+    UUID processId = UUID.randomUUID();
+    UUID commandId = UUID.randomUUID();
+
+    ProcessInstance succeededInstance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-key",
+            ProcessStatus.SUCCEEDED,
+            "Step2",
+            Map.of("data", "value"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(succeededInstance));
+
+    CommandReply lateReply = CommandReply.completed(commandId, processId, Map.of());
+
+    // When
+    processManager.handleReply(processId, commandId, lateReply);
+
+    // Then - should still process the reply even if already succeeded
+    verify(mockRepo).findById(processId);
+  }
+
+  @Test
+  void testStartProcess_WithEmptyInitialData() {
+    // Given
+    when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+
+    // When
+    UUID processId = processManager.startProcess("TestProcess", "test-key", Map.of());
+
+    // Then
+    assertNotNull(processId);
+
+    ArgumentCaptor<ProcessInstance> instanceCaptor = ArgumentCaptor.forClass(ProcessInstance.class);
+    verify(mockRepo).insert(instanceCaptor.capture(), any());
+
+    ProcessInstance instance = instanceCaptor.getValue();
+    assertNotNull(instance.data());
+    assertTrue(instance.data().isEmpty());
+  }
+
+  @Test
+  void testHandleReply_FailedReply_WithNullError() {
+    // Given
+    UUID processId = UUID.randomUUID();
+    UUID commandId = UUID.randomUUID();
+
+    ProcessInstance runningInstance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-123",
+            ProcessStatus.RUNNING,
+            "Step1",
+            Map.of("data", "value"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(runningInstance));
+
+    CommandReply reply = CommandReply.failed(commandId, processId, null);
+
+    // When
+    processManager.handleReply(processId, commandId, reply);
+
+    // Then - null error should not cause crash, treated as non-retryable
+    verify(mockRepo, atLeastOnce()).update(any(), any());
+  }
+
+  @Test
+  void testHandleReply_LargePayloadData() {
+    // Given
+    UUID processId = UUID.randomUUID();
+    UUID commandId = UUID.randomUUID();
+
+    ProcessInstance runningInstance =
+        new ProcessInstance(
+            processId,
+            "TestProcess",
+            "test-123",
+            ProcessStatus.RUNNING,
+            "Step1",
+            Map.of("small", "data"),
+            0,
+            java.time.Instant.now(),
+            java.time.Instant.now());
+
+    when(mockRepo.findById(processId)).thenReturn(Optional.of(runningInstance));
+    when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+
+    // Create large payload with many keys
+    Map<String, Object> largePayload = new HashMap<>();
+    for (int i = 0; i < 100; i++) {
+      largePayload.put("key" + i, "value" + i);
+      largePayload.put("nested" + i, Map.of("subKey", "subValue" + i));
+    }
+
+    CommandReply reply = CommandReply.completed(commandId, processId, largePayload);
+
+    // When
+    processManager.handleReply(processId, commandId, reply);
+
+    // Then - should handle large payload without issues
+    ArgumentCaptor<ProcessInstance> instanceCaptor = ArgumentCaptor.forClass(ProcessInstance.class);
+    verify(mockRepo, times(2)).update(instanceCaptor.capture(), any());
+
+    ProcessInstance updated = instanceCaptor.getAllValues().get(0);
+    assertTrue(updated.data().size() > 100);
+  }
+
+  @Test
+  void testOnApplicationEvent_AutoDiscoveryRegistersProcesses() {
+    // Given
+    var mockBeanContext = mock(io.micronaut.context.BeanContext.class);
+    var mockServerEvent = mock(io.micronaut.runtime.server.event.ServerStartupEvent.class);
+
+    ProcessManager manager = new ProcessManager(mockRepo, mockCommandBus, mockBeanContext);
+
+    TestProcessConfiguration config1 = new TestProcessConfiguration();
+    AnotherTestProcessConfiguration config2 = new AnotherTestProcessConfiguration();
+
+    when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
+        .thenReturn(java.util.List.of(config1, config2));
+
+    // When
+    manager.onApplicationEvent(mockServerEvent);
+
+    // Then - both configurations should be registered
+    // Verify by attempting to start each process type
+    when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+
+    assertDoesNotThrow(
+        () -> manager.startProcess("TestProcess", "key1", Map.of()),
+        "TestProcess should be registered");
+
+    assertDoesNotThrow(
+        () -> manager.startProcess("AnotherTestProcess", "key2", Map.of()),
+        "AnotherTestProcess should be registered");
+  }
+
+  @Test
+  void testOnApplicationEvent_DuplicateConfiguration_ThrowsException() {
+    // Given
+    var mockBeanContext = mock(io.micronaut.context.BeanContext.class);
+    var mockServerEvent = mock(io.micronaut.runtime.server.event.ServerStartupEvent.class);
+
+    ProcessManager manager = new ProcessManager(mockRepo, mockCommandBus, mockBeanContext);
+
+    TestProcessConfiguration config1 = new TestProcessConfiguration();
+    TestProcessConfiguration config2 = new TestProcessConfiguration(); // Same type
+
+    when(mockBeanContext.getBeansOfType(ProcessConfiguration.class))
+        .thenReturn(java.util.List.of(config1, config2));
+
+    // When/Then
+    assertThrows(
+        IllegalStateException.class,
+        () -> manager.onApplicationEvent(mockServerEvent),
+        "Should throw when duplicate process types are discovered");
+  }
+
   /** Test ProcessConfiguration for unit tests */
   static class TestProcessConfiguration implements ProcessConfiguration {
     @Override
@@ -453,4 +926,61 @@ class ProcessManagerTest {
   static class Step1Command implements DomainCommand {}
 
   static class Step2Command implements DomainCommand {}
+
+  /** Three-step process configuration for testing data accumulation */
+  static class ThreeStepProcessConfiguration implements ProcessConfiguration {
+    @Override
+    public String getProcessType() {
+      return "ThreeStepProcess";
+    }
+
+    @Override
+    public ProcessGraph defineProcess() {
+      return ProcessGraphBuilder.process()
+          .startWith(StepACommand.class)
+          .then(StepBCommand.class)
+          .then(StepCCommand.class)
+          .end();
+    }
+
+    @Override
+    public boolean isRetryable(String step, String error) {
+      return error != null && error.contains("timeout");
+    }
+
+    @Override
+    public int getMaxRetries(String step) {
+      return 3;
+    }
+  }
+
+  /** Another test process configuration for auto-discovery tests */
+  static class AnotherTestProcessConfiguration implements ProcessConfiguration {
+    @Override
+    public String getProcessType() {
+      return "AnotherTestProcess";
+    }
+
+    @Override
+    public ProcessGraph defineProcess() {
+      return ProcessGraphBuilder.process().startWith(Step1Command.class).end();
+    }
+
+    @Override
+    public boolean isRetryable(String step, String error) {
+      return false;
+    }
+
+    @Override
+    public int getMaxRetries(String step) {
+      return 0;
+    }
+  }
+
+  // Additional dummy command classes
+  static class StepACommand implements DomainCommand {}
+
+  static class StepBCommand implements DomainCommand {}
+
+  static class StepCCommand implements DomainCommand {}
 }

@@ -1,5 +1,6 @@
 package com.acme.reliable.processor.process;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 @DisplayName("ProcessReplyConsumer Tests")
 class ProcessReplyConsumerTest {
@@ -298,6 +300,361 @@ class ProcessReplyConsumerTest {
       )));
 
       verify(mockProcessManager, times(3)).handleReply(any(), any(), any(CommandReply.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("onReply - CommandReply Verification Tests")
+  class CommandReplyVerificationTests {
+
+    @Test
+    @DisplayName("should create completed reply with correct status")
+    void testOnReply_VerifyCompletedReplyStatus() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "CommandCompleted",
+          "payload", Map.of("result", "success")
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      ArgumentCaptor<CommandReply> replyCaptor = ArgumentCaptor.forClass(CommandReply.class);
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), replyCaptor.capture());
+
+      CommandReply capturedReply = replyCaptor.getValue();
+      assertEquals(CommandReply.ReplyStatus.COMPLETED, capturedReply.status());
+      assertTrue(capturedReply.isSuccess());
+      assertFalse(capturedReply.isFailure());
+      assertEquals("success", capturedReply.data().get("result"));
+    }
+
+    @Test
+    @DisplayName("should create failed reply with correct status")
+    void testOnReply_VerifyFailedReplyStatus() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "CommandFailed",
+          "error", "Database error"
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      ArgumentCaptor<CommandReply> replyCaptor = ArgumentCaptor.forClass(CommandReply.class);
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), replyCaptor.capture());
+
+      CommandReply capturedReply = replyCaptor.getValue();
+      assertEquals(CommandReply.ReplyStatus.FAILED, capturedReply.status());
+      assertFalse(capturedReply.isSuccess());
+      assertTrue(capturedReply.isFailure());
+      assertEquals("Database error", capturedReply.error());
+    }
+
+    @Test
+    @DisplayName("should create timed out reply with correct status")
+    void testOnReply_VerifyTimedOutReplyStatus() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "CommandTimedOut",
+          "error", "Timeout after 30 seconds"
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      ArgumentCaptor<CommandReply> replyCaptor = ArgumentCaptor.forClass(CommandReply.class);
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), replyCaptor.capture());
+
+      CommandReply capturedReply = replyCaptor.getValue();
+      assertEquals(CommandReply.ReplyStatus.TIMED_OUT, capturedReply.status());
+      assertFalse(capturedReply.isSuccess());
+      assertTrue(capturedReply.isFailure());
+      assertEquals("Timeout after 30 seconds", capturedReply.error());
+    }
+
+    @Test
+    @DisplayName("should handle CommandTimedOut with default error message")
+    void testOnReply_TimedOutDefaultError() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "CommandTimedOut"
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      ArgumentCaptor<CommandReply> replyCaptor = ArgumentCaptor.forClass(CommandReply.class);
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), replyCaptor.capture());
+
+      CommandReply capturedReply = replyCaptor.getValue();
+      assertEquals("Command timed out", capturedReply.error());
+    }
+  }
+
+  @Nested
+  @DisplayName("onReply - Edge Cases Tests")
+  class EdgeCasesTests {
+
+    @Test
+    @DisplayName("should handle empty string body")
+    void testOnReply_EmptyString() {
+      consumer.onReply("");
+
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("should handle whitespace-only body")
+    void testOnReply_WhitespaceOnly() {
+      consumer.onReply("   ");
+
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("should handle invalid UUID format for commandId")
+    void testOnReply_InvalidCommandIdFormat() {
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", "not-a-valid-uuid",
+          "correlationId", correlationId.toString(),
+          "type", "CommandCompleted"
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("should handle invalid UUID format for correlationId")
+    void testOnReply_InvalidCorrelationIdFormat() {
+      UUID commandId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", "invalid-correlation-id",
+          "type", "CommandCompleted"
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("should handle missing type field")
+    void testOnReply_MissingTypeField() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString()
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("should handle payload with null values")
+    void testOnReply_PayloadWithNullValues() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> payloadWithNulls = new java.util.HashMap<>();
+      payloadWithNulls.put("key1", "value1");
+      payloadWithNulls.put("key2", null);
+      payloadWithNulls.put("key3", "value3");
+
+      Map<String, Object> reply = new java.util.HashMap<>();
+      reply.put("commandId", commandId.toString());
+      reply.put("correlationId", correlationId.toString());
+      reply.put("type", "CommandCompleted");
+      reply.put("payload", payloadWithNulls);
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), any(CommandReply.class));
+    }
+
+    @Test
+    @DisplayName("should handle extra unexpected fields in message")
+    void testOnReply_ExtraFields() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "CommandCompleted",
+          "extraField1", "value1",
+          "extraField2", 123,
+          "extraField3", Map.of("nested", "data")
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), any(CommandReply.class));
+    }
+
+    @Test
+    @DisplayName("should handle case-sensitive type matching")
+    void testOnReply_CaseSensitiveType() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "commandcompleted"
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      // Should not match because type is case-sensitive
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
+    }
+  }
+
+  @Nested
+  @DisplayName("onReply - Concurrent Processing Tests")
+  class ConcurrentProcessingTests {
+
+    @Test
+    @DisplayName("should handle concurrent replies independently")
+    void testOnReply_ConcurrentReplies() throws InterruptedException {
+      int threadCount = 5;
+      java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threadCount);
+      java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+      for (int i = 0; i < threadCount; i++) {
+        final int index = i;
+        new Thread(() -> {
+          try {
+            UUID commandId = UUID.randomUUID();
+            UUID correlationId = UUID.randomUUID();
+
+            Map<String, Object> reply = Map.of(
+                "commandId", commandId.toString(),
+                "correlationId", correlationId.toString(),
+                "type", "CommandCompleted",
+                "payload", Map.of("threadIndex", index)
+            );
+
+            String json = Jsons.toJson(reply);
+            consumer.onReply(json);
+            successCount.incrementAndGet();
+          } finally {
+            latch.countDown();
+          }
+        }).start();
+      }
+
+      latch.await();
+
+      assertEquals(threadCount, successCount.get());
+      verify(mockProcessManager, times(threadCount)).handleReply(any(), any(), any(CommandReply.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("onReply - Payload Content Validation Tests")
+  class PayloadContentValidationTests {
+
+    @Test
+    @DisplayName("should preserve complex nested payload structure")
+    void testOnReply_ComplexNestedPayload() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> complexPayload = Map.of(
+          "level1", Map.of(
+              "level2", Map.of(
+                  "level3", Map.of(
+                      "value", "deep-nested-value",
+                      "array", java.util.List.of("item1", "item2", "item3")
+                  )
+              )
+          ),
+          "metadata", Map.of(
+              "timestamp", "2025-01-01T00:00:00Z",
+              "version", 1
+          )
+      );
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "CommandCompleted",
+          "payload", complexPayload
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      ArgumentCaptor<CommandReply> replyCaptor = ArgumentCaptor.forClass(CommandReply.class);
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), replyCaptor.capture());
+
+      CommandReply capturedReply = replyCaptor.getValue();
+      assertNotNull(capturedReply.data().get("level1"));
+      assertNotNull(capturedReply.data().get("metadata"));
+    }
+
+    @Test
+    @DisplayName("should handle numeric values in payload")
+    void testOnReply_NumericPayload() {
+      UUID commandId = UUID.randomUUID();
+      UUID correlationId = UUID.randomUUID();
+
+      Map<String, Object> numericPayload = Map.of(
+          "intValue", 42,
+          "longValue", 9876543210L,
+          "doubleValue", 3.14159,
+          "booleanValue", true
+      );
+
+      Map<String, Object> reply = Map.of(
+          "commandId", commandId.toString(),
+          "correlationId", correlationId.toString(),
+          "type", "CommandCompleted",
+          "payload", numericPayload
+      );
+
+      String json = Jsons.toJson(reply);
+      consumer.onReply(json);
+
+      ArgumentCaptor<CommandReply> replyCaptor = ArgumentCaptor.forClass(CommandReply.class);
+      verify(mockProcessManager).handleReply(eq(correlationId), eq(commandId), replyCaptor.capture());
+
+      CommandReply capturedReply = replyCaptor.getValue();
+      assertEquals(4, capturedReply.data().size());
     }
   }
 }
