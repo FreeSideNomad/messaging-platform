@@ -436,11 +436,11 @@ class OutboxSweeperTest {
       // Given
       when(outboxRepository.recoverStuck(any())).thenThrow(new RuntimeException("DB connection lost"));
 
-      // When
-      outboxSweeper.tick();
+      // When/Then - should not throw even when recoverStuck fails
+      assertThatCode(() -> outboxSweeper.tick()).doesNotThrowAnyException();
 
-      // Then - logs would show "Error in OutboxSweeper tick: DB connection lost"
-      // Tick should not throw, just log
+      // Verify that the exception was swallowed and not propagated
+      verify(outboxRepository).recoverStuck(any());
     }
   }
 

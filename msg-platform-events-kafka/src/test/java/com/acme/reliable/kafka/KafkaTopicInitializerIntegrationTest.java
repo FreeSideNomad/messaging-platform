@@ -101,7 +101,7 @@ class KafkaTopicInitializerIntegrationTest {
         new KafkaTopicInitializer(kafka.getBootstrapServers(), "", 3, 1);
 
     // When/Then: Should not throw
-    initializer.ensureTopics();
+    assertThatCode(() -> initializer.ensureTopics()).doesNotThrowAnyException();
   }
 
   @Test
@@ -112,7 +112,7 @@ class KafkaTopicInitializerIntegrationTest {
         new KafkaTopicInitializer(kafka.getBootstrapServers(), null, 3, 1);
 
     // When/Then: Should not throw
-    initializer.ensureTopics();
+    assertThatCode(() -> initializer.ensureTopics()).doesNotThrowAnyException();
   }
 
   @Test

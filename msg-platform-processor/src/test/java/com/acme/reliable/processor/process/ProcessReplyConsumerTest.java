@@ -161,10 +161,12 @@ class ProcessReplyConsumerTest {
       );
 
       String json = Jsons.toJson(reply);
-      consumer.onReply(json);
 
-      // Should handle error without throwing
-      // ProcessManager may not be called if critical field is missing
+      // Should handle error without throwing when critical field is missing
+      assertThatCode(() -> consumer.onReply(json)).doesNotThrowAnyException();
+
+      // ProcessManager should not be called if commandId is missing
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
     }
 
     @Test
@@ -180,10 +182,12 @@ class ProcessReplyConsumerTest {
       );
 
       String json = Jsons.toJson(reply);
-      consumer.onReply(json);
 
-      // Should handle error without throwing
-      // ProcessManager may not be called if type is unknown
+      // Should handle error without throwing when type is unknown
+      assertThatCode(() -> consumer.onReply(json)).doesNotThrowAnyException();
+
+      // ProcessManager should not be called if type is unknown
+      verify(mockProcessManager, never()).handleReply(any(), any(), any());
     }
 
     @Test
