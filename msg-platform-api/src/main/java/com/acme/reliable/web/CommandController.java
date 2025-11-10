@@ -93,6 +93,6 @@ public class CommandController {
     private String businessKey(String payload) {
         // Simple key derivation - in production, extract from payload
         // For now, use a UUID to ensure uniqueness
-        return java.util.UUID.randomUUID().toString();
+        return payload.hashCode() + java.util.UUID.randomUUID().toString();
     }
 }

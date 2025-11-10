@@ -40,6 +40,9 @@ class SonarQubeClient:
             url = f"{self.base_url}/api/issues/search"
             params = {
                 'componentKeys': self.project_key,
+                'branch': 'main',
+                'statuses': 'OPEN',
+                'types': 'CODE_SMELL',
                 'p': page,
                 'ps': page_size,
             }

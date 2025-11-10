@@ -146,7 +146,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should discover and register handler from simple service bean")
-        void testDiscoverSimpleHandler() throws Exception {
+        void testDiscoverSimpleHandler() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -171,7 +171,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should discover multiple handlers from same service bean")
-        void testDiscoverMultipleHandlers() throws Exception {
+        void testDiscoverMultipleHandlers() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -201,7 +201,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should skip CommandHandlerRegistry beans during discovery")
-        void testSkipRegistryBeans() throws Exception {
+        void testSkipRegistryBeans() {
             BeanDefinition<AutoCommandHandlerRegistry> registryDef =
                     mockBeanDefinition(AutoCommandHandlerRegistry.class);
 
@@ -220,7 +220,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should skip beans that are not yet available")
-        void testSkipUnavailableBeans() throws Exception {
+        void testSkipUnavailableBeans() {
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
             when(mockBeanContext.getAllBeanDefinitions()).thenReturn(List.of(beanDef));
@@ -239,7 +239,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should skip methods with multiple parameters")
-        void testSkipMultiParamMethods() throws Exception {
+        void testSkipMultiParamMethods() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -259,7 +259,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should skip methods without DomainCommand parameters")
-        void testSkipNonCommandMethods() throws Exception {
+        void testSkipNonCommandMethods() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -279,7 +279,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should prefer proxy beans over non-proxy beans")
-        void testPreferProxyBeans() throws Exception {
+        void testPreferProxyBeans() {
             UserService proxyService = new UserService$Intercepted();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -298,7 +298,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should skip AOP accessor methods")
-        void testSkipAopAccessorMethods() throws Exception {
+        void testSkipAopAccessorMethods() {
             UserService$Intercepted proxyService = new UserService$Intercepted();
             BeanDefinition<UserService$Intercepted> beanDef =
                     mockBeanDefinition(UserService$Intercepted.class);
@@ -318,7 +318,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should derive command type from class name without Command suffix")
-        void testDeriveCommandType() throws Exception {
+        void testDeriveCommandType() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -342,7 +342,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should throw exception when duplicate handlers found")
-        void testDuplicateHandlerThrowsException() throws Exception {
+        void testDuplicateHandlerThrowsException() {
             UserService service1 = new UserService();
             AnotherUserService service2 = new AnotherUserService();
 
@@ -362,7 +362,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should allow multiple candidates from same base class (proxy vs non-proxy)")
-        void testMultipleCandidatesSameBaseClass() throws Exception {
+        void testMultipleCandidatesSameBaseClass() {
             // This simulates Micronaut creating both a proxy and the original bean
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
@@ -381,7 +381,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should invoke handler and return completed reply with data")
-        void testInvokeHandlerWithData() throws Exception {
+        void testInvokeHandlerWithData() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -408,7 +408,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should handle void return type and return empty data")
-        void testInvokeHandlerWithVoidReturn() throws Exception {
+        void testInvokeHandlerWithVoidReturn() {
             VoidService service = new VoidService();
             BeanDefinition<VoidService> beanDef = mockBeanDefinition(VoidService.class);
 
@@ -431,7 +431,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should handle null return value and return empty data")
-        void testInvokeHandlerWithNullReturn() throws Exception {
+        void testInvokeHandlerWithNullReturn() {
             NullReturningService service = new NullReturningService();
             BeanDefinition<NullReturningService> beanDef = mockBeanDefinition(NullReturningService.class);
 
@@ -454,7 +454,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should return failed reply when handler throws exception")
-        void testInvokeHandlerThrowsException() throws Exception {
+        void testInvokeHandlerThrowsException() {
             FaultyService service = new FaultyService();
             BeanDefinition<FaultyService> beanDef = mockBeanDefinition(FaultyService.class);
 
@@ -478,7 +478,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should handle JSON deserialization errors")
-        void testInvokeHandlerWithInvalidJson() throws Exception {
+        void testInvokeHandlerWithInvalidJson() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -501,7 +501,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should return failed reply for unregistered command type")
-        void testInvokeUnregisteredCommand() throws Exception {
+        void testInvokeUnregisteredCommand() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -523,7 +523,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should deserialize command payload correctly before invoking handler")
-        void testPayloadDeserialization() throws Exception {
+        void testPayloadDeserialization() {
             UserService service = spy(new UserService());
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -550,7 +550,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should use full class name when Command suffix is absent")
-        void testDeriveCommandTypeWithoutSuffix() throws Exception {
+        void testDeriveCommandTypeWithoutSuffix() {
             TestService service = new TestService();
             BeanDefinition<TestService> beanDef = mockBeanDefinition(TestService.class);
 
@@ -591,7 +591,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should handle discovery with no valid handlers")
-        void testNoValidHandlers() throws Exception {
+        void testNoValidHandlers() {
             // Service with no DomainCommand methods
             Object beanWithoutHandlers = new Object();
             BeanDefinition<Object> beanDef = mockBeanDefinition(Object.class);
@@ -615,7 +615,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should handle inherited methods from parent class")
-        void testInheritedMethods() throws Exception {
+        void testInheritedMethods() {
             UserService$Intercepted proxyService = new UserService$Intercepted();
             BeanDefinition<UserService$Intercepted> beanDef =
                     mockBeanDefinition(UserService$Intercepted.class);
@@ -637,7 +637,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should normalize proxy class names for duplicate detection")
-        void testProxyClassNameNormalization() throws Exception {
+        void testProxyClassNameNormalization() {
             // Simulate having both proxy and non-proxy versions
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
@@ -656,7 +656,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should handle complete workflow: discover, register, and invoke")
-        void testCompleteWorkflow() throws Exception {
+        void testCompleteWorkflow() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
@@ -699,7 +699,7 @@ class AutoCommandHandlerRegistryTest {
 
         @Test
         @DisplayName("should maintain handler registry state across multiple invocations")
-        void testHandlerCaching() throws Exception {
+        void testHandlerCaching() {
             UserService service = new UserService();
             BeanDefinition<UserService> beanDef = mockBeanDefinition(UserService.class);
 
