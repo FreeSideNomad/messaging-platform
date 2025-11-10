@@ -17,7 +17,6 @@ COPY coverage-aggregate/pom.xml coverage-aggregate/
 # Copy source code and resources for dependencies
 COPY msg-platform-core/src msg-platform-core/src
 COPY msg-platform-persistence-jdbc/src msg-platform-persistence-jdbc/src
-COPY msg-platform-persistence-jdbc/src/main/resources msg-platform-persistence-jdbc/src/main/resources
 COPY msg-platform-messaging-ibmmq/src msg-platform-messaging-ibmmq/src
 COPY msg-platform-events-kafka/src msg-platform-events-kafka/src
 COPY msg-platform-processor/src msg-platform-processor/src
