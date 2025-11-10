@@ -230,6 +230,7 @@ ON CONFLICT DO NOTHING
 #### Key Methods:
 
 -
+
 `void insertDlqEntry(UUID commandId, String commandName, String businessKey, String payload, String failedStatus, String errorClass, String errorMessage, int attempts, String parkedBy)` -
 Park failed command for manual intervention
 

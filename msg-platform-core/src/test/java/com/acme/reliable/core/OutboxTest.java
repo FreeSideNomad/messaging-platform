@@ -46,7 +46,7 @@ class OutboxTest {
             assertThat(row.getKey()).isEqualTo("user-123");
             assertThat(row.getType()).isEqualTo("CommandRequested");
             assertThat(row.getPayload()).isEqualTo("{\"name\":\"John\"}");
-            assertThat(row.getAttempts()).isEqualTo(0);
+            assertThat(row.getAttempts()).isZero();
 
             // Verify merged headers
             assertThat(row.getHeaders()).containsEntry("commandId", commandId.toString());
@@ -102,7 +102,7 @@ class OutboxTest {
             assertThat(row.getType()).isEqualTo("UserCreated");
             assertThat(row.getPayload()).isEqualTo("{\"userId\":\"789\"}");
             assertThat(row.getHeaders()).isEmpty();
-            assertThat(row.getAttempts()).isEqualTo(0);
+            assertThat(row.getAttempts()).isZero();
         }
 
         @Test
@@ -149,7 +149,7 @@ class OutboxTest {
             assertThat(row.getKey()).isEqualTo("key-123");
             assertThat(row.getType()).isEqualTo("CommandCompleted");
             assertThat(row.getPayload()).isEqualTo("{\"result\":\"success\"}");
-            assertThat(row.getAttempts()).isEqualTo(0);
+            assertThat(row.getAttempts()).isZero();
 
             // Verify merged headers
             assertThat(row.getHeaders()).containsEntry("correlationId", correlationId.toString());

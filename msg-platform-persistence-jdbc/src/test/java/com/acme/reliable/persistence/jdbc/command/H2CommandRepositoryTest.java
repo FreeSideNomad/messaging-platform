@@ -97,7 +97,7 @@ class H2CommandRepositoryTest {
             assertThat(command.getPayload()).isEqualTo(payload);
             assertThat(command.getIdempotencyKey()).isEqualTo(idempotencyKey);
             assertThat(command.getStatus()).isEqualTo("PENDING");
-            assertThat(command.getRetries()).isEqualTo(0);
+            assertThat(command.getRetries()).isZero();
             assertThat(command.getReply()).isEqualTo(reply);
 
             // Validate timestamp fields
@@ -131,7 +131,7 @@ class H2CommandRepositoryTest {
             Optional<Command> command = repository.findById(commandId);
             assertThat(command).isPresent();
             assertThat(command.get().getStatus()).isEqualTo("PENDING");
-            assertThat(command.get().getRetries()).isEqualTo(0);
+            assertThat(command.get().getRetries()).isZero();
         }
 
         @Test
@@ -362,7 +362,7 @@ class H2CommandRepositoryTest {
             assertThat(afterRunning.get().getPayload()).isEqualTo(payload);
             assertThat(afterRunning.get().getIdempotencyKey()).isEqualTo(idempotencyKey);
             assertThat(afterRunning.get().getReply()).isEqualTo(reply);
-            assertThat(afterRunning.get().getRetries()).isEqualTo(0);
+            assertThat(afterRunning.get().getRetries()).isZero();
 
             // When - Increment retries
             repository.incrementRetries(commandId, "Temporary error");
@@ -433,7 +433,7 @@ class H2CommandRepositoryTest {
             assertThat(cmd.getIdempotencyKey()).isEqualTo(idempotencyKey);
             assertThat(cmd.getReply()).isEqualTo(reply);
             assertThat(cmd.getStatus()).isEqualTo("FAILED");
-            assertThat(cmd.getRetries()).isEqualTo(0);
+            assertThat(cmd.getRetries()).isZero();
             assertThat(cmd.getProcessingLeaseUntil()).isNotNull();
             assertThat(cmd.getLastError()).isEqualTo(errorMsg);
             assertThat(cmd.getRequestedAt()).isNotNull();
@@ -656,7 +656,7 @@ class H2CommandRepositoryTest {
 
             Command pending = repository.findById(commandId).orElseThrow();
             assertThat(pending.getStatus()).isEqualTo("PENDING");
-            assertThat(pending.getRetries()).isEqualTo(0);
+            assertThat(pending.getRetries()).isZero();
             assertThat(pending.getProcessingLeaseUntil()).isNull();
             assertThat(pending.getLastError()).isNull();
 
