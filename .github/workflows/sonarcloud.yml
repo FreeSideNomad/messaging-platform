@@ -39,10 +39,6 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build application
-        run: |
-          mvn -B clean package -DskipTests
-
       # E2E services disabled in CI/CD due to Docker image build constraints
       # To run E2E tests locally, use: docker compose -f docker-compose.e2e.yml up
       # - name: Start E2E services
@@ -52,25 +48,21 @@ jobs:
       #     timeout 300 bash -c 'until docker compose -f docker-compose.e2e.yml ps | grep -q "healthy"; do sleep 5; done'
       #     docker compose -f docker-compose.e2e.yml ps
 
-      - name: Run unit tests with coverage
+      - name: Run tests with coverage and SonarCloud analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn -B test -Pcoverage
+          mvn -B clean verify -Pcoverage \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=FreeSideNomad_messaging-platform \
+            -Dsonar.organization=freesidenomad \
+            -Dsonar.qualitygate.wait=true
 
       # E2E tests disabled in CI/CD - uncomment locally if needed
       # - name: Run E2E tests
       #   run: |
       #     mvn -B test -Pe2e
-
-      - name: SonarCloud analysis
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          mvn -B verify \
-            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=FreeSideNomad_messaging-platform \
-            -Dsonar.organization=freesidenomad \
-            -Dsonar.qualitygate.wait=true
 
       # E2E services cleanup disabled in CI/CD
       # - name: Stop E2E services
