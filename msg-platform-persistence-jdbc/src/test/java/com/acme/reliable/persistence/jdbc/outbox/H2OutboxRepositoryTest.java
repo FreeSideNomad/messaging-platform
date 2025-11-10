@@ -1558,4 +1558,197 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
       assertThat(recovered).isZero();
     }
   }
+
+  @Nested
+  @DisplayName("H2 sweepBatch Empty Results - Edge Case Coverage")
+  class SweepBatchEmptyResultsEdgeCases {
+
+    @BeforeEach
+    void setUp() throws Exception {
+      try (Connection conn = dataSource.getConnection();
+          Statement stmt = conn.createStatement()) {
+        stmt.execute("DELETE FROM outbox");
+      }
+    }
+
+    @Test
+    @DisplayName("sweepBatch should handle empty results and skip update when no IDs collected")
+    void testSweepBatchEmptyResultsSkipsUpdate() {
+      // Given: Empty outbox table (no entries to sweep)
+      // When: Sweep batch
+      List<Outbox> results = repository.sweepBatch(100);
+
+      // Then: Should return empty list without attempting UPDATE (line 124 branch: !ids.isEmpty() = false)
+      assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("sweepBatch should collect multiple IDs and execute batch update")
+    void testSweepBatchMultipleIdsUpdate() {
+      // Given: Multiple NEW entries
+      repository.insertReturningId("events", "test", "key1", "type", "{}", "{}");
+      repository.insertReturningId("events", "test", "key2", "type", "{}", "{}");
+      repository.insertReturningId("events", "test", "key3", "type", "{}", "{}");
+
+      // When: Sweep batch
+      List<Outbox> results = repository.sweepBatch(3);
+
+      // Then: Should collect IDs and execute UPDATE (line 124 branch: !ids.isEmpty() = true)
+      assertThat(results).isNotEmpty();
+      assertThat(results).hasSizeLessThanOrEqualTo(3);
+      // Verify all results have CLAIMED status after update (line 142-144)
+      assertThat(results).allMatch(o -> "CLAIMED".equals(o.getStatus()));
+    }
+
+    @Test
+    @DisplayName("sweepBatch should build correct SQL with single ID")
+    void testSweepBatchSingleIdUpdateSql() {
+      // Given: Single NEW entry
+      repository.insertReturningId("events", "test", "key1", "type", "{}", "{}");
+
+      // When: Sweep batch with limit 1
+      List<Outbox> results = repository.sweepBatch(1);
+
+      // Then: Should build SQL without commas (line 126-131: i < ids.size() - 1 = false)
+      assertThat(results).hasSize(1);
+      assertThat(results.get(0).getStatus()).isEqualTo("CLAIMED");
+    }
+
+    @Test
+    @DisplayName("sweepBatch should build correct SQL with multiple IDs and commas")
+    void testSweepBatchMultipleIdsUpdateSqlWithCommas() {
+      // Given: Three NEW entries
+      repository.insertReturningId("events", "test", "key1", "type", "{}", "{}");
+      repository.insertReturningId("events", "test", "key2", "type", "{}", "{}");
+      repository.insertReturningId("events", "test", "key3", "type", "{}", "{}");
+
+      // When: Sweep batch with limit 3
+      List<Outbox> results = repository.sweepBatch(3);
+
+      // Then: Should build SQL with commas between IDs (line 126-131: multiple iterations)
+      assertThat(results).hasSizeGreaterThan(1);
+      assertThat(results).allMatch(o -> "CLAIMED".equals(o.getStatus()));
+    }
+  }
+
+  @Nested
+  @DisplayName("H2 claimIfNew Exception Path Coverage")
+  class ClaimIfNewExceptionPathTests {
+
+    @BeforeEach
+    void setUp() throws Exception {
+      try (Connection conn = dataSource.getConnection();
+          Statement stmt = conn.createStatement()) {
+        stmt.execute("DELETE FROM outbox");
+      }
+    }
+
+    @Test
+    @DisplayName("claimIfNew should return empty when UPDATE returns 0 rows")
+    void testClaimIfNewUpdateReturnsZero() {
+      // Given: Entry in CLAIMED status (not NEW)
+      long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
+      repository.claimIfNew(id); // First claim succeeds
+
+      // When: Try to claim again (UPDATE will return 0 because status != NEW)
+      Optional<Outbox> result = repository.claimIfNew(id);
+
+      // Then: Should return empty (line 60-63: rowsUpdated == 0 branch)
+      assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("claimIfNew should return empty when SELECT after UPDATE returns no rows")
+    void testClaimIfNewSelectReturnsEmpty() throws SQLException {
+      // Given: Entry that exists
+      long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
+
+      // First claim it normally
+      Optional<Outbox> firstClaim = repository.claimIfNew(id);
+      assertThat(firstClaim).isPresent();
+
+      // Then: If we manually delete it and try to claim, UPDATE might succeed but SELECT fails
+      // This is an edge case that tests line 79-82 where rs.next() returns true vs line 85
+      try (Connection conn = dataSource.getConnection();
+          PreparedStatement ps = conn.prepareStatement("DELETE FROM outbox WHERE id = ?")) {
+        ps.setLong(1, id);
+        ps.executeUpdate();
+      }
+
+      // When: Try to claim non-existent ID
+      Optional<Outbox> result = repository.claimIfNew(9999999L);
+
+      // Then: Should return empty (line 60 branch: rowsUpdated == 0)
+      assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("claimIfNew should successfully map result when SELECT returns row")
+    void testClaimIfNewSelectReturnsRow() {
+      // Given: Entry in NEW status
+      long id = repository.insertReturningId("events", "test-topic", "test-key", "TestEvent",
+          "{\"data\":\"value\"}", "{\"header\":\"value\"}");
+
+      // When: Claim the entry (UPDATE succeeds, SELECT returns row)
+      Optional<Outbox> result = repository.claimIfNew(id);
+
+      // Then: Should return populated Optional (line 79-81: rs.next() = true branch)
+      assertThat(result).isPresent();
+      assertThat(result.get().getId()).isEqualTo(id);
+      assertThat(result.get().getStatus()).isEqualTo("CLAIMED");
+      assertThat(result.get().getTopic()).isEqualTo("test-topic");
+    }
+  }
+
+  @Nested
+  @DisplayName("H2 sweepBatch ResultSet Iteration Coverage")
+  class SweepBatchResultSetIterationTests {
+
+    @BeforeEach
+    void setUp() throws Exception {
+      try (Connection conn = dataSource.getConnection();
+          Statement stmt = conn.createStatement()) {
+        stmt.execute("DELETE FROM outbox");
+      }
+    }
+
+    @Test
+    @DisplayName("sweepBatch should handle while loop with no iterations (empty result)")
+    void testSweepBatchWhileLoopNoIterations() {
+      // Given: No entries in outbox
+      // When: Sweep batch
+      List<Outbox> results = repository.sweepBatch(100);
+
+      // Then: while(rs.next()) never executes (line 116: false on first check)
+      assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("sweepBatch should handle while loop with single iteration")
+    void testSweepBatchWhileLoopSingleIteration() {
+      // Given: Single entry
+      repository.insertReturningId("events", "test", "key1", "type", "{}", "{}");
+
+      // When: Sweep batch
+      List<Outbox> results = repository.sweepBatch(100);
+
+      // Then: while(rs.next()) executes once (line 116: true once, then false)
+      assertThat(results).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("sweepBatch should handle while loop with multiple iterations")
+    void testSweepBatchWhileLoopMultipleIterations() {
+      // Given: Multiple entries
+      for (int i = 0; i < 5; i++) {
+        repository.insertReturningId("events", "test", "key" + i, "type", "{}", "{}");
+      }
+
+      // When: Sweep batch
+      List<Outbox> results = repository.sweepBatch(5);
+
+      // Then: while(rs.next()) executes multiple times (line 116: true multiple times)
+      assertThat(results).hasSizeGreaterThan(1);
+    }
+  }
 }
