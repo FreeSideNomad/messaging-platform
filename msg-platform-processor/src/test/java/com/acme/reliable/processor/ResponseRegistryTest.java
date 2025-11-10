@@ -565,6 +565,7 @@ class ResponseRegistryTest {
                                     future.get();
                                     successCount.incrementAndGet();
                                 } catch (Exception ignored) {
+                                    // Exception is expected and handled by the async framework
                                 }
                             } else {
                                 registry.fail(commandId, "error");

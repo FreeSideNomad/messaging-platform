@@ -87,6 +87,7 @@ class AutoCommandHandlerRegistryTest {
 
         // Not a handler - multiple parameters
         public void multiParam(CreateUserCommand cmd, String extra) {
+            // This method intentionally does nothing - it's a test helper to simulate a method that shouldn't be registered as a handler
         }
 
         // Not a handler - no DomainCommand parameter
