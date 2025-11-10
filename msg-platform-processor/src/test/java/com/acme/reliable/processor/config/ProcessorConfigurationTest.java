@@ -12,8 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -39,8 +37,6 @@ import static org.mockito.Mockito.mock;
  */
 @DisplayName("Processor Configuration Tests")
 class ProcessorConfigurationTest {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ProcessorConfigurationTest.class);
 
     @Nested
     @DisplayName("CoreBeansFactory Tests")

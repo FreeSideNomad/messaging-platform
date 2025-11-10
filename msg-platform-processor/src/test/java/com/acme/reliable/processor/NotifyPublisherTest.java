@@ -49,9 +49,6 @@ import static org.mockito.Mockito.*;
 @DisplayName("NotifyPublisher Unit Tests")
 class NotifyPublisherTest {
 
-    // Use lenient mocking to avoid unnecessary stubbing exceptions
-    private static final org.mockito.quality.Strictness LENIENT = org.mockito.quality.Strictness.LENIENT;
-
     @Mock
     private RedissonClient redisson;
 
@@ -72,17 +69,11 @@ class NotifyPublisherTest {
 
     private NotifyPublisher publisher;
 
-    // Flag to control test execution
-    private volatile boolean allowSubscription = true;
-
     @BeforeEach
     void setUp() {
         // Setup default mock behavior with lenient to avoid unnecessary stubbing warnings
         lenient().when(redisson.getBlockingQueue("outbox:notify")).thenReturn(blockingQueue);
         lenient().when(redisson.getQueue("outbox:notify")).thenReturn(queue);
-
-        // Prevent actual subscription in constructor
-        allowSubscription = false;
     }
 
     @AfterEach
