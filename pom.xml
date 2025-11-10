@@ -52,7 +52,9 @@
     <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/coverage-aggregate/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <sonar.exclusions>**/pmd-ruleset.xml,**/*.md,**/Dockerfile,**/.github/**,**/scripts/**,**/coverage-aggregate/**</sonar.exclusions>
     <!-- Coverage exclusions to match local JaCoCo check rules -->
-    <sonar.coverage.exclusions>com/acme/reliable/processor/**,com/acme/reliable/processor/command/**,com/acme/reliable/processor/config/**</sonar.coverage.exclusions>
+    <!-- Processor: Package-level infrastructure/bootstrapping code -->
+    <!-- Kafka: Class-level factory/initialization code -->
+    <sonar.coverage.exclusions>com/acme/reliable/processor/**,com/acme/reliable/processor/command/**,com/acme/reliable/processor/config/**,com/acme/reliable/kafka/KafkaProducerFactory.java,com/acme/reliable/kafka/KafkaTopicInitializer.java</sonar.coverage.exclusions>
     <jacoco.version>0.8.12</jacoco.version>
   </properties>
 
