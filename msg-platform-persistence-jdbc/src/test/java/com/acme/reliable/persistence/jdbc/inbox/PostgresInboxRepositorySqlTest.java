@@ -46,6 +46,8 @@ class PostgresInboxRepositorySqlTest {
     String sql = invokeProtectedMethod("getInsertIfAbsentSql");
 
     assertThat(sql)
+        .isNotNull()
+        .isNotEmpty()
         .contains("INSERT INTO inbox")
         .contains("(message_id, handler, processed_at)")
         .contains("VALUES (?, ?, ?)")
@@ -62,6 +64,8 @@ class PostgresInboxRepositorySqlTest {
     String sql = invokeProtectedMethod("getInsertIfAbsentSql");
 
     assertThat(sql)
+        .isNotNull()
+        .isNotEmpty()
         .doesNotContain("IGNORE")
         .doesNotContain("MERGE")
         .doesNotContain("PRAGMA")
