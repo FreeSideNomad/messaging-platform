@@ -1,6 +1,5 @@
-package com.acme.reliable.persistence.jdbc.process;
+package com.acme.reliable.persistence.jdbc;
 
-import com.acme.reliable.repository.ProcessRepository;
 import io.micronaut.context.annotation.Requires;
 import jakarta.inject.Singleton;
 import javax.sql.DataSource;

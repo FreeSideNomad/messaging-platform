@@ -2,6 +2,7 @@ package com.acme.reliable.persistence.jdbc.inbox;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.acme.reliable.persistence.jdbc.H2InboxRepository;
 import com.acme.reliable.persistence.jdbc.H2RepositoryFaultyTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

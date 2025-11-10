@@ -2,8 +2,13 @@ package com.acme.reliable.persistence.jdbc.process;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.acme.reliable.persistence.jdbc.H2ProcessRepository;
 import com.acme.reliable.persistence.jdbc.H2RepositoryFaultyTestBase;
+import com.acme.reliable.process.ProcessEvent;
+import com.acme.reliable.process.ProcessInstance;
 import com.acme.reliable.process.ProcessStatus;
+import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +24,22 @@ class H2ProcessRepositoryExceptionTests extends H2RepositoryFaultyTestBase {
 
   private void setupRepository() {
     repository = new H2ProcessRepository(getDataSource());
+  }
+
+  /**
+   * Creates a test ProcessInstance for insert/update testing.
+   */
+  private ProcessInstance createTestProcessInstance() {
+    return new ProcessInstance(
+        UUID.randomUUID(),
+        "TestProcess",
+        "test-key",
+        ProcessStatus.NEW,
+        "Step1",
+        Map.of("data", "value"),
+        0,
+        Instant.now(),
+        Instant.now());
   }
 
   @Nested
@@ -78,6 +99,37 @@ class H2ProcessRepositoryExceptionTests extends H2RepositoryFaultyTestBase {
 
       assertThatThrownBy(() -> repository.getLog(UUID.randomUUID(), 10))
           .isInstanceOf(RuntimeException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("Write Exception Handling")
+  class WriteExceptionTests {
+
+    @Test
+    @DisplayName("insert should throw exception when table doesn't exist")
+    void testInsertTableNotFound() {
+      setupRepository();
+      ProcessInstance processInstance = createTestProcessInstance();
+      ProcessEvent event = new ProcessEvent.ProcessStarted(
+          "TestProcess", "test-key", Map.of("data", "value"));
+
+      assertThatThrownBy(() -> repository.insert(processInstance, event))
+          .isInstanceOf(RuntimeException.class)
+          .hasMessageContaining("Permanent database error during insert process instance");
+    }
+
+    @Test
+    @DisplayName("update should throw exception when table doesn't exist")
+    void testUpdateTableNotFound() {
+      setupRepository();
+      ProcessInstance processInstance = createTestProcessInstance();
+      ProcessEvent event = new ProcessEvent.StepCompleted(
+          "Step1", UUID.randomUUID().toString(), Map.of("result", "data"));
+
+      assertThatThrownBy(() -> repository.update(processInstance, event))
+          .isInstanceOf(RuntimeException.class)
+          .hasMessageContaining("Permanent database error during update process instance");
     }
   }
 }

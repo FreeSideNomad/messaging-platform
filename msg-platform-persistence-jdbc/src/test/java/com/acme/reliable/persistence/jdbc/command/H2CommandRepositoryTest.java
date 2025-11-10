@@ -3,6 +3,7 @@ package com.acme.reliable.persistence.jdbc.command;
 import static org.assertj.core.api.Assertions.*;
 
 import com.acme.reliable.domain.Command;
+import com.acme.reliable.persistence.jdbc.H2CommandRepository;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
@@ -12,7 +13,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
-import javax.sql.DataSource;
+
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -812,6 +813,20 @@ class H2CommandRepositoryTest {
 
       // When - Try to increment retries for a command that doesn't exist
       repository.incrementRetries(nonExistentId, "Retry error message");
+
+      // Then - Command should not exist (verifying 0 rows were updated)
+      Optional<Command> result = repository.findById(nonExistentId);
+      assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("updateToTimedOut should log warning when updating non-existent command (0 rows updated)")
+    void testUpdateToTimedOutZeroRowsUpdated() {
+      // Given - A command ID that doesn't exist in the database
+      UUID nonExistentId = UUID.randomUUID();
+
+      // When - Try to update a command to timed out that doesn't exist
+      repository.updateToTimedOut(nonExistentId, "Timeout reason");
 
       // Then - Command should not exist (verifying 0 rows were updated)
       Optional<Command> result = repository.findById(nonExistentId);

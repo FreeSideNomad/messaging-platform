@@ -23,6 +23,19 @@ flyway:
     default:
       enabled: true  # Enable for integration tests
 
+# JMS Configuration for embedded ActiveMQ
+jms:
+  connection-factory-jndi-name: ConnectionFactory
+  client-id: processor-test-client
+
+# ActiveMQ transport configuration for embedded broker
+activemq:
+  pool:
+    enabled: true
+    max-connections: 8
+    idle-timeout: 30000  # 30 seconds
+    expiry-timeout: 0     # No expiry for test messages
+
 # Test environment settings
 test:
   active: true

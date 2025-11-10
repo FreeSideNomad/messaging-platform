@@ -2,6 +2,7 @@ package com.acme.reliable.persistence.jdbc.command;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.acme.reliable.persistence.jdbc.H2CommandRepository;
 import com.acme.reliable.persistence.jdbc.H2RepositoryFaultyTestBase;
 import java.sql.Timestamp;
 import java.util.UUID;

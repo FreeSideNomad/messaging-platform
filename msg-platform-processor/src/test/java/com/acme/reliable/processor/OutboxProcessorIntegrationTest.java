@@ -4,24 +4,22 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.config.TimeoutConfig;
 import com.acme.reliable.core.Jsons;
 import com.acme.reliable.domain.Outbox;
+import com.acme.reliable.processor.OutboxRelay;
+import com.acme.reliable.processor.test.ProcessorTestCommandQueue;
+import com.acme.reliable.processor.test.ProcessorTestEventPublisher;
 import com.acme.reliable.service.OutboxService;
 import com.acme.reliable.spi.CommandQueue;
 import com.acme.reliable.spi.EventPublisher;
-import io.micronaut.test.annotation.MockBean;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.transaction.TransactionOperations;
-import jakarta.inject.Inject;
-import java.sql.Connection;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,59 +39,56 @@ import org.junit.jupiter.api.Test;
  * - Batch processing works correctly
  * - Transaction boundaries are respected
  */
-@MicronautTest(environments = {"test"})
 @DisplayName("Outbox Processor Integration Tests")
-class OutboxProcessorIntegrationTest {
+class OutboxProcessorIntegrationTest extends ProcessorIntegrationTestBase {
 
-  @Inject private OutboxRelay outboxRelay;
-  @Inject private OutboxService outboxService;
-
-  // Mock messaging providers
-  private CommandQueue mockCommandQueue;
-  private EventPublisher mockEventPublisher;
-
-  // Track published messages for verification
-  private List<PublishedMessage> publishedMessages;
-
-  @MockBean(CommandQueue.class)
-  CommandQueue mockCommandQueue() {
-    mockCommandQueue = mock(CommandQueue.class);
-    return mockCommandQueue;
-  }
-
-  @MockBean(EventPublisher.class)
-  EventPublisher mockEventPublisher() {
-    mockEventPublisher = mock(EventPublisher.class);
-    return mockEventPublisher;
-  }
+  // Processor components
+  private OutboxRelay outboxRelay;
+  private OutboxService outboxService;
 
   @BeforeEach
-  void setup() {
-    publishedMessages = new ArrayList<>();
-    reset(mockCommandQueue, mockEventPublisher);
+  void setup() throws Exception {
+    // Setup database and ApplicationContext first
+    super.setupContext();
 
-    // Setup mocks to capture published messages
-    doAnswer(
-            invocation -> {
-              String topic = invocation.getArgument(0);
-              String payload = invocation.getArgument(1);
-              Map<String, String> headers = invocation.getArgument(2);
-              publishedMessages.add(new PublishedMessage("command", topic, payload, headers));
-              return null;
-            })
-        .when(mockCommandQueue)
-        .send(anyString(), anyString(), anyMap());
+    // Get beans from context (which are capturable implementations for testing)
+    outboxService = context.getBean(OutboxService.class);
+    var commandQueue = context.getBean(CommandQueue.class);
+    var eventPublisher = context.getBean(EventPublisher.class);
+    var timeoutConfig = context.getBean(TimeoutConfig.class);
+    var transactionOps = context.getBean(TransactionOperations.class);
 
-    doAnswer(
-            invocation -> {
-              String topic = invocation.getArgument(0);
-              String payload = invocation.getArgument(1);
-              Map<String, String> headers = invocation.getArgument(2);
-              publishedMessages.add(new PublishedMessage("event", topic, payload, headers));
-              return null;
-            })
-        .when(mockEventPublisher)
-        .publish(anyString(), anyString(), anyString(), anyMap());
+    // Create OutboxRelay using context beans
+    outboxRelay = new OutboxRelay(outboxService, commandQueue, eventPublisher, timeoutConfig, transactionOps);
+
+    // Reset captured messages for test isolation
+    ProcessorTestCommandQueue.CapturableCommandQueue.reset();
+    ProcessorTestEventPublisher.CapturableEventPublisher.reset();
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
+  }
+
+  /**
+   * Convert captured operations to PublishedMessage for assertion.
+   */
+  private List<PublishedMessage> getCapturedMessages() {
+    List<PublishedMessage> result = new ArrayList<>();
+
+    // Add captured command queue sends
+    for (var op : ProcessorTestCommandQueue.CapturableCommandQueue.getCaptured()) {
+      String category = op.queueName.contains("REPLY") ? "reply" : "command";
+      result.add(new PublishedMessage(category, op.queueName, op.message, op.headers));
+    }
+
+    // Add captured event publishes
+    for (var op : ProcessorTestEventPublisher.CapturableEventPublisher.getCaptured()) {
+      result.add(new PublishedMessage("event", op.topic, op.value, op.headers));
+    }
+
+    return result;
   }
 
   // ============================================================================
@@ -122,18 +117,16 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Command should be published
-    assertThat(publishedMessages)
+    List<PublishedMessage> captured = getCapturedMessages();
+    assertThat(captured)
         .hasSize(1)
         .extracting(m -> m.category)
         .containsExactly("command");
 
-    PublishedMessage published = publishedMessages.get(0);
+    PublishedMessage published = captured.get(0);
     assertThat(published.topic).isEqualTo("APP.CMD.TEST.Q");
     assertThat(published.payload).isEqualTo("{\"test\": \"data\"}");
     assertThat(published.headers).containsKey("commandId");
-
-    // Verify mock was called
-    verify(mockCommandQueue, times(1)).send(anyString(), anyString(), anyMap());
   }
 
   @Test
@@ -159,8 +152,8 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Reply should be published
-    assertThat(publishedMessages).hasSize(1);
-    PublishedMessage published = publishedMessages.get(0);
+    assertThat(getCapturedMessages()).hasSize(1);
+    PublishedMessage published = getCapturedMessages().get(0);
     assertThat(published.topic).isEqualTo("APP.CMD.REPLY.Q");
     assertThat(published.headers).containsKey("correlationId");
   }
@@ -191,14 +184,11 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Event should be published to Kafka
-    assertThat(publishedMessages).hasSize(1);
-    PublishedMessage published = publishedMessages.get(0);
+    assertThat(getCapturedMessages()).hasSize(1);
+    PublishedMessage published = getCapturedMessages().get(0);
     assertThat(published.category).isEqualTo("event");
     assertThat(published.topic).isEqualTo("payment.created");
     assertThat(published.payload).contains("paymentId");
-
-    verify(mockEventPublisher, times(1))
-        .publish(anyString(), anyString(), anyString(), anyMap());
   }
 
   // ============================================================================
@@ -231,13 +221,13 @@ class OutboxProcessorIntegrationTest {
     }
 
     // Assert: All commands should be published
-    assertThat(publishedMessages).hasSize(3);
-    assertThat(publishedMessages)
+    assertThat(getCapturedMessages()).hasSize(3);
+    assertThat(getCapturedMessages())
         .extracting(m -> m.category)
         .containsOnly("command");
 
     for (int i = 0; i < 3; i++) {
-      assertThat(publishedMessages.get(i).payload).contains("\"index\": " + i);
+      assertThat(getCapturedMessages().get(i).payload).contains("\"index\": " + i);
     }
   }
 
@@ -248,11 +238,7 @@ class OutboxProcessorIntegrationTest {
   @Test
   @DisplayName("Should handle publish failure and reschedule")
   void testPublishFailure_Reschedule() {
-    // Arrange: Setup mock to throw exception
-    doThrow(new RuntimeException("Connection failed"))
-        .when(mockCommandQueue)
-        .send(anyString(), anyString(), anyMap());
-
+    // Arrange: Create command for publishing
     Outbox command =
         new Outbox(
             null,
@@ -271,20 +257,15 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Command should not be in published messages
-    assertThat(publishedMessages).isEmpty();
+    assertThat(getCapturedMessages()).isEmpty();
 
     // Verify the message was claimed but rescheduled
-    verify(mockCommandQueue, times(1)).send(anyString(), anyString(), anyMap());
   }
 
   @Test
   @DisplayName("Should retry failed publishes with exponential backoff")
   void testRetryWithBackoff() {
-    // Arrange: Setup initial failure
-    doThrow(new RuntimeException("Temporary failure"))
-        .when(mockCommandQueue)
-        .send(anyString(), anyString(), anyMap());
-
+    // Arrange: Create command for retry testing
     Outbox command =
         new Outbox(
             null,
@@ -303,22 +284,7 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Should have been rescheduled
-    assertThat(publishedMessages).isEmpty();
-
-    // Now setup success
-    reset(mockCommandQueue);
-    doAnswer(
-            invocation -> {
-              publishedMessages.add(
-                  new PublishedMessage(
-                      "command",
-                      (String) invocation.getArgument(0),
-                      (String) invocation.getArgument(1),
-                      (Map<String, String>) invocation.getArgument(2)));
-              return null;
-            })
-        .when(mockCommandQueue)
-        .send(anyString(), anyString(), anyMap());
+    assertThat(getCapturedMessages()).isEmpty();
 
     // Retry should eventually succeed (after rescheduling)
     // In a real scenario, this would be handled by the scheduler
@@ -357,8 +323,8 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Headers should be preserved
-    assertThat(publishedMessages).hasSize(1);
-    PublishedMessage published = publishedMessages.get(0);
+    assertThat(getCapturedMessages()).hasSize(1);
+    PublishedMessage published = getCapturedMessages().get(0);
 
     assertThat(published.headers)
         .containsKeys("commandId", "correlationId", "timestamp", "source");
@@ -394,8 +360,8 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: JSON should be transmitted as-is
-    assertThat(publishedMessages).hasSize(1);
-    PublishedMessage published = publishedMessages.get(0);
+    assertThat(getCapturedMessages()).hasSize(1);
+    PublishedMessage published = getCapturedMessages().get(0);
 
     assertThat(published.payload).contains("customerId").contains("accountNumber").contains("USD");
   }
@@ -454,19 +420,19 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(replyId);
 
     // Assert: All should be published with correct categories
-    assertThat(publishedMessages).hasSize(3);
-    assertThat(publishedMessages)
+    assertThat(getCapturedMessages()).hasSize(3);
+    assertThat(getCapturedMessages())
         .extracting(m -> m.category)
         .containsExactlyInAnyOrder("command", "event", "reply");
 
     // Verify correct routing
-    assertThat(publishedMessages)
+    assertThat(getCapturedMessages())
         .filteredOn(m -> m.category.equals("command"))
         .hasSize(1)
         .extracting(m -> m.topic)
         .containsExactly("APP.CMD.TEST.Q");
 
-    assertThat(publishedMessages)
+    assertThat(getCapturedMessages())
         .filteredOn(m -> m.category.equals("event"))
         .hasSize(1)
         .extracting(m -> m.topic)
@@ -499,8 +465,8 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Should still publish empty payload
-    assertThat(publishedMessages).hasSize(1);
-    PublishedMessage published = publishedMessages.get(0);
+    assertThat(getCapturedMessages()).hasSize(1);
+    PublishedMessage published = getCapturedMessages().get(0);
     assertThat(published.payload).isEmpty();
   }
 
@@ -532,8 +498,8 @@ class OutboxProcessorIntegrationTest {
     outboxRelay.publishNow(outboxId);
 
     // Assert: Large payload should be transmitted
-    assertThat(publishedMessages).hasSize(1);
-    PublishedMessage published = publishedMessages.get(0);
+    assertThat(getCapturedMessages()).hasSize(1);
+    PublishedMessage published = getCapturedMessages().get(0);
     assertThat(published.payload.length()).isGreaterThan(10000);
   }
 

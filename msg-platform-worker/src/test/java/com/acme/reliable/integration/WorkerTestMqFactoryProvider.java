@@ -1,4 +1,4 @@
-package com.acme.reliable.processor.test;
+package com.acme.reliable.integration;
 
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
@@ -7,7 +7,7 @@ import jakarta.jms.ConnectionFactory;
 import java.util.logging.Logger;
 
 /**
- * Provides embedded ActiveMQ ConnectionFactory for processor integration tests.
+ * Provides embedded ActiveMQ ConnectionFactory for worker integration tests.
  *
  * <p>This factory is only active when the "test" environment is enabled in Micronaut
  * ApplicationContext. It creates an embedded ActiveMQ broker using VM transport
@@ -15,14 +15,14 @@ import java.util.logging.Logger;
  *
  * <p>Usage: Enable this in tests by running ApplicationContext with "test" environment:
  * <pre>
- * ApplicationContext.run(configuration, "test");
+ * @MicronautTest(environments = {"test"})
  * </pre>
  */
 @Factory
 @Requires(env = "test")
-public class ProcessorTestMqFactoryProvider {
+public class WorkerTestMqFactoryProvider {
 
-  private static final Logger logger = Logger.getLogger(ProcessorTestMqFactoryProvider.class.getName());
+  private static final Logger logger = Logger.getLogger(WorkerTestMqFactoryProvider.class.getName());
 
   /**
    * Creates an embedded ActiveMQ ConnectionFactory for testing.
@@ -34,7 +34,7 @@ public class ProcessorTestMqFactoryProvider {
    */
   @JMSConnectionFactory("testActiveMqFactory")
   public ConnectionFactory connectionFactory() {
-    logger.info("Creating embedded ActiveMQ ConnectionFactory for processor test environment");
+    logger.info("Creating embedded ActiveMQ ConnectionFactory for worker test environment");
 
     try {
       // Try to load ActiveMQ ConnectionFactory using reflection to avoid hard dependency

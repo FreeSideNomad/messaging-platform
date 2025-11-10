@@ -2,6 +2,7 @@ package com.acme.reliable.persistence.jdbc.outbox;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.acme.reliable.persistence.jdbc.H2OutboxRepository;
 import com.acme.reliable.persistence.jdbc.H2RepositoryFaultyTestBase;
 import java.time.Duration;
 import java.time.Instant;

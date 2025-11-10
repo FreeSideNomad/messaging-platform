@@ -1,6 +1,5 @@
-package com.acme.reliable.persistence.jdbc.inbox;
+package com.acme.reliable.persistence.jdbc;
 
-import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import com.acme.reliable.repository.InboxRepository;
 import io.micronaut.transaction.annotation.Transactional;
 import java.sql.*;

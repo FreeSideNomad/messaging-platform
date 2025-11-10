@@ -29,6 +29,15 @@ flyway:
 jms:
   consumers:
     enabled: true
+  connection-factory-jndi-name: ConnectionFactory
+  client-id: worker-test-client
+
+activemq:
+  pool:
+    enabled: true
+    max-connections: 8
+    idle-timeout: 30000
+    expiry-timeout: 0
 
 db:
   dialect: H2  # Used by @Requires(property = "db.dialect", value = "H2")

@@ -2,6 +2,7 @@ package com.acme.reliable.persistence.jdbc.process;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.acme.reliable.persistence.jdbc.H2ProcessRepository;
 import com.acme.reliable.persistence.jdbc.H2RepositoryTestBase;
 import com.acme.reliable.process.ProcessEvent;
 import com.acme.reliable.process.ProcessInstance;
@@ -411,6 +412,119 @@ class H2ProcessRepositoryTest extends H2RepositoryTestBase {
 
       // Then
       assertThat(limited).hasSize(5);
+    }
+  }
+
+  @Nested
+  @DisplayName("Empty Results and Zero Rows Tests")
+  class EmptyResultsTests {
+
+    @Test
+    @DisplayName("findByTypeAndStatus should return empty list when no processes match")
+    void testFindByTypeAndStatusEmptyResults() {
+      // When - query for processes that don't exist
+      List<ProcessInstance> results = repository.findByTypeAndStatus("NonExistentType", ProcessStatus.RUNNING, 10);
+
+      // Then - should return empty list
+      assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findByStatus should return empty list when no processes in that status")
+    void testFindByStatusEmptyResults() {
+      // Given - create a process in RUNNING status
+      UUID processId = UUID.randomUUID();
+      ProcessInstance instance = ProcessInstance.create(
+          processId,
+          "Order",
+          "order-for-status",
+          "step1",
+          new HashMap<>());
+      ProcessEvent event = new ProcessEvent.ProcessStarted("Order", "order-for-status", new HashMap<>());
+      repository.insert(instance, event);
+
+      // When - query for processes in SUCCEEDED status (none exist)
+      List<ProcessInstance> results = repository.findByStatus(ProcessStatus.SUCCEEDED, 10);
+
+      // Then - should return empty list
+      assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("update should handle non-existent process (0 rows updated)")
+    void testUpdateNonExistentProcess() {
+      // Given - a process that doesn't exist
+      UUID processId = UUID.randomUUID();
+      ProcessInstance nonExistent = new ProcessInstance(
+          processId,
+          "Order",
+          "order-not-exist",
+          ProcessStatus.RUNNING,
+          "step2",
+          new HashMap<>(),
+          1,
+          java.time.Instant.now(),
+          java.time.Instant.now());
+      ProcessEvent event = new ProcessEvent.StepCompleted("step1", "result", new HashMap<>());
+
+      // When - update non-existent process (should silently return, 0 rows updated)
+      // This should not throw an exception
+      repository.update(nonExistent, event);
+
+      // Then - verify the process still doesn't exist
+      Optional<ProcessInstance> found = repository.findById(processId);
+      assertThat(found).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findByBusinessKey should return empty when not found")
+    void testFindByBusinessKeyNotFound() {
+      // Given - business key that doesn't exist
+      String businessKey = "order-never-created";
+
+      // When - query for non-existent business key
+      Optional<ProcessInstance> found = repository.findByBusinessKey("Order", businessKey);
+
+      // Then - should return empty
+      assertThat(found).isEmpty();
+    }
+
+    @Test
+    @DisplayName("getLog should return empty list when no log entries exist")
+    void testGetLogEmptyList() {
+      // Given - a random process ID with no log entries
+      UUID processId = UUID.randomUUID();
+
+      // When - query log for non-existent process
+      List<ProcessLogEntry> log = repository.getLog(processId);
+
+      // Then - should return empty list
+      assertThat(log).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findById should handle minimal process data")
+    void testFindByIdWithMinimalData() {
+      // Given - create and insert a process with minimal data
+      UUID processId = UUID.randomUUID();
+      Map<String, Object> minimalData = new HashMap<>();
+
+      ProcessInstance instance = ProcessInstance.create(
+          processId,
+          "Payment",
+          "payment-123",
+          "validate",
+          minimalData);
+
+      ProcessEvent event = new ProcessEvent.ProcessStarted("Payment", "payment-123", minimalData);
+
+      // When - insert and retrieve
+      repository.insert(instance, event);
+      Optional<ProcessInstance> found = repository.findById(processId);
+
+      // Then - should retrieve successfully
+      assertThat(found).isPresent();
+      assertThat(found.get().data()).isEmpty();
     }
   }
 }

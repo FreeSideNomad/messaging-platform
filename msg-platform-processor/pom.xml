@@ -163,6 +163,27 @@
       <artifactId>micronaut-data-runtime</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- Flyway for database migrations in tests -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- HikariCP connection pool for tests -->
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- ActiveMQ for embedded JMS testing (with broker for VM transport) -->
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-broker</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -208,12 +229,12 @@
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.50</minimum>
+                      <minimum>0.80</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.20</minimum>
+                      <minimum>0.80</minimum>
                     </limit>
                   </limits>
                   <excludes>

@@ -1,8 +1,7 @@
-package com.acme.reliable.persistence.jdbc.outbox;
+package com.acme.reliable.persistence.jdbc;
 
 import com.acme.reliable.core.Jsons;
 import com.acme.reliable.domain.Outbox;
-import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import com.acme.reliable.repository.OutboxRepository;
 import io.micronaut.transaction.annotation.Transactional;
 import java.sql.*;

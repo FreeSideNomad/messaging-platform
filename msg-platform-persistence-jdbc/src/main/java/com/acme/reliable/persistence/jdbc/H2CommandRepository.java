@@ -1,16 +1,16 @@
-package com.acme.reliable.persistence.jdbc.command;
+package com.acme.reliable.persistence.jdbc;
 
 import com.acme.reliable.repository.CommandRepository;
 import io.micronaut.context.annotation.Requires;
 import jakarta.inject.Singleton;
 import javax.sql.DataSource;
 
-/** PostgreSQL-specific implementation of CommandRepository */
+/** H2-specific implementation of CommandRepository */
 @Singleton
-@Requires(property = "db.dialect", value = "PostgreSQL")
-public class PostgresCommandRepository extends JdbcCommandRepository implements CommandRepository {
+@Requires(property = "db.dialect", value = "H2")
+public class H2CommandRepository extends JdbcCommandRepository implements CommandRepository {
 
-  public PostgresCommandRepository(DataSource dataSource) {
+  public H2CommandRepository(DataSource dataSource) {
     super(dataSource);
   }
 

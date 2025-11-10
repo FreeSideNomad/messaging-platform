@@ -1,7 +1,6 @@
-package com.acme.reliable.persistence.jdbc.command;
+package com.acme.reliable.persistence.jdbc;
 
 import com.acme.reliable.domain.Command;
-import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import com.acme.reliable.repository.CommandRepository;
 import io.micronaut.transaction.annotation.Transactional;
 import java.sql.*;

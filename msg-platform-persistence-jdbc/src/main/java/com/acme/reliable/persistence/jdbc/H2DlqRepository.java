@@ -1,6 +1,5 @@
-package com.acme.reliable.persistence.jdbc.dlq;
+package com.acme.reliable.persistence.jdbc;
 
-import com.acme.reliable.repository.DlqRepository;
 import io.micronaut.context.annotation.Requires;
 import jakarta.inject.Singleton;
 import javax.sql.DataSource;

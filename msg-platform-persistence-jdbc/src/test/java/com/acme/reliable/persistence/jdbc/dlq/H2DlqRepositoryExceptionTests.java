@@ -2,6 +2,7 @@ package com.acme.reliable.persistence.jdbc.dlq;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.acme.reliable.persistence.jdbc.H2DlqRepository;
 import com.acme.reliable.persistence.jdbc.H2RepositoryFaultyTestBase;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;

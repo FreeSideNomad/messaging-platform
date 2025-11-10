@@ -6,53 +6,29 @@ import static org.mockito.Mockito.*;
 
 import com.acme.reliable.command.CommandBus;
 import com.acme.reliable.command.DomainCommand;
+import com.acme.reliable.processor.ProcessorIntegrationTestBase;
 import com.acme.reliable.process.*;
 import com.acme.reliable.repository.ProcessRepository;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.support.TestPropertyProvider;
-import jakarta.inject.Inject;
 import java.util.*;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** Integration tests for ProcessManager with real database (Testcontainers) */
-@MicronautTest(transactional = false, environments = "test")
-@Testcontainers
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ProcessManagerIntegrationTest implements TestPropertyProvider {
+/** Integration tests for ProcessManager with embedded H2 database */
+class ProcessManagerIntegrationTest extends ProcessorIntegrationTestBase {
 
-  @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:16")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
-
-  @Inject ProcessRepository processRepository;
-
+  private ProcessRepository processRepository;
   private ProcessManager processManager;
   private CommandBus mockCommandBus;
   private IntegrationTestProcessConfiguration testDefinition;
 
-  @Override
-  public Map<String, String> getProperties() {
-    postgres.start();
-    Map<String, String> props = new HashMap<>();
-    props.put("datasources.default.url", postgres.getJdbcUrl());
-    props.put("datasources.default.username", postgres.getUsername());
-    props.put("datasources.default.password", postgres.getPassword());
-    props.put("datasources.default.driver-class-name", "org.postgresql.Driver");
-    props.put("datasources.default.maximum-pool-size", "10");
-    props.put("datasources.default.minimum-idle", "2");
-    props.put("flyway.datasources.default.enabled", "true");
-    props.put("flyway.datasources.default.locations", "classpath:db/migration");
-    return props;
-  }
+  @BeforeEach
+  void setup() throws Exception {
+    // Setup database and ApplicationContext
+    super.setupContext();
 
-  @BeforeAll
-  void setupAll() {
+    // Get ProcessRepository from context
+    processRepository = context.getBean(ProcessRepository.class);
+
+    // Create mocked CommandBus
     mockCommandBus = mock(CommandBus.class);
     testDefinition = new IntegrationTestProcessConfiguration();
 
@@ -61,13 +37,14 @@ class ProcessManagerIntegrationTest implements TestPropertyProvider {
     processManager = new ProcessManager(processRepository, mockCommandBus, mockBeanContext);
     processManager.register(testDefinition);
 
+    // Reset and configure mock for each test
+    reset(mockCommandBus);
     when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
   }
 
-  @BeforeEach
-  void setup() {
-    reset(mockCommandBus);
-    when(mockCommandBus.accept(any(), any(), any(), any(), any())).thenReturn(UUID.randomUUID());
+  @AfterEach
+  void tearDown() throws Exception {
+    super.tearDownContext();
   }
 
   @Test

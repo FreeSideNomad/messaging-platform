@@ -1,11 +1,10 @@
-package com.acme.reliable.persistence.jdbc.process;
+package com.acme.reliable.persistence.jdbc;
 
 import com.acme.reliable.core.Jsons;
-import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import com.acme.reliable.process.*;
 import com.acme.reliable.repository.ProcessRepository;
 import io.micronaut.transaction.annotation.Transactional;
-import jakarta.inject.Singleton;
+
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;

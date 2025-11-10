@@ -1,4 +1,4 @@
-package com.acme.reliable.persistence.jdbc.outbox;
+package com.acme.reliable.persistence.jdbc;
 
 import com.acme.reliable.domain.Outbox;
 import com.acme.reliable.repository.OutboxRepository;

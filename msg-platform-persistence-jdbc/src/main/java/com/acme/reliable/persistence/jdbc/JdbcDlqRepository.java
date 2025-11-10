@@ -1,6 +1,5 @@
-package com.acme.reliable.persistence.jdbc.dlq;
+package com.acme.reliable.persistence.jdbc;
 
-import com.acme.reliable.persistence.jdbc.ExceptionTranslator;
 import com.acme.reliable.repository.DlqRepository;
 import io.micronaut.transaction.annotation.Transactional;
 import java.sql.*;
