@@ -48,7 +48,7 @@ class PostgresCommandRepositorySqlTest {
         assertThat(sql)
                 .contains("INSERT INTO platform.command")
                 .contains("(id, name, business_key, payload, idempotency_key, status, retries, requested_at, reply)")
-                .contains("VALUES (?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?::jsonb)");
+                .contains("VALUES (?, ?, ?, ?::jsonb, ?, ?::platform.command_status, ?, ?, ?::jsonb)");
     }
 
     @Test
@@ -71,7 +71,7 @@ class PostgresCommandRepositorySqlTest {
 
         assertThat(sql)
                 .contains("UPDATE platform.command")
-                .contains("SET status = ?, processing_lease_until = ?, updated_at = ?")
+                .contains("SET status = ?::platform.command_status, processing_lease_until = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
 
@@ -82,7 +82,7 @@ class PostgresCommandRepositorySqlTest {
 
         assertThat(sql)
                 .contains("UPDATE platform.command")
-                .contains("SET status = ?, updated_at = ?")
+                .contains("SET status = ?::platform.command_status, updated_at = ?")
                 .contains("WHERE id = ?");
     }
 
@@ -93,7 +93,7 @@ class PostgresCommandRepositorySqlTest {
 
         assertThat(sql)
                 .contains("UPDATE platform.command")
-                .contains("SET status = ?, last_error = ?, updated_at = ?")
+                .contains("SET status = ?::platform.command_status, last_error = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
 
@@ -115,7 +115,7 @@ class PostgresCommandRepositorySqlTest {
 
         assertThat(sql)
                 .contains("UPDATE platform.command")
-                .contains("SET status = ?, last_error = ?, updated_at = ?")
+                .contains("SET status = ?::platform.command_status, last_error = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
 
