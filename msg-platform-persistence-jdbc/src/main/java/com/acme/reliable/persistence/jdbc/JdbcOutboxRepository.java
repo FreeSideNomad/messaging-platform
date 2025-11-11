@@ -103,7 +103,7 @@ public abstract class JdbcOutboxRepository implements OutboxRepository {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<Outbox> claimIfNew(long id) {
         String sql = getClaimIfNewSql();
 
@@ -125,7 +125,7 @@ public abstract class JdbcOutboxRepository implements OutboxRepository {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Outbox> sweepBatch(int max) {
         String sql = getSweepBatchSql();
 
@@ -212,7 +212,7 @@ public abstract class JdbcOutboxRepository implements OutboxRepository {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public int recoverStuck(Duration olderThan) {
         String sql = getRecoverStuckSql();
         Instant threshold = Instant.now().minus(olderThan);
