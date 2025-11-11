@@ -50,7 +50,7 @@ public class OutboxSweeper {
                     outbox.markPublished(row.getId());
                     LOG.debug("Swept and published outbox id={} category={}", row.getId(), row.getCategory());
                 } catch (Exception e) {
-                    LOG.warn("Failed to publish outbox id={}: {}", row.getId(), e.getMessage());
+                    LOG.warn("Failed to publish outbox id={}: {}", row.getId(), e.getMessage(), e);
                     outbox.markFailed(
                             row.getId(), e.getMessage(), Instant.now().plusSeconds(backoff(row.getAttempts() + 1)));
                 }

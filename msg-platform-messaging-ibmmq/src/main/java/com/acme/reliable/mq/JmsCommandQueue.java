@@ -34,7 +34,7 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
                                 LOG.debug(
                                         "Creating new JMS session for thread {}", Thread.currentThread().getName());
                                 return new SessionHolder(
-                                        connection.createSession(true, jakarta.jms.Session.SESSION_TRANSACTED));
+                                        connection.createSession(false, jakarta.jms.Session.AUTO_ACKNOWLEDGE));
                             } catch (jakarta.jms.JMSException e) {
                                 throw new RuntimeException("Failed to create JMS session", e);
                             }
@@ -73,7 +73,7 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
 
             // Reuse the pooled producer
             holder.producer.send(dest, msg);
-            session.commit();
+            // No need to commit in AUTO_ACKNOWLEDGE mode
 
         } catch (Exception e) {
             try {
@@ -86,6 +86,7 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
             holder.close();
             sessionPool.remove();
 
+            LOG.error("Error details for queue {}: {}", queue, e.getMessage(), e);
             throw new RuntimeException("Failed to send message to queue: " + queue, e);
         }
     }

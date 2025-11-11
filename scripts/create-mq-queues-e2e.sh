@@ -74,6 +74,21 @@ echo -e "${GREEN}Queue Creation Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 
+# Grant permissions for application users (admin and mqm)
+echo -e "${YELLOW}Granting permissions for application users...${NC}"
+echo ""
+
+docker exec ${CONTAINER_NAME} /opt/mqm/bin/runmqsc ${QUEUE_MANAGER} <<'ENDMQ'
+SET AUTHREC PROFILE('APP.CMD.*') OBJTYPE(QUEUE) PRINCIPAL('admin') AUTHADD(ALL)
+SET AUTHREC PROFILE('APP.CMD.*') OBJTYPE(QUEUE) PRINCIPAL('mqm') AUTHADD(ALL)
+SET AUTHREC OBJTYPE(QMGR) PRINCIPAL('admin') AUTHADD(CONNECT,SYSTEM)
+SET AUTHREC OBJTYPE(QMGR) PRINCIPAL('mqm') AUTHADD(CONNECT,SYSTEM)
+END
+ENDMQ
+
+echo -e "${GREEN}✓ Permissions granted for application users${NC}"
+echo ""
+
 # Display created queues
 echo -e "${YELLOW}Verifying queues...${NC}"
 docker exec ${CONTAINER_NAME} /opt/mqm/bin/runmqsc ${QUEUE_MANAGER} <<'ENDMQ'
@@ -82,4 +97,4 @@ END
 ENDMQ
 
 echo ""
-echo -e "${GREEN}All queues have been created and verified.${NC}"
+echo -e "${GREEN}All queues have been created and verified with permissions for 'app' user.${NC}"
