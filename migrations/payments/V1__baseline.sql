@@ -7,7 +7,7 @@ CREATE SCHEMA IF NOT EXISTS platform;
 -- ========== V1: Baseline ==========
 -- Create types first
 CREATE TYPE platform.command_status AS ENUM ('PENDING','RUNNING','SUCCEEDED','FAILED','TIMED_OUT');
-CREATE TYPE platform.outbox_status AS ENUM ('NEW','SENDING','PUBLISHED','FAILED');
+CREATE TYPE platform.outbox_status AS ENUM ('NEW','CLAIMED','PUBLISHED','FAILED');
 
 -- Create tables
 CREATE TABLE platform.command (

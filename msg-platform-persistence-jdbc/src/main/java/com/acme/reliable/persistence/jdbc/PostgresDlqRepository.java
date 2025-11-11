@@ -19,7 +19,7 @@ public class PostgresDlqRepository extends JdbcDlqRepository {
     @Override
     protected String getInsertDlqEntrySql() {
         return """
-                INSERT INTO dlq
+                INSERT INTO platform.command_dlq
                 (id, command_id, command_name, business_key, payload, failed_status, error_class, error_message, attempts, parked_by, parked_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;

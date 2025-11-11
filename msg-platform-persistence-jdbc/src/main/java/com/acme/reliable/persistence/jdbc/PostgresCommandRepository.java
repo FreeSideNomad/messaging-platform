@@ -20,7 +20,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     @Override
     protected String getInsertPendingSql() {
         return """
-                INSERT INTO command
+                INSERT INTO platform.command
                 (id, name, business_key, payload, idempotency_key, status, retries, requested_at, reply)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
@@ -31,7 +31,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
         return """
                 SELECT id, name, business_key, payload, idempotency_key, status, requested_at, updated_at,
                        retries, processing_lease_until, last_error, reply
-                FROM command
+                FROM platform.command
                 WHERE id = ?
                 """;
     }
@@ -39,7 +39,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     @Override
     protected String getUpdateToRunningSql() {
         return """
-                UPDATE command
+                UPDATE platform.command
                 SET status = ?, processing_lease_until = ?, updated_at = ?
                 WHERE id = ?
                 """;
@@ -48,7 +48,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     @Override
     protected String getUpdateToSucceededSql() {
         return """
-                UPDATE command
+                UPDATE platform.command
                 SET status = ?, updated_at = ?
                 WHERE id = ?
                 """;
@@ -57,7 +57,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     @Override
     protected String getUpdateToFailedSql() {
         return """
-                UPDATE command
+                UPDATE platform.command
                 SET status = ?, last_error = ?, updated_at = ?
                 WHERE id = ?
                 """;
@@ -66,7 +66,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     @Override
     protected String getIncrementRetriesSql() {
         return """
-                UPDATE command
+                UPDATE platform.command
                 SET retries = retries + 1, last_error = ?, updated_at = ?
                 WHERE id = ?
                 """;
@@ -75,7 +75,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     @Override
     protected String getUpdateToTimedOutSql() {
         return """
-                UPDATE command
+                UPDATE platform.command
                 SET status = ?, last_error = ?, updated_at = ?
                 WHERE id = ?
                 """;
@@ -84,7 +84,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     @Override
     protected String getExistsByIdempotencyKeySql() {
         return """
-                SELECT COUNT(*) FROM command WHERE idempotency_key = ?
+                SELECT COUNT(*) FROM platform.command WHERE idempotency_key = ?
                 """;
     }
 }

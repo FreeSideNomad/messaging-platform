@@ -21,7 +21,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     @Override
     protected String getInsertSql() {
         return """
-                INSERT INTO outbox
+                INSERT INTO platform.outbox
                 (category, topic, key, type, payload, headers, status, attempts, created_at)
                 VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
                 """;
@@ -30,7 +30,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     @Override
     protected String getClaimIfNewSql() {
         return """
-                UPDATE outbox
+                UPDATE platform.outbox
                 SET status = 'CLAIMED'
                 WHERE id = ? AND status = 'NEW'
                 RETURNING id, category, topic, key, type, payload, headers, status, attempts,
@@ -43,13 +43,13 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
         return """
                 WITH available AS (
                   SELECT id
-                  FROM outbox
+                  FROM platform.outbox
                   WHERE (status = 'NEW' OR (status = 'CLAIMED' AND created_at < now() - interval '5 minutes'))
                     AND (next_at IS NULL OR next_at <= now())
                   ORDER BY created_at ASC
                   LIMIT ? FOR UPDATE SKIP LOCKED
                 )
-                UPDATE outbox o
+                UPDATE platform.outbox o
                 SET status = 'CLAIMED'
                 FROM available
                 WHERE o.id = available.id
@@ -61,7 +61,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     @Override
     protected String getMarkPublishedSql() {
         return """
-                UPDATE outbox
+                UPDATE platform.outbox
                 SET status = 'PUBLISHED', published_at = ?
                 WHERE id = ?
                 """;
@@ -70,7 +70,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     @Override
     protected String getMarkFailedSql() {
         return """
-                UPDATE outbox
+                UPDATE platform.outbox
                 SET last_error = ?, next_at = ?
                 WHERE id = ?
                 """;
@@ -79,7 +79,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     @Override
     protected String getRescheduleSql() {
         return """
-                UPDATE outbox
+                UPDATE platform.outbox
                 SET next_at = ?, last_error = ?
                 WHERE id = ?
                 """;
@@ -88,7 +88,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     @Override
     protected String getRecoverStuckSql() {
         return """
-                UPDATE outbox
+                UPDATE platform.outbox
                 SET status = 'NEW', next_at = NULL
                 WHERE status = 'CLAIMED' AND created_at < ?
                 """;

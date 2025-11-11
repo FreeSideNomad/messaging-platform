@@ -19,7 +19,7 @@ public class PostgresInboxRepository extends JdbcInboxRepository {
     @Override
     protected String getInsertIfAbsentSql() {
         return """
-                INSERT INTO inbox (message_id, handler, processed_at)
+                INSERT INTO platform.inbox (message_id, handler, processed_at)
                 VALUES (?, ?, ?)
                 ON CONFLICT DO NOTHING
                 """;

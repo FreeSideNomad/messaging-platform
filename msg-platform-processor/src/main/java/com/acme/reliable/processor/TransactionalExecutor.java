@@ -74,12 +74,12 @@ public class TransactionalExecutor implements CommandExecutor {
             }
 
             commands.markSucceeded(env.commandId());
-            outboxStore.addReturningId(Outbox.newMqReply(env, "CommandCompleted", resultJson, messagingConfig));
+            outboxStore.addReturningId(Outbox.newMqReply(env, EventTypeConstants.COMMAND_COMPLETED, resultJson, messagingConfig));
             outboxStore.addReturningId(
                     Outbox.newKafkaEvent(
                             messagingConfig.getTopicNaming().buildEventTopic(env.name()),
                             env.key(),
-                            "CommandCompleted",
+                            EventTypeConstants.COMMAND_COMPLETED,
                             Aggregates.snapshot(env.key())));
             // Note: fastPath.registerAfterCommit() calls are disabled to prevent transaction leak
         } catch (PermanentException e) {
@@ -89,20 +89,20 @@ public class TransactionalExecutor implements CommandExecutor {
                     env.name(),
                     env.key(),
                     env.payload(),
-                    "FAILED",
+                    ProcessStatusConstants.STATUS_FAILED,
                     "Permanent",
                     e.getMessage(),
                     0,
                     "worker");
             var replyId =
                     outboxStore.addReturningId(
-                            Outbox.newMqReply(env, "CommandFailed", Jsons.of("error", e.getMessage()), messagingConfig));
+                            Outbox.newMqReply(env, EventTypeConstants.COMMAND_FAILED, Jsons.of("error", e.getMessage()), messagingConfig));
             var eventId =
                     outboxStore.addReturningId(
                             Outbox.newKafkaEvent(
                                     messagingConfig.getTopicNaming().buildEventTopic(env.name()),
                                     env.key(),
-                                    "CommandFailed",
+                                    EventTypeConstants.COMMAND_FAILED,
                                     Jsons.of("error", e.getMessage())));
             // fastPath.registerAfterCommit(replyId); // DISABLED: causing transaction leak
             // fastPath.registerAfterCommit(eventId); // DISABLED: causing transaction leak
