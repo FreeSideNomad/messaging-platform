@@ -22,7 +22,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
         return """
                 INSERT INTO platform.command
                 (id, name, business_key, payload, idempotency_key, status, retries, requested_at, reply)
-                VALUES (?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?::jsonb)
+                VALUES (?, ?, ?, ?::jsonb, ?, ?::platform.command_status, ?, ?, ?::jsonb)
                 """;
     }
 
@@ -40,7 +40,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     protected String getUpdateToRunningSql() {
         return """
                 UPDATE platform.command
-                SET status = ?, processing_lease_until = ?, updated_at = ?
+                SET status = ?::platform.command_status, processing_lease_until = ?, updated_at = ?
                 WHERE id = ?
                 """;
     }
@@ -49,7 +49,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     protected String getUpdateToSucceededSql() {
         return """
                 UPDATE platform.command
-                SET status = ?, updated_at = ?
+                SET status = ?::platform.command_status, updated_at = ?
                 WHERE id = ?
                 """;
     }
@@ -58,7 +58,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     protected String getUpdateToFailedSql() {
         return """
                 UPDATE platform.command
-                SET status = ?, last_error = ?, updated_at = ?
+                SET status = ?::platform.command_status, last_error = ?, updated_at = ?
                 WHERE id = ?
                 """;
     }
@@ -76,7 +76,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
     protected String getUpdateToTimedOutSql() {
         return """
                 UPDATE platform.command
-                SET status = ?, last_error = ?, updated_at = ?
+                SET status = ?::platform.command_status, last_error = ?, updated_at = ?
                 WHERE id = ?
                 """;
     }

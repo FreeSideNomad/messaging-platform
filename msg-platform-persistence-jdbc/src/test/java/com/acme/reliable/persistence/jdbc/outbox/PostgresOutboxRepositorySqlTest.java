@@ -42,15 +42,16 @@ class PostgresOutboxRepositorySqlTest {
     }
 
     @Test
-    @DisplayName("Insert SQL should use JSONB cast for headers")
+    @DisplayName("Insert SQL should use JSONB cast for payload and headers, ENUM cast for status")
     void testInsertSql() {
         String sql = invokeProtectedMethod("getInsertSql");
 
         assertThat(sql)
                 .contains("INSERT INTO platform.outbox")
                 .contains("(category, topic, key, type, payload, headers, status, attempts, created_at)")
-                .contains("VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)")
+                .contains("VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::platform.outbox_status, ?, ?)")
                 .contains("?::jsonb")
+                .contains("?::platform.outbox_status")
                 .doesNotContain("H2")
                 .doesNotContain("PRAGMA");
     }

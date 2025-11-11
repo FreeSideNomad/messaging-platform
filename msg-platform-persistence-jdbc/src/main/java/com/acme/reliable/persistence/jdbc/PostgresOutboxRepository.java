@@ -23,7 +23,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
         return """
                 INSERT INTO platform.outbox
                 (category, topic, key, type, payload, headers, status, attempts, created_at)
-                VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::platform.outbox_status, ?, ?)
                 """;
     }
 
