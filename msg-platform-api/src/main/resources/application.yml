@@ -79,6 +79,10 @@ timeout:
   outbox-batch-size: ${OUTBOX_BATCH_SIZE:2000}
   outbox-claim-timeout: ${OUTBOX_CLAIM_TIMEOUT:1s}  # Timeout to reclaim stuck CLAIMED messages
 
+# Database dialect configuration (used for conditional bean registration)
+db:
+  dialect: ${DB_DIALECT:PostgreSQL}
+
 # MQ configuration
 mq:
   required-queues: ${MQ_REQUIRED_QUEUES:APP.CMD.CreateUser.Q,APP.CMD.REPLY.Q}

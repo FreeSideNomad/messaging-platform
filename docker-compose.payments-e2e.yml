@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: messaging-postgres-e2e
+    environment:
+      POSTGRES_DB: reliable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=4000"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "effective_cache_size=2GB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "work_mem=8MB"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_e2e:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-network-e2e
+
+  # IBM MQ
+  ibmmq:
+    image: ${IBM_MQ_IMAGE:-icr.io/ibm-messaging/mq:9.4.4.0-r1}
+    container_name: messaging-ibmmq-e2e
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_APP_PASSWORD: passw0rd
+      MQ_ADMIN_PASSWORD: passw0rd
+      MQ_QMGR_MAXHANDS: 10000
+      MQ_QMGR_MAXUMSGS: 50000
+      MQ_QMGR_MAXMSGL: 104857600
+      MQ_QMGR_ACTCHL: 1000
+      MQ_QMGR_MAXCHL: 2000
+      MQ_QMGR_CHAD: DISABLED
+      MQ_QMGR_SCYCASE: UPPER
+      MQ_LOGGING_CONSOLE_SOURCE: file
+      MQ_LOGGING_CONSOLE_FORMAT: basic
+    ports:
+      - "1414:1414"
+      - "9443:9443"
+    volumes:
+      - ibmmq_data_e2e:/mnt/mqm
+    healthcheck:
+      test: [ "CMD", "dspmq" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-network-e2e
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: messaging-kafka-e2e
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    volumes:
+      - kafka_data_e2e:/var/lib/kafka/data
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - messaging-network-e2e
+
+  # Redis (for fast-publish notify queue)
+  redis:
+    image: redis:7-alpine
+    container_name: messaging-redis-e2e
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-network-e2e
+
+  # Flyway Database Migration Service
+  flyway-init:
+    image: flyway/flyway:10.4.1
+    container_name: messaging-flyway-init-e2e
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations/reliable/V1__baseline.sql:/flyway/sql/reliable/V1__baseline.sql
+      - ./migrations/payments/V1__baseline.sql:/flyway/sql/payments/V1__baseline.sql
+      - ./migrations/payments/V1.1__payments_schema.sql:/flyway/sql/payments/V1.1__payments_schema.sql
+      - ./scripts/flyway-config:/etc/flyway
+      - ./scripts/run-flyway-migrations.sh:/flyway/run-migrations.sh
+    entrypoint: "/bin/sh"
+    command: [ "/flyway/run-migrations.sh" ]
+    networks:
+      - messaging-network-e2e
+
+  # API Instance (Payments Database)
+  api-payments:
+    build:
+      context: .
+      dockerfile: msg-platform-api/Dockerfile
+    container_name: messaging-api-payments-e2e
+    ports:
+      - "8081:8080"
+    environment:
+      MICRONAUT_SERVER_PORT: 8080
+      DB_DIALECT: PostgreSQL
+      NETTY_WORKER_THREADS: ${NETTY_WORKER_THREADS_API:-400}
+      NETTY_PARENT_THREADS: ${NETTY_PARENT_THREADS_API:-32}
+      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE_API:-150}
+      JMS_CONSUMERS_ENABLED: false
+      SYNC_WAIT_DURATION: ${SYNC_WAIT_DURATION:-0s}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: payments
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      MQ_HOST: ibmmq
+      MQ_PORT: 1414
+      MQ_QMGR: ${MQ_QMGR:-QM1}
+      MQ_CHANNEL: ${MQ_CHANNEL:-DEV.APP.SVRCONN}
+      MQ_USER: ${MQ_USER:-app}
+      MQ_PASS: ${MQ_PASS:-passw0rd}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx2g -Xms1g -Xss512k -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 10000
+        hard: 10000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      flyway-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/commands/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - messaging-network-e2e
+
+networks:
+  messaging-network-e2e:
+    driver: bridge
+
+volumes:
+  postgres_data_e2e:
+  ibmmq_data_e2e:
+  kafka_data_e2e:

@@ -164,15 +164,16 @@ For each entity in `platform/entity/`:
 @MappedEntity("outbox")
 public class OutboxEntity {
 
-// After
-@MappedEntity("platform.outbox")
-@Table("outbox")
-public class Outbox {  // Rename from OutboxEntity to Outbox
+    // After
+    @MappedEntity("platform.outbox")
+    @Table("outbox")
+    public class Outbox {  // Rename from OutboxEntity to Outbox
 ```
 
 For each entity in `payments/entity/`:
 
 ```java
+
 @MappedEntity("payments.account")
 @Table("account")
 public class Account {
@@ -205,7 +206,7 @@ public class Account {
 // In msg-platform-persistence-jdbc/platform/repository/
 @DataRepository
 public class JdbcOutboxRepository
-    implements com.acme.reliable.repository.platform.OutboxRepository {
+        implements com.acme.reliable.repository.platform.OutboxRepository {
 
     private final GenericRepository<Outbox, Long> delegate;
 

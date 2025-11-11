@@ -1,0 +1,51 @@
+micronaut:
+  application:
+    name: payments-worker-e2e
+  server:
+    port: ${PAYMENTS_PORT:9091}
+    thread-selection: AUTO
+    netty:
+      worker:
+        threads: ${NETTY_WORKER_THREADS:50}
+      parent:
+        threads: ${NETTY_PARENT_THREADS:4}
+
+logger:
+  levels:
+    root: WARN
+    io.micronaut: DEBUG
+    com.acme.payments: DEBUG
+    com.acme.reliable: DEBUG
+
+datasources:
+  default:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/payments
+    username: postgres
+    password: postgres
+    driverClassName: org.postgresql.Driver
+    maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
+    minimum-idle: ${HIKARI_MIN_IDLE:10}
+
+jms:
+  consumers:
+    enabled: true
+
+kafka:
+  bootstrap:
+    servers: localhost:9092
+
+mq:
+  required-queues: ${MQ_REQUIRED_QUEUES:APP.CMD.BOOKFX.Q,APP.CMD.BOOKLIMITS.Q,APP.CMD.COMPLETEACCOUNTCREATION.Q,APP.CMD.CREATEACCOUNT.Q,APP.CMD.CREATELIMITS.Q,APP.CMD.CREATEPAYMENT.Q,APP.CMD.CREATETRANSACTION.Q,APP.CMD.INITIATESIMPLEPAYMENT.Q,APP.CMD.REVERSELIMITS.Q,APP.CMD.REVERSETRANSACTION.Q,APP.CMD.UNWINDFX.Q,APP.CMD.REPLY.Q}
+  host: localhost
+  port: 1414
+  qmgr: QM1
+  channel: DEV.APP.SVRCONN
+  user: app
+  password: passw0rd
+
+messaging:
+  queue-naming:
+    command-prefix: ${MQ_COMMAND_PREFIX:APP.CMD.}
+    queue-suffix: ${MQ_QUEUE_SUFFIX:.Q}
+    reply-queue: ${MQ_REPLY_QUEUE:APP.CMD.REPLY.Q}

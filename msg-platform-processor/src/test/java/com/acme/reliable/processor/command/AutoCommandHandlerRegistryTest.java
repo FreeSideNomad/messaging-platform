@@ -135,7 +135,7 @@ class AutoCommandHandlerRegistryTest {
     }
 
     // Service for testing command types without "Command" suffix
-    public static class TestService {
+    static class TestService {
         public void handleCommand(CommandWithoutSuffix cmd) {
             // void return type
         }
