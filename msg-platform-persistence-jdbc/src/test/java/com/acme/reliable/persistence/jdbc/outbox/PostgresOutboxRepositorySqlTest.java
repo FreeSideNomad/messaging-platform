@@ -48,8 +48,8 @@ class PostgresOutboxRepositorySqlTest {
 
         assertThat(sql)
                 .contains("INSERT INTO platform.outbox")
-                .contains("(id, category, topic, key, type, payload, headers, status, attempts, created_at)")
-                .contains("VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)")
+                .contains("(category, topic, key, type, payload, headers, status, attempts, created_at)")
+                .contains("VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)")
                 .contains("?::jsonb")
                 .doesNotContain("H2")
                 .doesNotContain("PRAGMA");
