@@ -17,7 +17,11 @@
     <!-- Suppress JaCoCo and bytecode instrumentation related logs -->
     <logger name="org.jacoco" level="WARN"/>
     <logger name="org.jacoco.agent" level="WARN"/>
+    <logger name="org.jacoco.agent.rt" level="WARN"/>
     <logger name="org.objectweb.asm" level="WARN"/>
+
+    <!-- Suppress Mockito ByteBuddy instrumentation warnings -->
+    <logger name="net.bytebuddy" level="WARN"/>
 
     <!-- Suppress Netty logs -->
     <logger name="io.netty" level="WARN"/>

@@ -209,6 +209,9 @@
                         <exclude>jdk/internal/**</exclude>
                         <exclude>sun/**</exclude>
                         <exclude>java/lang/invoke/**</exclude>
+                        <!-- Exclude Mockito-generated mock classes -->
+                        <exclude>**/*MockitoMock*</exclude>
+                        <exclude>**/*$Proxy*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
