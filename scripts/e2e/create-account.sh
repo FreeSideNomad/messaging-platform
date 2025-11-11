@@ -98,7 +98,7 @@ echo ""
 
 # Send the request and capture response + headers
 HTTP_CODE=$(curl -s -o /tmp/response_body.txt -w "%{http_code}" \
-  -X POST "$API_URL/commands/CreateAccountCommand" \
+  -X POST "$API_URL/commands/CreateAccount" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
   -d "$PAYLOAD")
