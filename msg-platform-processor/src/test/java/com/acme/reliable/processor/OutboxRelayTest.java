@@ -80,13 +80,13 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(outboxId)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(outboxId), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(outboxId);
 
             // Then
-            verify(outboxService).claimOne(outboxId);
+            verify(outboxService).claimOne(eq(outboxId), anyString());
             verify(commandQueue)
                     .send("APP.CMD.PAYMENTS.Q", "{\"amount\":100}", Map.of("commandId", "cmd-1"));
             verify(outboxService).markPublished(outboxId);
@@ -109,13 +109,13 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(outboxId)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(outboxId), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(outboxId);
 
             // Then
-            verify(outboxService).claimOne(outboxId);
+            verify(outboxService).claimOne(eq(outboxId), anyString());
             verify(eventPublisher)
                     .publish(
                             "payment.events",
@@ -142,13 +142,13 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(outboxId)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(outboxId), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(outboxId);
 
             // Then
-            verify(outboxService).claimOne(outboxId);
+            verify(outboxService).claimOne(eq(outboxId), anyString());
             verify(commandQueue)
                     .send("APP.CMD.REPLY.Q", "{\"result\":\"success\"}", Map.of("correlationId", "corr-1"));
             verify(outboxService).markPublished(outboxId);
@@ -159,13 +159,13 @@ class OutboxRelayTest {
         void testPublishNow_NotFound() {
             // Given
             long outboxId = 999L;
-            when(outboxService.claimOne(outboxId)).thenReturn(Optional.empty());
+            when(outboxService.claimOne(eq(outboxId), anyString())).thenReturn(Optional.empty());
 
             // When
             outboxRelay.publishNow(outboxId);
 
             // Then
-            verify(outboxService).claimOne(outboxId);
+            verify(outboxService).claimOne(eq(outboxId), anyString());
             verify(commandQueue, never()).send(any(), any(), any());
             verify(eventPublisher, never()).publish(any(), any(), any(), any());
             verify(outboxService, never()).markPublished(anyLong());
@@ -188,7 +188,7 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(outboxId)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(outboxId), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Connection timeout"))
                     .when(commandQueue)
                     .send(any(), any(), any());
@@ -225,13 +225,13 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(outboxId)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(outboxId), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(outboxId);
 
             // Then
-            verify(outboxService).claimOne(outboxId);
+            verify(outboxService).claimOne(eq(outboxId), anyString());
             verify(outboxService).reschedule(eq(outboxId), anyLong(), contains("Unknown category"));
         }
     }
@@ -331,7 +331,7 @@ class OutboxRelayTest {
                     new Outbox(
                             1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0); // 0 attempts
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -353,7 +353,7 @@ class OutboxRelayTest {
                     new Outbox(
                             1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 1); // 1 attempt
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -375,7 +375,7 @@ class OutboxRelayTest {
                     new Outbox(
                             1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 20);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -393,7 +393,7 @@ class OutboxRelayTest {
         @DisplayName("should handle progressive backoff for multiple failures")
         void testBackoff_Progressive() {
             // Given
-            when(outboxService.claimOne(1L))
+            when(outboxService.claimOne(eq(1L), anyString()))
                     .thenReturn(
                             Optional.of(
                                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0)))
@@ -446,7 +446,7 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -473,7 +473,7 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -500,7 +500,7 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -519,7 +519,7 @@ class OutboxRelayTest {
                     new Outbox(
                             1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -538,7 +538,7 @@ class OutboxRelayTest {
         void testTransaction_Claim() {
             // Given
             long outboxId = 1L;
-            when(outboxService.claimOne(outboxId)).thenReturn(Optional.empty());
+            when(outboxService.claimOne(eq(outboxId), anyString())).thenReturn(Optional.empty());
 
             // When
             outboxRelay.publishNow(outboxId);
@@ -553,7 +553,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -569,7 +569,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Publish failed")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -607,7 +607,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Database connection lost"))
                     .when(commandQueue)
                     .send(any(), any(), any());
@@ -627,7 +627,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new NullPointerException()).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -649,7 +649,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -669,7 +669,7 @@ class OutboxRelayTest {
                             "header3", "value3");
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", headers, "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -689,7 +689,7 @@ class OutboxRelayTest {
                             "special-chars", "value with spaces & symbols!@#$");
             Outbox outbox =
                     new Outbox(1L, "event", "topic", "key", "Type", "{}", headers, "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -709,7 +709,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -726,7 +726,7 @@ class OutboxRelayTest {
                     "{\"customer\":{\"id\":\"123\",\"name\":\"Test\"},\"items\":[{\"sku\":\"ABC\",\"qty\":2}]}";
             Outbox outbox =
                     new Outbox(1L, "event", "topic", "key", "Type", complexJson, Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -742,7 +742,7 @@ class OutboxRelayTest {
             String largePayload = "{\"data\":\"" + "x".repeat(10000) + "\"}";
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", largePayload, Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -760,7 +760,7 @@ class OutboxRelayTest {
         @DisplayName("should handle concurrent publishNow calls")
         void testConcurrency_PublishNow() throws InterruptedException {
             // Given
-            when(outboxService.claimOne(anyLong()))
+            when(outboxService.claimOne(anyLong(), anyString()))
                     .thenReturn(
                             Optional.of(
                                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0)));
@@ -779,7 +779,7 @@ class OutboxRelayTest {
             t3.join();
 
             // Then - all should complete without errors
-            verify(outboxService, times(3)).claimOne(anyLong());
+            verify(outboxService, times(3)).claimOne(anyLong(), anyString());
             verify(commandQueue, times(3)).send(any(), any(), any());
             verify(outboxService, times(3)).markPublished(anyLong());
         }
@@ -833,7 +833,7 @@ class OutboxRelayTest {
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", -1);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -858,7 +858,7 @@ class OutboxRelayTest {
             Outbox outbox5 =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 4);
 
-            when(outboxService.claimOne(1L))
+            when(outboxService.claimOne(eq(1L), anyString()))
                     .thenReturn(Optional.of(outbox3))
                     .thenReturn(Optional.of(outbox4))
                     .thenReturn(Optional.of(outbox5));
@@ -898,7 +898,7 @@ class OutboxRelayTest {
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 3);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -926,7 +926,7 @@ class OutboxRelayTest {
                             "CLAIMED",
                             0);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Kafka unavailable")).when(eventPublisher).publish(any(), any(), any(), any());
 
             // When
@@ -946,7 +946,7 @@ class OutboxRelayTest {
                     new Outbox(
                             1L, "reply", "APP.REPLY.Q", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("MQ connection lost"))
                     .when(commandQueue)
                     .send(any(), any(), any());
@@ -966,7 +966,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -983,7 +983,7 @@ class OutboxRelayTest {
             String arrayPayload = "[{\"id\":1},{\"id\":2},{\"id\":3}]";
             Outbox outbox =
                     new Outbox(1L, "event", "topic", "key", "Type", arrayPayload, Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -1001,7 +1001,7 @@ class OutboxRelayTest {
                     new Outbox(
                             1L, "COMMAND", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0); // Uppercase
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);
@@ -1016,7 +1016,7 @@ class OutboxRelayTest {
             // Given - outbox with special values
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", null, Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Null payload error"))
                     .when(commandQueue)
                     .send(any(), any(), any());
@@ -1035,7 +1035,7 @@ class OutboxRelayTest {
             // Given
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // Mock transaction to throw on second call (markPublished)
             AtomicInteger callCount = new AtomicInteger(0);
@@ -1090,7 +1090,7 @@ class OutboxRelayTest {
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 15);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -1109,7 +1109,7 @@ class OutboxRelayTest {
             Outbox outbox =
                     new Outbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), "CLAIMED", 0);
 
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
             doThrow(new RuntimeException("Error")).when(commandQueue).send(any(), any(), any());
 
             // When
@@ -1130,7 +1130,7 @@ class OutboxRelayTest {
             Outbox outbox =
                     new Outbox(
                             1L, "command", "queue", "key", "Type", veryLargePayload, Map.of(), "CLAIMED", 0);
-            when(outboxService.claimOne(1L)).thenReturn(Optional.of(outbox));
+            when(outboxService.claimOne(eq(1L), anyString())).thenReturn(Optional.of(outbox));
 
             // When
             outboxRelay.publishNow(1L);

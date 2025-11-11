@@ -260,6 +260,10 @@
                         <exclude>**/ui/**</exclude>
                         <exclude>**/CliApplication.class</exclude>
                         <exclude>**/commands/**</exclude>
+                        <!-- Exclude problematic JDK internal packages that cause instrumentation warnings -->
+                        <exclude>jdk/internal/**</exclude>
+                        <exclude>sun/**</exclude>
+                        <exclude>java/lang/invoke/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>

@@ -55,7 +55,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
 
             // Verify entry was inserted
             Optional<Outbox> result = readInTransaction(() ->
-                    outboxRepository.claimIfNew(id)
+                    outboxRepository.claimIfNew(id, "TEST_CLAIMER")
             );
             assertThat(result).isPresent();
             assertThat(result.get().getCategory()).isEqualTo("command");
@@ -73,7 +73,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
 
             assertThat(id).isGreaterThan(0L);
             Optional<Outbox> result = readInTransaction(() ->
-                    outboxRepository.claimIfNew(id)
+                    outboxRepository.claimIfNew(id, "TEST_CLAIMER")
             );
             assertThat(result).isPresent();
             assertThat(result.get().getHeaders()).isEmpty();
@@ -113,7 +113,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
             );
 
             Optional<Outbox> result = readInTransaction(() ->
-                    outboxRepository.claimIfNew(id)
+                    outboxRepository.claimIfNew(id, "TEST_CLAIMER")
             );
 
             assertThat(result).isPresent();
@@ -128,7 +128,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
         @DisplayName("should return empty when entry not found")
         void testClaimIfNew_NotFound() {
             Optional<Outbox> result = readInTransaction(() ->
-                    outboxRepository.claimIfNew(999999L)
+                    outboxRepository.claimIfNew(999999L, "TEST_CLAIMER")
             );
 
             assertThat(result).isEmpty();
@@ -156,7 +156,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
             });
 
             List<Outbox> results = readInTransaction(() ->
-                    outboxRepository.sweepBatch(10)
+                    outboxRepository.sweepBatch(10, "TEST_CLAIMER")
             );
 
             assertThat(results).isNotEmpty().hasSizeGreaterThanOrEqualTo(3);
@@ -177,7 +177,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
             });
 
             List<Outbox> results = readInTransaction(() ->
-                    outboxRepository.sweepBatch(2)
+                    outboxRepository.sweepBatch(2, "TEST_CLAIMER")
             );
 
             assertThat(results).hasSizeLessThanOrEqualTo(2);
@@ -202,7 +202,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
             );
 
             Optional<Outbox> result = readInTransaction(() ->
-                    outboxRepository.claimIfNew(id)
+                    outboxRepository.claimIfNew(id, "TEST_CLAIMER")
             );
 
             // After marking published, the entry's status changes but may still be retrievable
@@ -231,7 +231,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
             );
 
             Optional<Outbox> result = readInTransaction(() ->
-                    outboxRepository.claimIfNew(id)
+                    outboxRepository.claimIfNew(id, "TEST_CLAIMER")
             );
 
             // After marking failed, the status changes but may still be retrievable
@@ -259,7 +259,7 @@ class OutboxRepositoryIntegrationTest extends ProcessorIntegrationTestBase {
 
             // Entry should still be retrievable
             Optional<Outbox> result = readInTransaction(() ->
-                    outboxRepository.claimIfNew(id)
+                    outboxRepository.claimIfNew(id, "TEST_CLAIMER")
             );
 
             // Behavior depends on status after reschedule

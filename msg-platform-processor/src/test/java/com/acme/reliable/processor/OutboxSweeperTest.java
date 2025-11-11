@@ -74,7 +74,7 @@ class OutboxSweeperTest {
         void testTick_RecoverStuck() {
             // Given
             when(outboxRepository.recoverStuck(any(Duration.class))).thenReturn(5);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of());
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of());
 
             // When
             outboxSweeper.tick();
@@ -88,7 +88,7 @@ class OutboxSweeperTest {
         void testTick_RecoverStuck_LogWhenFound() {
             // Given
             when(outboxRepository.recoverStuck(any(Duration.class))).thenReturn(10);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of());
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of());
 
             // When
             outboxSweeper.tick();
@@ -103,7 +103,7 @@ class OutboxSweeperTest {
         void testTick_RecoverStuck_NoLog() {
             // Given
             when(outboxRepository.recoverStuck(any(Duration.class))).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of());
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of());
 
             // When
             outboxSweeper.tick();
@@ -117,7 +117,7 @@ class OutboxSweeperTest {
         void testTick_RecoverStuck_Timeout() {
             // Given
             when(outboxRepository.recoverStuck(any(Duration.class))).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of());
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of());
 
             // When
             outboxSweeper.tick();
@@ -138,13 +138,13 @@ class OutboxSweeperTest {
         void testTick_SweepBatch() {
             // Given
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of());
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of());
 
             // When
             outboxSweeper.tick();
 
             // Then
-            verify(outboxRepository).sweepBatch(500);
+            verify(outboxRepository).sweepBatch(eq(500), anyString());
         }
 
         @Test
@@ -157,7 +157,7 @@ class OutboxSweeperTest {
                     createOutbox(2L, "event", "topic.events", "key2", "Type2", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox1, outbox2));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox1, outbox2));
 
             // When
             outboxSweeper.tick();
@@ -174,7 +174,7 @@ class OutboxSweeperTest {
         void testTick_EmptyBatch() {
             // Given
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of());
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of());
 
             // When
             outboxSweeper.tick();
@@ -191,13 +191,13 @@ class OutboxSweeperTest {
             // Given
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
 
             // Then
-            verify(outboxRepository).sweepBatch(500);
+            verify(outboxRepository).sweepBatch(eq(500), anyString());
             // Logs would show "Sweeping 1 outbox messages"
         }
     }
@@ -222,7 +222,7 @@ class OutboxSweeperTest {
                             0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -254,7 +254,7 @@ class OutboxSweeperTest {
                             0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -286,7 +286,7 @@ class OutboxSweeperTest {
                             0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -309,7 +309,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "unknown", "topic", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -331,7 +331,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -347,7 +347,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -366,7 +366,7 @@ class OutboxSweeperTest {
             Outbox outbox3 = createOutbox(3L, "reply", "q3", "k3", "T3", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox1, outbox2, outbox3));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox1, outbox2, outbox3));
 
             // When
             outboxSweeper.tick();
@@ -392,7 +392,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Connection timeout"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -413,7 +413,7 @@ class OutboxSweeperTest {
             Outbox outbox2 = createOutbox(2L, "event", "t2", "k2", "T2", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox1, outbox2));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox1, outbox2));
             doThrow(new RuntimeException("Failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -435,7 +435,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Publish failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -453,7 +453,7 @@ class OutboxSweeperTest {
         void testFailure_NoThrow() {
             // Given
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenThrow(new RuntimeException("Database error"));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenThrow(new RuntimeException("Database error"));
 
             // When/Then - should not throw
             assertThatCode(() -> outboxSweeper.tick()).doesNotThrowAnyException();
@@ -484,7 +484,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -511,7 +511,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 1);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -538,7 +538,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 7);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -565,7 +565,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 9);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -594,7 +594,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 20);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -626,7 +626,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -647,7 +647,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "event", "topic", "key", "Type", "{}", headers, 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -664,7 +664,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", payload, Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -682,7 +682,7 @@ class OutboxSweeperTest {
                     createOutbox(1L, "event", "topic", "key", "Type", largePayload, Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -702,7 +702,7 @@ class OutboxSweeperTest {
             // Given
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When - simulate concurrent ticks
             Thread t1 = new Thread(() -> outboxSweeper.tick());
@@ -719,7 +719,7 @@ class OutboxSweeperTest {
 
             // Then - all should complete
             verify(outboxRepository, times(3)).recoverStuck(any());
-            verify(outboxRepository, times(3)).sweepBatch(500);
+            verify(outboxRepository, times(3)).sweepBatch(eq(500), anyString());
         }
 
         @Test
@@ -732,7 +732,7 @@ class OutboxSweeperTest {
                             .toList();
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(largeBatch);
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(largeBatch);
 
             // When
             outboxSweeper.tick();
@@ -754,7 +754,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Database connection timeout after 30 seconds"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -775,7 +775,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new NullPointerException()).when(mqPublisher).publish(any(), any(), any(), any(), any());
 
             // When
@@ -797,14 +797,14 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(3);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
 
             // Then - should do both operations
             verify(outboxRepository).recoverStuck(Duration.ofSeconds(10));
-            verify(outboxRepository).sweepBatch(500);
+            verify(outboxRepository).sweepBatch(eq(500), anyString());
             verify(mqPublisher).publish("queue", "key", "Type", "{}", Map.of());
             verify(outboxRepository).markPublished(1L);
         }
@@ -818,7 +818,7 @@ class OutboxSweeperTest {
             Outbox success2 = createOutbox(3L, "reply", "q3", "k3", "T3", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(success1, failure, success2));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(success1, failure, success2));
             doThrow(new RuntimeException("Kafka down"))
                     .when(kafkaPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -848,7 +848,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), -1);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Error")).when(mqPublisher).publish(any(), any(), any(), any(), any());
 
             // When
@@ -873,7 +873,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Error")).when(mqPublisher).publish(any(), any(), any(), any(), any());
 
             // When
@@ -900,7 +900,7 @@ class OutboxSweeperTest {
             Outbox outbox5 = createOutbox(3L, "command", "q", "k", "T", "{}", Map.of(), 4);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox3, outbox4, outbox5));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox3, outbox4, outbox5));
             doThrow(new RuntimeException("Error")).when(mqPublisher).publish(any(), any(), any(), any(), any());
 
             // When
@@ -929,7 +929,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 8);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Error")).when(mqPublisher).publish(any(), any(), any(), any(), any());
 
             // When
@@ -951,7 +951,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 99);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Error")).when(mqPublisher).publish(any(), any(), any(), any(), any());
 
             // When
@@ -973,7 +973,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -990,7 +990,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", null, Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Null payload")).when(mqPublisher).publish(any(), any(), any(), any(), any());
 
             // When
@@ -1011,7 +1011,7 @@ class OutboxSweeperTest {
                             1L, "command", "queue.with.dots", "key-with-dashes", "Type_With_Underscores", specialPayload, specialHeaders, 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -1029,7 +1029,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "COMMAND", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -1045,7 +1045,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -1061,7 +1061,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, null, "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When
             outboxSweeper.tick();
@@ -1082,7 +1082,7 @@ class OutboxSweeperTest {
             // Then - should catch exception and log, not throw
             verify(outboxRepository).recoverStuck(Duration.ofSeconds(10));
             // sweepBatch should not be called due to exception
-            verify(outboxRepository, never()).sweepBatch(anyInt());
+            verify(outboxRepository, never()).sweepBatch(anyInt(), anyString());
         }
 
         @Test
@@ -1090,13 +1090,13 @@ class OutboxSweeperTest {
         void testSweepBatch_Failure() {
             // Given
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenThrow(new RuntimeException("Sweep DB error"));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenThrow(new RuntimeException("Sweep DB error"));
 
             // When
             outboxSweeper.tick();
 
             // Then - should catch exception and log, not throw
-            verify(outboxRepository).sweepBatch(500);
+            verify(outboxRepository).sweepBatch(eq(500), anyString());
             verify(mqPublisher, never()).publish(any(), any(), any(), any(), any());
         }
 
@@ -1107,7 +1107,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Mark published failed"))
                     .when(outboxRepository)
                     .markPublished(anyLong());
@@ -1127,7 +1127,7 @@ class OutboxSweeperTest {
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
             doThrow(new RuntimeException("Publish error")).when(mqPublisher).publish(any(), any(), any(), any(), any());
             doThrow(new RuntimeException("Mark failed error"))
                     .when(outboxRepository)
@@ -1152,7 +1152,7 @@ class OutboxSweeperTest {
                             createOutbox(3L, "reply", "q3", "k3", "T3", "{}", Map.of(), 0));
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(batch);
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(batch);
             doThrow(new RuntimeException("All failed"))
                     .when(mqPublisher)
                     .publish(any(), any(), any(), any(), any());
@@ -1178,7 +1178,7 @@ class OutboxSweeperTest {
             }
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(largeBatch);
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(largeBatch);
 
             // When
             outboxSweeper.tick();
@@ -1198,7 +1198,7 @@ class OutboxSweeperTest {
             }
 
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(batch);
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(batch);
 
             java.util.concurrent.atomic.AtomicInteger count = new java.util.concurrent.atomic.AtomicInteger(0);
             doAnswer(
@@ -1225,14 +1225,14 @@ class OutboxSweeperTest {
         void testRecovery_LargeNumber() {
             // Given - 1000 stuck messages recovered
             when(outboxRepository.recoverStuck(any())).thenReturn(1000);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of());
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of());
 
             // When
             outboxSweeper.tick();
 
             // Then - should log the recovery
             verify(outboxRepository).recoverStuck(Duration.ofSeconds(10));
-            verify(outboxRepository).sweepBatch(500);
+            verify(outboxRepository).sweepBatch(eq(500), anyString());
         }
 
         @Test
@@ -1241,7 +1241,7 @@ class OutboxSweeperTest {
             // Given
             Outbox outbox = createOutbox(1L, "command", "queue", "key", "Type", "{}", Map.of(), 0);
             when(outboxRepository.recoverStuck(any())).thenReturn(0);
-            when(outboxRepository.sweepBatch(500)).thenReturn(List.of(outbox));
+            when(outboxRepository.sweepBatch(eq(500), anyString())).thenReturn(List.of(outbox));
 
             // When - simulate concurrent ticks
             Thread t1 = new Thread(() -> outboxSweeper.tick());
@@ -1258,7 +1258,7 @@ class OutboxSweeperTest {
 
             // Then - all should complete
             verify(outboxRepository, times(3)).recoverStuck(any());
-            verify(outboxRepository, times(3)).sweepBatch(500);
+            verify(outboxRepository, times(3)).sweepBatch(eq(500), anyString());
         }
     }
 }

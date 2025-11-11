@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Set root logger to WARN to suppress DEBUG and INFO messages -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Suppress extremely verbose loggers from third-party libraries -->
+    <logger name="io.micronaut.context.lifecycle" level="WARN"/>
+    <logger name="io.micronaut.context.condition" level="WARN"/>
+    <logger name="io.micronaut.context.condition.Condition" level="WARN"/>
+    <logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.wire" level="WARN"/>
+    <logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.headers" level="WARN"/>
+    <logger name="com.zaxxer.hikari.HikariConfig" level="WARN"/>
+    <logger name="io.micronaut.reactor.instrument.ReactorInstrumentation" level="WARN"/>
+
+    <!-- Suppress JaCoCo and bytecode instrumentation related logs -->
+    <logger name="org.jacoco" level="WARN"/>
+    <logger name="org.jacoco.agent" level="WARN"/>
+    <logger name="org.objectweb.asm" level="WARN"/>
+
+    <!-- Suppress Netty logs -->
+    <logger name="io.netty" level="WARN"/>
+
+    <!-- Suppress Redisson (Redis client) logs -->
+    <logger name="org.redisson" level="WARN"/>
+
+    <!-- Suppress Kafka logs -->
+    <logger name="org.apache.kafka" level="WARN"/>
+
+    <!-- Suppress Spring/Micronaut framework logs -->
+    <logger name="io.micronaut" level="WARN"/>
+    <logger name="org.springframework" level="WARN"/>
+
+    <!-- Suppress HTTP client logs -->
+    <logger name="org.apache.hc" level="WARN"/>
+
+    <!-- Suppress Docker client logs -->
+    <logger name="com.github.dockerjava" level="WARN"/>
+
+    <!-- Keep testcontainers at INFO level as it can be useful for test debugging -->
+    <logger name="org.testcontainers" level="WARN"/>
+
+    <!-- Default console appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+</configuration>

@@ -178,7 +178,7 @@ class H2OutboxRepositoryResourceClosureTest {
             H2OutboxRepository repository = new H2OutboxRepository(mockDataSource);
 
             // Act & Assert: sweepBatch throws RuntimeException directly (different error handling)
-            assertThatThrownBy(() -> repository.sweepBatch(100))
+            assertThatThrownBy(() -> repository.sweepBatch(100, "TEST_CLAIMER"))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Failed to sweep");
 

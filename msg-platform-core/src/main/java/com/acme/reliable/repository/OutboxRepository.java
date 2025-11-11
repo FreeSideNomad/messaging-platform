@@ -42,25 +42,25 @@ public interface OutboxRepository {
     /**
      * Claim a single outbox entry by ID if it's in NEW status
      */
-    Optional<Outbox> claimIfNew(long id);
+    Optional<Outbox> claimIfNew(long id, String claimer);
 
     /**
      * Claim a single outbox entry by ID (alias for claimIfNew)
      */
-    default Optional<Outbox> claimOne(long id) {
-        return claimIfNew(id);
+    default Optional<Outbox> claimOne(long id, String claimer) {
+        return claimIfNew(id, claimer);
     }
 
     /**
      * Claim a batch of outbox entries for processing (includes NEW, SENDING with timeout recovery, and FAILED)
      */
-    List<Outbox> sweepBatch(int max);
+    List<Outbox> sweepBatch(int max, String claimer);
 
     /**
-     * Claim a batch of outbox entries with timeout recovery (maps to sweepBatch, claimer param for future use)
+     * Claim a batch of outbox entries with timeout recovery
      */
     default List<Outbox> claim(int max, String claimer) {
-        return sweepBatch(max);
+        return sweepBatch(max, claimer);
     }
 
     /**

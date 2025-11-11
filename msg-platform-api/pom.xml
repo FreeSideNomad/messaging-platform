@@ -134,6 +134,14 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
+                <configuration>
+                    <!-- Exclude problematic JDK internal packages that cause instrumentation warnings -->
+                    <excludes>
+                        <exclude>jdk/internal/**</exclude>
+                        <exclude>sun/**</exclude>
+                        <exclude>java/lang/invoke/**</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

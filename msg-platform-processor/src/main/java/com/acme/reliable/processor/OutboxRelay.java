@@ -38,7 +38,7 @@ public class OutboxRelay {
     public void publishNow(long id) {
         transactionOps.executeWrite(
                 status -> {
-                    store.claimOne(id).ifPresent(this::sendAndMark);
+                    store.claimOne(id, "OutboxRelay").ifPresent(this::sendAndMark);
                     return null;
                 });
     }

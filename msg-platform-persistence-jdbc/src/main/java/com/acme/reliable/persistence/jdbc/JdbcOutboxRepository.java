@@ -104,13 +104,14 @@ public abstract class JdbcOutboxRepository implements OutboxRepository {
     }
 
     @Transactional
-    public Optional<Outbox> claimIfNew(long id) {
+    public Optional<Outbox> claimIfNew(long id, String claimer) {
         String sql = getClaimIfNewSql();
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setLong(1, id);
+            ps.setString(2, claimer);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -126,13 +127,14 @@ public abstract class JdbcOutboxRepository implements OutboxRepository {
     }
 
     @Transactional
-    public List<Outbox> sweepBatch(int max) {
+    public List<Outbox> sweepBatch(int max, String claimer) {
         String sql = getSweepBatchSql();
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, max);
+            ps.setString(2, claimer);
 
             List<Outbox> results = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {

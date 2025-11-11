@@ -58,7 +58,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             assertThat(id).isGreaterThan(0);
 
             // Verify entry exists
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(outbox).isPresent();
             assertThat(outbox.get().getId()).isEqualTo(id);
             assertThat(outbox.get().getCategory()).isEqualTo("events");
@@ -98,7 +98,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
                     "{}", "{}");
 
             // When
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then
             assertThat(claimed).isPresent();
@@ -110,10 +110,10 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testClaimIfNewAlreadyClaimed() {
             // Given - claimed entry
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id); // First claim succeeds
+            repository.claimIfNew(id, "TEST_CLAIMER"); // First claim succeeds
 
             // When - try to claim again
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then - should return empty (already CLAIMED)
             assertThat(claimed).isEmpty();
@@ -133,7 +133,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             repository.insertReturningId("events", "test", "k3", "type", "{}", "{}");
 
             // When
-            List<Outbox> swept = repository.sweepBatch(2);
+            List<Outbox> swept = repository.sweepBatch(2, "TEST_CLAIMER");
 
             // Then - should return only 2 (max)
             assertThat(swept).hasSize(2);
@@ -145,7 +145,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testSweepBatchTimedOutClaimed() throws InterruptedException {
             // Given - entry claimed and timed out (older than 5 minutes)
             long id = repository.insertReturningId("events", "test", "old", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Manually update to simulate timeout (created 10 minutes ago)
             try (Connection conn = dataSource.getConnection()) {
@@ -158,7 +158,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             }
 
             // When
-            List<Outbox> swept = repository.sweepBatch(10);
+            List<Outbox> swept = repository.sweepBatch(10, "TEST_CLAIMER");
 
             // Then - should include the timed-out entry
             assertThat(swept).isNotEmpty();
@@ -175,7 +175,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testMarkPublished() {
             // Given
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
 
             // When
             repository.markPublished(id);
@@ -251,7 +251,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testRecoverStuck() {
             // Given - CLAIMED entry older than threshold
             long id = repository.insertReturningId("events", "test", "stuck", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
 
             try (Connection conn = dataSource.getConnection()) {
                 var pstmt = conn.prepareStatement(
@@ -299,7 +299,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId(category, topic, key, type, payload, headers);
 
             // Then
-            Optional<Outbox> retrieved = repository.claimIfNew(id);
+            Optional<Outbox> retrieved = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(retrieved).isPresent();
             Outbox outbox = retrieved.get();
 
@@ -323,7 +323,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
                     "{}", "{\"correlation-id\":\"abc-123\",\"request-id\":\"req-456\"}");
 
             // When
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then
             assertThat(outbox).isPresent();
@@ -336,7 +336,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         @DisplayName("claimIfNew should return empty Optional for non-existent entry")
         void testClaimIfNewNonExistent() {
             // When: Try to claim an entry that was never inserted
-            Optional<Outbox> claimed = repository.claimIfNew(999999L);
+            Optional<Outbox> claimed = repository.claimIfNew(999999L, "TEST_CLAIMER");
 
             // Then: Should return empty
             assertThat(claimed).isEmpty();
@@ -346,7 +346,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         @DisplayName("sweepBatch should return empty list when no pending entries exist")
         void testSweepBatchEmpty() {
             // When: Try to sweep with empty outbox
-            List<Outbox> swept = repository.sweepBatch(100);
+            List<Outbox> swept = repository.sweepBatch(100, "TEST_CLAIMER");
 
             // Then: Should return empty list
             assertThat(swept).isEmpty();
@@ -359,7 +359,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", null);
 
             // Then: Verify headers are stored and retrieved correctly
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(outbox).isPresent();
             assertThat(outbox.get().getHeaders()).isNotNull();
         }
@@ -371,7 +371,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry (status is CLAIMED, not PUBLISHED)
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: publishedAt should be null
             assertThat(outbox).isPresent();
@@ -385,7 +385,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: lastError should be null
             assertThat(outbox).isPresent();
@@ -480,7 +480,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: nextAt should be null
             assertThat(outbox).isPresent();
@@ -494,7 +494,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // Then: Retrieve and verify headers are empty map
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(outbox).isPresent();
             assertThat(outbox.get().getHeaders()).isEmpty();
         }
@@ -506,7 +506,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: createdAt should be present
             assertThat(outbox).isPresent();
@@ -540,17 +540,17 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             }
 
             // When: Retrieve using claimIfNew
-            Optional<Outbox> result = repository.claimIfNew(1L);
+            Optional<Outbox> result = repository.claimIfNew(1L, "TEST_CLAIMER");
 
-            // Then: All nullable fields should be null or empty
+            // Then: All nullable fields should be null or empty, except claimed_by and claimed_at are now set
             assertThat(result).isPresent();
             Outbox outbox = result.get();
-            assertThat(outbox.getHeaders()).isEmpty(); // empty JSON headers becomes empty map (branch: false on line 260)
-            assertThat(outbox.getNextAt()).isNull(); // (branch: false on line 272)
-            assertThat(outbox.getClaimedBy()).isNull(); // (branch: false on line 277)
-            assertThat(outbox.getPublishedAt()).isNull(); // (branch: false on line 287)
-            assertThat(outbox.getLastError()).isNull(); // (branch: false on line 292)
-            assertThat(outbox.getCreatedAt()).isNotNull(); // created_at is always set (branch: true on line 282)
+            assertThat(outbox.getHeaders()).isEmpty(); // empty JSON headers becomes empty map
+            assertThat(outbox.getNextAt()).isNull();
+            assertThat(outbox.getClaimedBy()).isEqualTo("TEST_CLAIMER"); // claimed_by is set by claimIfNew
+            assertThat(outbox.getPublishedAt()).isNull();
+            assertThat(outbox.getLastError()).isNull();
+            assertThat(outbox.getCreatedAt()).isNotNull(); // created_at is always set
         }
 
         @Test
@@ -581,7 +581,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             }
 
             // When: Retrieve using claimIfNew
-            Optional<Outbox> result = repository.claimIfNew(2L);
+            Optional<Outbox> result = repository.claimIfNew(2L, "TEST_CLAIMER");
 
             // Then: All fields should be populated
             assertThat(result).isPresent();
@@ -603,8 +603,8 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             assertThat(outbox.getNextAt()).isNotNull();
             assertThat(outbox.getPublishedAt()).isNotNull();
 
-            // String fields populated
-            assertThat(outbox.getClaimedBy()).isEqualTo("worker-service-1");
+            // String fields populated (claimed_by is updated by claimIfNew)
+            assertThat(outbox.getClaimedBy()).isEqualTo("TEST_CLAIMER"); // claimed_by is updated by claimIfNew
             assertThat(outbox.getLastError()).isEqualTo("Temporary network failure");
         }
     }
@@ -626,11 +626,11 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testSweepBatchAllPublished() {
             // Given: Insert and mark as published
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
             repository.markPublished(id);
 
             // When: Try to sweep NEW/CLAIMED entries
-            List<Outbox> swept = repository.sweepBatch(100);
+            List<Outbox> swept = repository.sweepBatch(100, "TEST_CLAIMER");
 
             // Then: Should return empty (all published)
             assertThat(swept).isEmpty();
@@ -645,7 +645,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             }
 
             // When: Sweep with large batch size
-            List<Outbox> swept = repository.sweepBatch(10000);
+            List<Outbox> swept = repository.sweepBatch(10000, "TEST_CLAIMER");
 
             // Then: Should return all entries up to batch size
             assertThat(swept).hasSizeGreaterThan(0);
@@ -742,11 +742,11 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testPublishedAtSet() {
             // Given: Entry that has been published
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
             repository.markPublished(id);
 
             // When: Claim the published entry
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: publishedAt should be set (or entry not returned since it's published)
             // Most likely it won't be returned, but verify behavior
@@ -760,7 +760,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testLastErrorSet() throws SQLException {
             // Given: Entry that has been marked as failed
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
             String errorMsg = "Connection timeout";
             repository.markFailed(id, errorMsg, Instant.now().plusSeconds(60));
 
@@ -798,7 +798,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", null);
 
             // Then: Headers should default to "{}" and be retrievable as empty map
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(outbox).isPresent();
             assertThat(outbox.get().getHeaders()).isEmpty();
         }
@@ -812,7 +812,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
                     repository.insertReturningId("events", "test", "key", "type", "{}", headersJson);
 
             // Then: Headers should be preserved
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(outbox).isPresent();
             assertThat(outbox.get().getHeaders()).contains(entry("key", "value"),
                     entry("request-id", "123"));
@@ -827,7 +827,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
                     repository.insertReturningId("events", "test", "key", "type", "{}", headersJson);
 
             // Then: Headers should be parsed (note: nested objects become strings in Map)
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(outbox).isPresent();
             assertThat(outbox.get().getHeaders()).containsKey("service");
         }
@@ -870,7 +870,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testNextAtSetOnReschedule() throws SQLException {
             // Given: Entry that has been rescheduled
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
             repository.reschedule(id, 5000, "Retry attempt");
 
             // When: Query entry directly
@@ -892,7 +892,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testNextAtSetOnFailureWithRetry() throws SQLException {
             // Given: Entry that has been failed with retry scheduled
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
             Instant retryTime = Instant.now().plusSeconds(30);
             repository.markFailed(id, "Temporary failure", retryTime);
 
@@ -930,11 +930,11 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry (update succeeds)
-            Optional<Outbox> firstClaim = repository.claimIfNew(id);
+            Optional<Outbox> firstClaim = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(firstClaim).isPresent();
 
             // Then: Claiming again should return empty (already claimed)
-            Optional<Outbox> secondClaim = repository.claimIfNew(id);
+            Optional<Outbox> secondClaim = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(secondClaim).isEmpty();
         }
 
@@ -945,9 +945,9 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Try to claim multiple times
-            Optional<Outbox> claim1 = repository.claimIfNew(id);
-            Optional<Outbox> claim2 = repository.claimIfNew(id);
-            Optional<Outbox> claim3 = repository.claimIfNew(id);
+            Optional<Outbox> claim1 = repository.claimIfNew(id, "TEST_CLAIMER");
+            Optional<Outbox> claim2 = repository.claimIfNew(id, "TEST_CLAIMER");
+            Optional<Outbox> claim3 = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: Only first should succeed
             assertThat(claim1).isPresent();
@@ -977,7 +977,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id3 = repository.insertReturningId("events", "test", "key3", "type", "{}", "{}");
 
             // When: Sweep batch with limit 2
-            List<Outbox> swept = repository.sweepBatch(2);
+            List<Outbox> swept = repository.sweepBatch(2, "TEST_CLAIMER");
 
             // Then: Should return up to 2 entries in sweep
             assertThat(swept).hasSizeGreaterThanOrEqualTo(1).hasSizeLessThanOrEqualTo(2);
@@ -992,7 +992,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id2 = repository.insertReturningId("events", "test", "key2", "type", "{}", "{}");
 
             // When: Get batch with larger limit
-            List<Outbox> swept = repository.sweepBatch(10);
+            List<Outbox> swept = repository.sweepBatch(10, "TEST_CLAIMER");
 
             // Then: Should iterate through all entries (tests while(rs.next()) branch)
             assertThat(swept).hasSizeGreaterThanOrEqualTo(2);
@@ -1020,7 +1020,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
                     "{\"details\":\"test\"}", "{\"version\":\"1\"}");
 
             // When: Claim the entry
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: All fields should be mapped (tests rs.next() and mapResultSetToOutbox branches)
             assertThat(claimed).isPresent();
@@ -1039,7 +1039,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim it
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: Status should be CLAIMED
             assertThat(claimed).isPresent();
@@ -1064,7 +1064,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testMarkFailedSetsError() {
             // Given: Entry in CLAIMED status
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
 
             // When: Mark as failed with error message
             String errorMsg = "Connection timeout after 5000ms";
@@ -1090,7 +1090,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testMarkFailedSetsNextAt() throws SQLException {
             // Given: Entry in CLAIMED status
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
 
             // When: Mark as failed with retry time
             Instant nextAttempt = Instant.now().plus(Duration.ofSeconds(60));
@@ -1127,7 +1127,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testRescheduleSetNextAt() throws SQLException {
             // Given: Entry that failed
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
             repository.markFailed(id, "Failed once", Instant.now());
 
             // When: Reschedule with backoff
@@ -1152,7 +1152,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testRescheduleUpdatesError() throws SQLException {
             // Given: Entry with previous error
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id);
+            repository.claimIfNew(id, "TEST_CLAIMER");
             repository.markFailed(id, "First error", Instant.now());
 
             // When: Reschedule with new error message
@@ -1211,7 +1211,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "");
 
             // Then: Headers should be stored as empty JSON
-            Optional<Outbox> outbox = repository.claimIfNew(id);
+            Optional<Outbox> outbox = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(outbox).isPresent();
             assertThat(outbox.get().getHeaders()).isEmpty();
         }
@@ -1224,7 +1224,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
                     "{\"x-correlation-id\":\"123\",\"x-request-id\":\"req-456\"}");
 
             // When: Claim the entry
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: Headers should be properly parsed and mapped
             assertThat(claimed).isPresent();
@@ -1253,7 +1253,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry (this loads and maps it)
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: nextAt should be null/empty in Optional (tests line 272 NULL branch)
             assertThat(claimed).isPresent();
@@ -1287,7 +1287,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim it
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: createdAt should be set (because insert always sets it)
             assertThat(claimed).isPresent();
@@ -1301,7 +1301,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: publishedAt should be null (tests line 287 NULL branch)
             assertThat(claimed).isPresent();
@@ -1315,7 +1315,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // When: Claim the entry
-            Optional<Outbox> claimed = repository.claimIfNew(id);
+            Optional<Outbox> claimed = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: lastError should be null (tests line 292 NULL branch)
             assertThat(claimed).isPresent();
@@ -1343,7 +1343,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
 
             // Then: ID should be positive and entry should exist
             assertThat(id).isPositive();
-            Optional<Outbox> found = repository.claimIfNew(id);
+            Optional<Outbox> found = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(found).isPresent();
             assertThat(found.get().getId()).isEqualTo(id);
         }
@@ -1352,7 +1352,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         @DisplayName("claimIfNew should return empty when no entry matches ID")
         void testClaimIfNewNoMatch() {
             // When: Try to claim a non-existent ID
-            Optional<Outbox> claimed = repository.claimIfNew(999999L);
+            Optional<Outbox> claimed = repository.claimIfNew(999999L, "TEST_CLAIMER");
 
             // Then: Should return empty (tests line 121 false branch of rs.next())
             assertThat(claimed).isEmpty();
@@ -1510,7 +1510,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         @DisplayName("sweepBatch should return empty list when table is empty")
         void testSweepBatchEmptyTable() {
             // When: Sweep batch with empty table
-            List<Outbox> results = repository.sweepBatch(100);
+            List<Outbox> results = repository.sweepBatch(100, "TEST_CLAIMER");
 
             // Then: Should return empty list
             assertThat(results).isEmpty();
@@ -1525,7 +1525,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id3 = repository.insertReturningId("events", "test", "key3", "type", "{}", "{}");
 
             // When: Sweep batch with limit of 2
-            List<Outbox> results = repository.sweepBatch(2);
+            List<Outbox> results = repository.sweepBatch(2, "TEST_CLAIMER");
 
             // Then: Should return up to 2 entries
             assertThat(results).hasSizeLessThanOrEqualTo(2);
@@ -1573,7 +1573,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testSweepBatchEmptyResultsSkipsUpdate() {
             // Given: Empty outbox table (no entries to sweep)
             // When: Sweep batch
-            List<Outbox> results = repository.sweepBatch(100);
+            List<Outbox> results = repository.sweepBatch(100, "TEST_CLAIMER");
 
             // Then: Should return empty list without attempting UPDATE (line 124 branch: !ids.isEmpty() = false)
             assertThat(results).isEmpty();
@@ -1588,7 +1588,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             repository.insertReturningId("events", "test", "key3", "type", "{}", "{}");
 
             // When: Sweep batch
-            List<Outbox> results = repository.sweepBatch(3);
+            List<Outbox> results = repository.sweepBatch(3, "TEST_CLAIMER");
 
             // Then: Should collect IDs and execute UPDATE (line 124 branch: !ids.isEmpty() = true)
             assertThat(results).isNotEmpty();
@@ -1604,7 +1604,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             repository.insertReturningId("events", "test", "key1", "type", "{}", "{}");
 
             // When: Sweep batch with limit 1
-            List<Outbox> results = repository.sweepBatch(1);
+            List<Outbox> results = repository.sweepBatch(1, "TEST_CLAIMER");
 
             // Then: Should build SQL without commas (line 126-131: i < ids.size() - 1 = false)
             assertThat(results).hasSize(1);
@@ -1620,7 +1620,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             repository.insertReturningId("events", "test", "key3", "type", "{}", "{}");
 
             // When: Sweep batch with limit 3
-            List<Outbox> results = repository.sweepBatch(3);
+            List<Outbox> results = repository.sweepBatch(3, "TEST_CLAIMER");
 
             // Then: Should build SQL with commas between IDs (line 126-131: multiple iterations)
             assertThat(results).hasSizeGreaterThan(1);
@@ -1645,10 +1645,10 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testClaimIfNewUpdateReturnsZero() {
             // Given: Entry in CLAIMED status (not NEW)
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
-            repository.claimIfNew(id); // First claim succeeds
+            repository.claimIfNew(id, "TEST_CLAIMER"); // First claim succeeds
 
             // When: Try to claim again (UPDATE will return 0 because status != NEW)
-            Optional<Outbox> result = repository.claimIfNew(id);
+            Optional<Outbox> result = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: Should return empty (line 60-63: rowsUpdated == 0 branch)
             assertThat(result).isEmpty();
@@ -1661,7 +1661,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             long id = repository.insertReturningId("events", "test", "key", "type", "{}", "{}");
 
             // First claim it normally
-            Optional<Outbox> firstClaim = repository.claimIfNew(id);
+            Optional<Outbox> firstClaim = repository.claimIfNew(id, "TEST_CLAIMER");
             assertThat(firstClaim).isPresent();
 
             // Then: If we manually delete it and try to claim, UPDATE might succeed but SELECT fails
@@ -1673,7 +1673,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             }
 
             // When: Try to claim non-existent ID
-            Optional<Outbox> result = repository.claimIfNew(9999999L);
+            Optional<Outbox> result = repository.claimIfNew(9999999L, "TEST_CLAIMER");
 
             // Then: Should return empty (line 60 branch: rowsUpdated == 0)
             assertThat(result).isEmpty();
@@ -1687,7 +1687,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
                     "{\"data\":\"value\"}", "{\"header\":\"value\"}");
 
             // When: Claim the entry (UPDATE succeeds, SELECT returns row)
-            Optional<Outbox> result = repository.claimIfNew(id);
+            Optional<Outbox> result = repository.claimIfNew(id, "TEST_CLAIMER");
 
             // Then: Should return populated Optional (line 79-81: rs.next() = true branch)
             assertThat(result).isPresent();
@@ -1714,7 +1714,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
         void testSweepBatchWhileLoopNoIterations() {
             // Given: No entries in outbox
             // When: Sweep batch
-            List<Outbox> results = repository.sweepBatch(100);
+            List<Outbox> results = repository.sweepBatch(100, "TEST_CLAIMER");
 
             // Then: while(rs.next()) never executes (line 116: false on first check)
             assertThat(results).isEmpty();
@@ -1727,7 +1727,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             repository.insertReturningId("events", "test", "key1", "type", "{}", "{}");
 
             // When: Sweep batch
-            List<Outbox> results = repository.sweepBatch(100);
+            List<Outbox> results = repository.sweepBatch(100, "TEST_CLAIMER");
 
             // Then: while(rs.next()) executes once (line 116: true once, then false)
             assertThat(results).hasSize(1);
@@ -1742,7 +1742,7 @@ class H2OutboxRepositoryTest extends H2RepositoryTestBase {
             }
 
             // When: Sweep batch
-            List<Outbox> results = repository.sweepBatch(5);
+            List<Outbox> results = repository.sweepBatch(5, "TEST_CLAIMER");
 
             // Then: while(rs.next()) executes multiple times (line 116: true multiple times)
             assertThat(results).hasSizeGreaterThan(1);

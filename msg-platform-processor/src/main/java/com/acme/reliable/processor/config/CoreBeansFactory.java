@@ -5,6 +5,7 @@ import com.acme.reliable.config.MessagingConfig;
 import com.acme.reliable.config.TimeoutConfig;
 import io.micronaut.context.annotation.ConfigurationProperties;
 import io.micronaut.context.annotation.Factory;
+import io.micronaut.context.annotation.Primary;
 import jakarta.inject.Singleton;
 
 /**
@@ -33,13 +34,5 @@ public class CoreBeansFactory {
     @ConfigurationProperties("messaging")
     public MessagingConfig messagingConfig() {
         return new MessagingConfig();
-    }
-
-    /**
-     * Creates CommandHandlerRegistry singleton
-     */
-    @Singleton
-    public CommandHandlerRegistry commandHandlerRegistry() {
-        return new CommandHandlerRegistry();
     }
 }

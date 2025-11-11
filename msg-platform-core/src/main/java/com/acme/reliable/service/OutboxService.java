@@ -18,7 +18,7 @@ public interface OutboxService {
     /**
      * Claim a single outbox entry by ID
      */
-    Optional<Outbox> claimOne(long id);
+    Optional<Outbox> claimOne(long id, String claimer);
 
     /**
      * Claim a batch of outbox entries for processing

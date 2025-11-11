@@ -6,6 +6,7 @@ import com.acme.reliable.core.Jsons;
 import com.acme.reliable.process.CommandReply;
 import io.micronaut.context.BeanContext;
 import io.micronaut.context.annotation.Context;
+import io.micronaut.context.annotation.Primary;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.inject.BeanDefinition;
 import jakarta.annotation.PostConstruct;
@@ -38,6 +39,7 @@ import java.util.*;
  * </pre>
  */
 @Context
+@Primary
 @Requires(notEnv = "test")
 @RequiredArgsConstructor
 @Slf4j

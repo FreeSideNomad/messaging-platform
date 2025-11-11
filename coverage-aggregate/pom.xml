@@ -63,6 +63,14 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <!-- Exclude problematic JDK internal packages that cause instrumentation warnings -->
+                    <excludes>
+                        <exclude>jdk/internal/**</exclude>
+                        <exclude>sun/**</exclude>
+                        <exclude>java/lang/invoke/**</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>report-aggregate</id>

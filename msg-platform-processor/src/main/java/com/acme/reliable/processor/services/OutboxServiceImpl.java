@@ -43,8 +43,8 @@ public class OutboxServiceImpl implements OutboxService {
 
     @Override
     @Transactional
-    public Optional<Outbox> claimOne(long id) {
-        return repository.claimOne(id);
+    public Optional<Outbox> claimOne(long id, String claimer) {
+        return repository.claimOne(id, claimer);
     }
 
     @Override

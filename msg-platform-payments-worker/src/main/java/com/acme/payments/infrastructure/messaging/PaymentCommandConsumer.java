@@ -27,6 +27,7 @@ public class PaymentCommandConsumer extends BaseCommandConsumer {
     @Queue("APP.CMD.BOOKFX.Q")
     public void onBookFxCommand(@MessageBody String body, @Message jakarta.jms.Message m)
             throws JMSException {
+        log.info(">>> LISTENER TRIGGERED: BookFx - Body: {}", body);
         processCommand("BookFx", body, m);
     }
 
@@ -45,6 +46,7 @@ public class PaymentCommandConsumer extends BaseCommandConsumer {
     @Queue("APP.CMD.CREATEACCOUNT.Q")
     public void onCreateAccountCommand(@MessageBody String body, @Message jakarta.jms.Message m)
             throws JMSException {
+        log.info(">>> LISTENER TRIGGERED: CreateAccount - Body: {}", body);
         processCommand("CreateAccount", body, m);
     }
 

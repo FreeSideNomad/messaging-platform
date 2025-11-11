@@ -58,7 +58,7 @@ class H2OutboxRepositoryExceptionTests extends H2RepositoryFaultyTestBase {
         void testClaimIfNewTableNotFound() {
             setupRepository();
 
-            assertThatThrownBy(() -> repository.claimIfNew(1L))
+            assertThatThrownBy(() -> repository.claimIfNew(1L, "TEST_CLAIMER"))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Failed to claim");
         }
@@ -73,7 +73,7 @@ class H2OutboxRepositoryExceptionTests extends H2RepositoryFaultyTestBase {
         void testSweepBatchTableNotFound() {
             setupRepository();
 
-            assertThatThrownBy(() -> repository.sweepBatch(100))
+            assertThatThrownBy(() -> repository.sweepBatch(100, "TEST_CLAIMER"))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Failed to sweep");
         }

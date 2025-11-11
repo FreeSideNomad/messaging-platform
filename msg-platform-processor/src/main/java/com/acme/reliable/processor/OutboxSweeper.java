@@ -33,7 +33,7 @@ public class OutboxSweeper {
                 LOG.info("Recovered {} stuck SENDING messages", recovered);
             }
 
-            var rows = outbox.sweepBatch(500);
+            var rows = outbox.sweepBatch(500, "OutboxSweeper");
             if (!rows.isEmpty()) {
                 LOG.debug("Sweeping {} outbox messages", rows.size());
             }

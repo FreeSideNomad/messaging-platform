@@ -111,24 +111,24 @@ class OutboxServiceImplTest {
             Outbox mockOutbox = new Outbox(
                     id, "command", "TOPIC", "key", "TestCommand", "{}", new HashMap<>(), "CLAIMED", 0
             );
-            when(mockRepository.claimOne(id)).thenReturn(Optional.of(mockOutbox));
+            when(mockRepository.claimOne(eq(id), anyString())).thenReturn(Optional.of(mockOutbox));
 
-            Optional<Outbox> result = outboxService.claimOne(id);
+            Optional<Outbox> result = outboxService.claimOne(id, "TEST_CLAIMER");
 
             assertThat(result).isPresent().contains(mockOutbox);
-            verify(mockRepository).claimOne(id);
+            verify(mockRepository).claimOne(eq(id), anyString());
         }
 
         @Test
         @DisplayName("should return empty when no entry available")
         void testClaimOne_ReturnsEmpty() {
             long id = 999L;
-            when(mockRepository.claimOne(id)).thenReturn(Optional.empty());
+            when(mockRepository.claimOne(eq(id), anyString())).thenReturn(Optional.empty());
 
-            Optional<Outbox> result = outboxService.claimOne(id);
+            Optional<Outbox> result = outboxService.claimOne(id, "TEST_CLAIMER");
 
             assertThat(result).isEmpty();
-            verify(mockRepository).claimOne(id);
+            verify(mockRepository).claimOne(eq(id), anyString());
         }
     }
 

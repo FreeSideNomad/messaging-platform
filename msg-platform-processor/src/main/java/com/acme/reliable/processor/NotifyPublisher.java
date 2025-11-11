@@ -59,7 +59,7 @@ public class NotifyPublisher implements AutoCloseable {
         try {
             long id = Long.parseLong(String.valueOf(idObj));
             outbox
-                    .claimIfNew(id)
+                    .claimIfNew(id, "NotifyPublisher")
                     .ifPresentOrElse(
                             row -> {
                                 try {

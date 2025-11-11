@@ -31,7 +31,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     protected String getClaimIfNewSql() {
         return """
                 UPDATE platform.outbox
-                SET status = 'CLAIMED'
+                SET status = 'CLAIMED', claimed_by = ?, claimed_at = now()
                 WHERE id = ? AND status = 'NEW'
                 RETURNING id, category, topic, key, type, payload, headers, status, attempts,
                           next_at, claimed_by, created_at, published_at, last_error
@@ -50,7 +50,7 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
                   LIMIT ? FOR UPDATE SKIP LOCKED
                 )
                 UPDATE platform.outbox o
-                SET status = 'CLAIMED'
+                SET status = 'CLAIMED', claimed_by = ?, claimed_at = now()
                 FROM available
                 WHERE o.id = available.id
                 RETURNING o.id, o.category, o.topic, o.key, o.type, o.payload, o.headers, o.status, o.attempts,

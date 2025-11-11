@@ -44,21 +44,22 @@ public class H2OutboxRepository extends JdbcOutboxRepository implements OutboxRe
     protected String getClaimIfNewSql() {
         return """
                 UPDATE outbox
-                SET status = 'CLAIMED'
+                SET status = 'CLAIMED', claimed_by = ?, claimed_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND status = 'NEW'
                 """;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Outbox> claimIfNew(long id) {
+    public Optional<Outbox> claimIfNew(long id, String claimer) {
         // First, try to update the entry to CLAIMED
         String updateSql = getClaimIfNewSql();
 
         try (Connection conn = dataSource.getConnection()) {
             // Update
             try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
-                updatePs.setLong(1, id);
+                updatePs.setString(1, claimer);
+                updatePs.setLong(2, id);
                 int rowsUpdated = updatePs.executeUpdate();
 
                 if (rowsUpdated == 0) {
@@ -96,7 +97,7 @@ public class H2OutboxRepository extends JdbcOutboxRepository implements OutboxRe
 
     @Override
     @Transactional(readOnly = true)
-    public List<Outbox> sweepBatch(int max) {
+    public List<Outbox> sweepBatch(int max, String claimer) {
         String selectSql =
                 """
                         SELECT id, category, topic, "key", "type", payload, headers, status, attempts,
@@ -126,7 +127,7 @@ public class H2OutboxRepository extends JdbcOutboxRepository implements OutboxRe
 
             // Update the status of claimed entries to CLAIMED
             if (!ids.isEmpty()) {
-                String updateSql = "UPDATE outbox SET status = 'CLAIMED' WHERE id IN (";
+                String updateSql = "UPDATE outbox SET status = 'CLAIMED', claimed_by = ?, claimed_at = CURRENT_TIMESTAMP WHERE id IN (";
                 for (int i = 0; i < ids.size(); i++) {
                     updateSql += "?";
                     if (i < ids.size() - 1) {
@@ -136,8 +137,9 @@ public class H2OutboxRepository extends JdbcOutboxRepository implements OutboxRe
                 updateSql += ")";
 
                 try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                    updatePs.setString(1, claimer);
                     for (int i = 0; i < ids.size(); i++) {
-                        updatePs.setLong(i + 1, ids.get(i));
+                        updatePs.setLong(i + 2, ids.get(i));
                     }
                     updatePs.executeUpdate();
                 }
@@ -145,6 +147,7 @@ public class H2OutboxRepository extends JdbcOutboxRepository implements OutboxRe
                 // Set status to CLAIMED in the returned objects to reflect the update
                 for (Outbox outbox : results) {
                     outbox.setStatus("CLAIMED");
+                    outbox.setClaimedBy(claimer);
                 }
             }
 

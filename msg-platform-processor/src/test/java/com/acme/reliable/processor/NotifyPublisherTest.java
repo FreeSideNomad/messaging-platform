@@ -136,7 +136,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert
-        verify(outbox).claimIfNew(outboxId);
+        verify(outbox).claimIfNew(eq(outboxId), anyString());
         verify(mq)
                 .publish(
                         "APP.CMD.CREATE.Q",
@@ -171,7 +171,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert
-        verify(outbox).claimIfNew(outboxId);
+        verify(outbox).claimIfNew(eq(outboxId), anyString());
         verify(mq)
                 .publish(
                         "APP.CMD.REPLY.Q",
@@ -209,7 +209,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert
-        verify(outbox).claimIfNew(outboxId);
+        verify(outbox).claimIfNew(eq(outboxId), anyString());
         verify(kafka)
                 .publish(
                         "payment.created",
@@ -253,7 +253,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert
-        verify(outbox).claimIfNew(outboxId);
+        verify(outbox).claimIfNew(eq(outboxId), anyString());
         verify(mq)
                 .publish(
                         "APP.CMD.TEST.Q",
@@ -378,7 +378,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert
-        verify(outbox).claimIfNew(outboxId);
+        verify(outbox).claimIfNew(eq(outboxId), anyString());
         verify(outbox).markFailed(eq(outboxId), contains("bad category: unknown"), any(Instant.class));
         verify(mq, never()).publish(anyString(), anyString(), anyString(), anyString(), anyMap());
         verify(kafka, never()).publish(anyString(), anyString(), anyString(), anyString(), anyMap());
@@ -402,14 +402,14 @@ class NotifyPublisherTest {
                 .thenReturn(block);
 
         // Setup outbox to return empty for all claims (simulating already processed)
-        lenient().when(outbox.claimIfNew(anyLong())).thenReturn(Optional.empty());
+        lenient().when(outbox.claimIfNew(anyLong(), anyString())).thenReturn(Optional.empty());
 
         // Act
         publisher = new NotifyPublisher(redisson, outbox, mq, kafka);
         Thread.sleep(200); // Allow processing
 
         // Assert - Messages were processed (or attempted)
-        verify(outbox, atLeast(1)).claimIfNew(anyLong());
+        verify(outbox, atLeast(1)).claimIfNew(anyLong(), anyString());
     }
 
     // ============================================================================
@@ -428,7 +428,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert
-        verify(outbox).claimIfNew(outboxId);
+        verify(outbox).claimIfNew(eq(outboxId), anyString());
         verify(mq, never()).publish(anyString(), anyString(), anyString(), anyString(), anyMap());
         verify(kafka, never()).publish(anyString(), anyString(), anyString(), anyString(), anyMap());
         verify(outbox, never()).markPublished(anyLong());
@@ -557,7 +557,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert - Should log error but not crash
-        verify(outbox, never()).claimIfNew(anyLong());
+        verify(outbox, never()).claimIfNew(anyLong(), anyString());
         verify(mq, never()).publish(anyString(), anyString(), anyString(), anyString(), anyMap());
         verify(kafka, never()).publish(anyString(), anyString(), anyString(), anyString(), anyMap());
     }
@@ -573,7 +573,7 @@ class NotifyPublisherTest {
         waitForProcessing();
 
         // Assert - Should log error but not crash
-        verify(outbox, never()).claimIfNew(anyLong());
+        verify(outbox, never()).claimIfNew(anyLong(), anyString());
     }
 
     // ============================================================================
@@ -631,7 +631,7 @@ class NotifyPublisherTest {
         RFuture<Object> blockSecond = createNeverCompletingFuture();
 
         lenient().when(blockingQueue.takeAsync()).thenReturn(firstMessage).thenReturn(blockSecond);
-        lenient().when(outbox.claimIfNew(outboxId)).thenReturn(Optional.of(row));
+        lenient().when(outbox.claimIfNew(eq(outboxId), anyString())).thenReturn(Optional.of(row));
 
         // Act
         publisher = new NotifyPublisher(redisson, outbox, mq, kafka);
@@ -663,9 +663,9 @@ class NotifyPublisherTest {
         RFuture<Object> block = createNeverCompletingFuture();
 
         lenient().when(blockingQueue.takeAsync()).thenReturn(msg1, msg2, msg3, block);
-        lenient().when(outbox.claimIfNew(outboxId1)).thenReturn(Optional.of(row1));
-        lenient().when(outbox.claimIfNew(outboxId2)).thenReturn(Optional.of(row2));
-        lenient().when(outbox.claimIfNew(outboxId3)).thenReturn(Optional.of(row3));
+        lenient().when(outbox.claimIfNew(eq(outboxId1), anyString())).thenReturn(Optional.of(row1));
+        lenient().when(outbox.claimIfNew(eq(outboxId2), anyString())).thenReturn(Optional.of(row2));
+        lenient().when(outbox.claimIfNew(eq(outboxId3), anyString())).thenReturn(Optional.of(row3));
 
         // Act
         publisher = new NotifyPublisher(redisson, outbox, mq, kafka);
@@ -714,9 +714,9 @@ class NotifyPublisherTest {
         lenient().when(blockingQueue.takeAsync()).thenReturn(message).thenReturn(block);
 
         if (row != null) {
-            lenient().when(outbox.claimIfNew(outboxId)).thenReturn(Optional.of(row));
+            lenient().when(outbox.claimIfNew(eq(outboxId), anyString())).thenReturn(Optional.of(row));
         } else {
-            lenient().when(outbox.claimIfNew(outboxId)).thenReturn(Optional.empty());
+            lenient().when(outbox.claimIfNew(eq(outboxId), anyString())).thenReturn(Optional.empty());
         }
     }
 

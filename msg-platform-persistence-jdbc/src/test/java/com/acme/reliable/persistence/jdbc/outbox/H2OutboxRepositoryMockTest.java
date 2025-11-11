@@ -163,7 +163,7 @@ class H2OutboxRepositoryMockTest {
             JdbcOutboxRepository repository = createMockRepository(mockDataSource);
 
             // When
-            Outbox result = repository.claimIfNew(1L).orElse(null);
+            Outbox result = repository.claimIfNew(1L, "TEST_CLAIMER").orElse(null);
 
             // Then: Should handle null and provide default
             assertThat(result).isNotNull();
@@ -184,7 +184,7 @@ class H2OutboxRepositoryMockTest {
             JdbcOutboxRepository repository = createMockRepository(mockDataSource);
 
             // When
-            Outbox result = repository.claimIfNew(1L).orElse(null);
+            Outbox result = repository.claimIfNew(1L, "TEST_CLAIMER").orElse(null);
 
             // Then
             assertThat(result).isNotNull();
@@ -226,7 +226,7 @@ class H2OutboxRepositoryMockTest {
             JdbcOutboxRepository repository = createMockRepository(mockDataSource);
 
             // When & Then: Should handle NULL createdAt gracefully
-            assertThatCode(() -> repository.claimIfNew(1L))
+            assertThatCode(() -> repository.claimIfNew(1L, "TEST_CLAIMER"))
                     .doesNotThrowAnyException();
         }
 
@@ -305,7 +305,7 @@ class H2OutboxRepositoryMockTest {
             JdbcOutboxRepository repository = createMockRepository(mockDataSource);
 
             // When & Then
-            assertThatThrownBy(() -> repository.sweepBatch(10))
+            assertThatThrownBy(() -> repository.sweepBatch(10, "TEST_CLAIMER"))
                     .isInstanceOf(RuntimeException.class);
         }
     }
