@@ -47,7 +47,7 @@ class PostgresDlqRepositorySqlTest {
         String sql = invokeProtectedMethod("getInsertDlqEntrySql");
 
         assertThat(sql)
-                .contains("INSERT INTO dlq")
+                .contains("INSERT INTO platform.command_dlq")
                 .contains("(id, command_id, command_name, business_key, payload, failed_status, error_class, error_message, attempts, parked_by, parked_at)")
                 .contains("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     }

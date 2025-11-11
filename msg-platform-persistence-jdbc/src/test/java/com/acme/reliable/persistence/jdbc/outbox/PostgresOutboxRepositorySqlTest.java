@@ -47,9 +47,9 @@ class PostgresOutboxRepositorySqlTest {
         String sql = invokeProtectedMethod("getInsertSql");
 
         assertThat(sql)
-                .contains("INSERT INTO outbox")
-                .contains("(category, topic, key, type, payload, headers, status, attempts, created_at)")
-                .contains("VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)")
+                .contains("INSERT INTO platform.outbox")
+                .contains("(id, category, topic, key, type, payload, headers, status, attempts, created_at)")
+                .contains("VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)")
                 .contains("?::jsonb")
                 .doesNotContain("H2")
                 .doesNotContain("PRAGMA");
@@ -61,7 +61,7 @@ class PostgresOutboxRepositorySqlTest {
         String sql = invokeProtectedMethod("getClaimIfNewSql");
 
         assertThat(sql)
-                .contains("UPDATE outbox")
+                .contains("UPDATE platform.outbox")
                 .contains("SET status = 'CLAIMED'")
                 .contains("WHERE id = ? AND status = 'NEW'")
                 .contains("RETURNING")
@@ -77,12 +77,12 @@ class PostgresOutboxRepositorySqlTest {
         assertThat(sql)
                 .contains("WITH available AS")
                 .contains("SELECT id")
-                .contains("FROM outbox")
+                .contains("FROM platform.outbox")
                 .contains("WHERE (status = 'NEW' OR (status = 'CLAIMED' AND created_at < now() - interval '5 minutes'))")
                 .contains("AND (next_at IS NULL OR next_at <= now())")
                 .contains("ORDER BY created_at ASC")
                 .contains("LIMIT ? FOR UPDATE SKIP LOCKED")
-                .contains("UPDATE outbox o")
+                .contains("UPDATE platform.outbox o")
                 .contains("FROM available")
                 .contains("WHERE o.id = available.id")
                 .contains("RETURNING");
@@ -94,7 +94,7 @@ class PostgresOutboxRepositorySqlTest {
         String sql = invokeProtectedMethod("getMarkPublishedSql");
 
         assertThat(sql)
-                .contains("UPDATE outbox")
+                .contains("UPDATE platform.outbox")
                 .contains("SET status = 'PUBLISHED', published_at = ?")
                 .contains("WHERE id = ?");
     }
@@ -105,7 +105,7 @@ class PostgresOutboxRepositorySqlTest {
         String sql = invokeProtectedMethod("getMarkFailedSql");
 
         assertThat(sql)
-                .contains("UPDATE outbox")
+                .contains("UPDATE platform.outbox")
                 .contains("SET last_error = ?, next_at = ?")
                 .contains("WHERE id = ?");
     }
@@ -116,7 +116,7 @@ class PostgresOutboxRepositorySqlTest {
         String sql = invokeProtectedMethod("getRescheduleSql");
 
         assertThat(sql)
-                .contains("UPDATE outbox")
+                .contains("UPDATE platform.outbox")
                 .contains("SET next_at = ?, last_error = ?")
                 .contains("WHERE id = ?");
     }
@@ -127,7 +127,7 @@ class PostgresOutboxRepositorySqlTest {
         String sql = invokeProtectedMethod("getRecoverStuckSql");
 
         assertThat(sql)
-                .contains("UPDATE outbox")
+                .contains("UPDATE platform.outbox")
                 .contains("SET status = 'NEW', next_at = NULL")
                 .contains("WHERE status = 'CLAIMED' AND created_at < ?");
     }

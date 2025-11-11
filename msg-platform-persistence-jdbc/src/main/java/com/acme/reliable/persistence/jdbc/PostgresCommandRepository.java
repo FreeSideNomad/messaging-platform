@@ -22,7 +22,7 @@ public class PostgresCommandRepository extends JdbcCommandRepository implements 
         return """
                 INSERT INTO platform.command
                 (id, name, business_key, payload, idempotency_key, status, retries, requested_at, reply)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?::jsonb)
                 """;
     }
 

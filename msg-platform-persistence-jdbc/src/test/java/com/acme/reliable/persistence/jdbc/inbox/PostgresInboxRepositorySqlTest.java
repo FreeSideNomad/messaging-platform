@@ -50,7 +50,7 @@ class PostgresInboxRepositorySqlTest {
                 .as("Should use PostgreSQL ON CONFLICT DO NOTHING clause for idempotent inserts")
                 .isNotNull()
                 .isNotEmpty()
-                .contains("INSERT INTO inbox")
+                .contains("INSERT INTO platform.inbox")
                 .contains("(message_id, handler, processed_at)")
                 .contains("VALUES (?, ?, ?)")
                 .contains("ON CONFLICT DO NOTHING");

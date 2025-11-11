@@ -46,9 +46,9 @@ class PostgresCommandRepositorySqlTest {
         String sql = invokeProtectedMethod("getInsertPendingSql");
 
         assertThat(sql)
-                .contains("INSERT INTO command")
+                .contains("INSERT INTO platform.command")
                 .contains("(id, name, business_key, payload, idempotency_key, status, retries, requested_at, reply)")
-                .contains("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                .contains("VALUES (?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?::jsonb)");
     }
 
     @Test
@@ -60,7 +60,7 @@ class PostgresCommandRepositorySqlTest {
                 .contains("SELECT")
                 .contains("id, name, business_key, payload, idempotency_key, status, requested_at, updated_at")
                 .contains("retries, processing_lease_until, last_error, reply")
-                .contains("FROM command")
+                .contains("FROM platform.command")
                 .contains("WHERE id = ?");
     }
 
@@ -70,7 +70,7 @@ class PostgresCommandRepositorySqlTest {
         String sql = invokeProtectedMethod("getUpdateToRunningSql");
 
         assertThat(sql)
-                .contains("UPDATE command")
+                .contains("UPDATE platform.command")
                 .contains("SET status = ?, processing_lease_until = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
@@ -81,7 +81,7 @@ class PostgresCommandRepositorySqlTest {
         String sql = invokeProtectedMethod("getUpdateToSucceededSql");
 
         assertThat(sql)
-                .contains("UPDATE command")
+                .contains("UPDATE platform.command")
                 .contains("SET status = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
@@ -92,7 +92,7 @@ class PostgresCommandRepositorySqlTest {
         String sql = invokeProtectedMethod("getUpdateToFailedSql");
 
         assertThat(sql)
-                .contains("UPDATE command")
+                .contains("UPDATE platform.command")
                 .contains("SET status = ?, last_error = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
@@ -103,7 +103,7 @@ class PostgresCommandRepositorySqlTest {
         String sql = invokeProtectedMethod("getIncrementRetriesSql");
 
         assertThat(sql)
-                .contains("UPDATE command")
+                .contains("UPDATE platform.command")
                 .contains("SET retries = retries + 1, last_error = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
@@ -114,7 +114,7 @@ class PostgresCommandRepositorySqlTest {
         String sql = invokeProtectedMethod("getUpdateToTimedOutSql");
 
         assertThat(sql)
-                .contains("UPDATE command")
+                .contains("UPDATE platform.command")
                 .contains("SET status = ?, last_error = ?, updated_at = ?")
                 .contains("WHERE id = ?");
     }
@@ -125,7 +125,7 @@ class PostgresCommandRepositorySqlTest {
         String sql = invokeProtectedMethod("getExistsByIdempotencyKeySql");
 
         assertThat(sql)
-                .contains("SELECT COUNT(*) FROM command WHERE idempotency_key = ?");
+                .contains("SELECT COUNT(*) FROM platform.command WHERE idempotency_key = ?");
     }
 
     /**

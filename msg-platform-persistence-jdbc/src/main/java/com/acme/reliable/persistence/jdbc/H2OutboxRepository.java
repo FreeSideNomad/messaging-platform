@@ -35,8 +35,8 @@ public class H2OutboxRepository extends JdbcOutboxRepository implements OutboxRe
     protected String getInsertSql() {
         return """
                 INSERT INTO outbox
-                (category, topic, "key", "type", payload, headers, status, attempts, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, category, topic, "key", "type", payload, headers, status, attempts, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
     }
 

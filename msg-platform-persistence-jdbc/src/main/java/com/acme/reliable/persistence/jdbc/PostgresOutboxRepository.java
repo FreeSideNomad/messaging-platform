@@ -22,8 +22,8 @@ public class PostgresOutboxRepository extends JdbcOutboxRepository implements Ou
     protected String getInsertSql() {
         return """
                 INSERT INTO platform.outbox
-                (category, topic, key, type, payload, headers, status, attempts, created_at)
-                VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
+                (id, category, topic, key, type, payload, headers, status, attempts, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)
                 """;
     }
 

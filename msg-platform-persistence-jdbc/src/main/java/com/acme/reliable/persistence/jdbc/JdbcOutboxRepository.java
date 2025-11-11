@@ -38,24 +38,25 @@ public abstract class JdbcOutboxRepository implements OutboxRepository {
             String headers,
             String status,
             int attempts) {
-        String sql = "INSERT INTO outbox (category, topic, \"key\", \"type\", payload, headers, status, attempts, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO outbox (id, category, topic, \"key\", \"type\", payload, headers, status, attempts, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, category);
-            ps.setString(2, topic);
-            ps.setString(3, key);
-            ps.setString(4, type);
-            ps.setString(5, payload);
-            ps.setString(6, headers != null && !headers.isEmpty() ? headers : "{}");
-            ps.setString(7, status);
-            ps.setInt(8, attempts);
-            ps.setTimestamp(9, Timestamp.from(Instant.now()));
+            ps.setLong(1, id);
+            ps.setString(2, category);
+            ps.setString(3, topic);
+            ps.setString(4, key);
+            ps.setString(5, type);
+            ps.setString(6, payload);
+            ps.setString(7, headers != null && !headers.isEmpty() ? headers : "{}");
+            ps.setString(8, status);
+            ps.setInt(9, attempts);
+            ps.setTimestamp(10, Timestamp.from(Instant.now()));
 
             ps.executeUpdate();
-            LOG.debug("Inserted outbox entry (id auto-generated from sequence)");
+            LOG.debug("Inserted outbox entry with id: {}", id);
 
         } catch (SQLException e) {
             throw ExceptionTranslator.translateException(e, "insert outbox entry", LOG);

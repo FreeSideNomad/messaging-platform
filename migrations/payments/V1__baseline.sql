@@ -53,7 +53,7 @@ create table platform.outbox (
 );
 
 create index outbox_dispatch_idx on platform.outbox (status, coalesce(next_at, 'epoch'::timestamptz), created_at);
-create index outbox_claimed_idx on platform.outbox (status, claimed_at) WHERE status='SENDING';
+create index outbox_claimed_idx on platform.outbox (status, claimed_at) WHERE status='CLAIMED';
 
 create table platform.command_dlq (
   id uuid primary key default gen_random_uuid(),

@@ -48,7 +48,7 @@ class PostgresProcessRepositorySqlTest {
 
         assertThat(sql)
                 .as("Should use PostgreSQL JSONB cast")
-                .contains("INSERT INTO process")
+                .contains("INSERT INTO platform.process_instance")
                 .contains("(process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at)")
                 .contains("VALUES (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?)")
                 .contains("?::jsonb");
@@ -62,7 +62,7 @@ class PostgresProcessRepositorySqlTest {
         assertThat(sql)
                 .contains("SELECT")
                 .contains("process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at")
-                .contains("FROM process")
+                .contains("FROM platform.process_instance")
                 .contains("WHERE process_id = ?");
     }
 
@@ -74,7 +74,7 @@ class PostgresProcessRepositorySqlTest {
         assertThat(sql)
                 .contains("SELECT")
                 .contains("process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at")
-                .contains("FROM process")
+                .contains("FROM platform.process_instance")
                 .contains("WHERE status = ?")
                 .contains("ORDER BY created_at DESC")
                 .contains("LIMIT ?");
@@ -88,7 +88,7 @@ class PostgresProcessRepositorySqlTest {
         assertThat(sql)
                 .contains("SELECT")
                 .contains("process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at")
-                .contains("FROM process")
+                .contains("FROM platform.process_instance")
                 .contains("WHERE process_type = ? AND status = ?")
                 .contains("ORDER BY created_at DESC")
                 .contains("LIMIT ?");
@@ -100,7 +100,7 @@ class PostgresProcessRepositorySqlTest {
         String sql = invokeProtectedMethod("getUpdateSql");
 
         assertThat(sql)
-                .contains("UPDATE process")
+                .contains("UPDATE platform.process_instance")
                 .contains("SET status = ?, current_step = ?, data = ?::jsonb, retries = ?, updated_at = ?")
                 .contains("?::jsonb")
                 .contains("WHERE process_id = ?");
@@ -114,7 +114,7 @@ class PostgresProcessRepositorySqlTest {
         assertThat(sql)
                 .contains("SELECT")
                 .contains("process_id, seq, at, event")
-                .contains("FROM process_log")
+                .contains("FROM platform.process_log")
                 .contains("WHERE process_id = ?")
                 .contains("ORDER BY seq DESC")
                 .contains("LIMIT ?");
@@ -128,7 +128,7 @@ class PostgresProcessRepositorySqlTest {
         assertThat(sql)
                 .contains("SELECT")
                 .contains("process_id, process_type, business_key, status, current_step, data, retries, created_at, updated_at")
-                .contains("FROM process")
+                .contains("FROM platform.process_instance")
                 .contains("WHERE process_type = ? AND business_key = ?");
     }
 
@@ -138,7 +138,7 @@ class PostgresProcessRepositorySqlTest {
         String sql = invokeProtectedMethod("getInsertLogEntrySql");
 
         assertThat(sql)
-                .contains("INSERT INTO process_log")
+                .contains("INSERT INTO platform.process_log")
                 .contains("(process_id, event)")
                 .contains("VALUES (?, ?::jsonb)")
                 .contains("?::jsonb");
