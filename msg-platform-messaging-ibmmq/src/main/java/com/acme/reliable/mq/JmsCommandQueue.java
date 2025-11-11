@@ -15,7 +15,6 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
     private static final String HEADER_REPLY_TO = "replyTo";
 
     private final jakarta.jms.Connection connection;
-    private final ThreadLocal<SessionHolder> sessionPool;
 
     public JmsCommandQueue(@Named("mqConnectionFactory") jakarta.jms.ConnectionFactory cf) {
         try {
@@ -25,28 +24,19 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
         } catch (jakarta.jms.JMSException e) {
             throw new RuntimeException("Failed to initialize JMS connection", e);
         }
-
-        // Initialize ThreadLocal after connection is established
-        this.sessionPool =
-                ThreadLocal.withInitial(
-                        () -> {
-                            try {
-                                LOG.debug(
-                                        "Creating new JMS session for thread {}", Thread.currentThread().getName());
-                                return new SessionHolder(
-                                        connection.createSession(false, jakarta.jms.Session.AUTO_ACKNOWLEDGE));
-                            } catch (jakarta.jms.JMSException e) {
-                                throw new RuntimeException("Failed to create JMS session", e);
-                            }
-                        });
     }
 
     @Override
     public void send(String queue, String body, java.util.Map<String, String> headers) {
-        SessionHolder holder = sessionPool.get();
+        // Create a fresh session for each message to avoid transaction state issues
+        jakarta.jms.Session session = null;
+        jakarta.jms.MessageProducer producer = null;
 
         try {
-            var session = holder.session;
+            // Use CLIENT_ACKNOWLEDGE mode to avoid transaction coordinator issues
+            session = connection.createSession(false, jakarta.jms.Session.CLIENT_ACKNOWLEDGE);
+            producer = session.createProducer(null);
+
             var dest = session.createQueue(queue);
             var msg = session.createTextMessage(body);
 
@@ -71,67 +61,43 @@ public class JmsCommandQueue implements com.acme.reliable.spi.CommandQueue {
                 }
             }
 
-            // Reuse the pooled producer
-            holder.producer.send(dest, msg);
-            // No need to commit in AUTO_ACKNOWLEDGE mode
+            // Send the message - AUTO_ACKNOWLEDGE mode ensures immediate delivery
+            producer.send(dest, msg);
+            LOG.debug("Successfully sent message to queue: {}", queue);
 
         } catch (Exception e) {
-            try {
-                holder.session.rollback();
-            } catch (jakarta.jms.JMSException rollbackEx) {
-                LOG.warn("Failed to rollback JMS session", rollbackEx);
-            }
-
-            // On error, invalidate the session and create a new one
-            holder.close();
-            sessionPool.remove();
-
-            LOG.error("Error details for queue {}: {}", queue, e.getMessage(), e);
+            // Log full exception chain including linked exceptions
+            LOG.error("Error details for queue {}: {} | Cause: {}",
+                queue, e.getMessage(),
+                e.getCause() != null ? e.getCause().getMessage() : "null",
+                e);
             throw new RuntimeException("Failed to send message to queue: " + queue, e);
+        } finally {
+            // Close the session and producer
+            if (producer != null) {
+                try {
+                    producer.close();
+                } catch (jakarta.jms.JMSException e) {
+                    LOG.debug("Error closing producer", e);
+                }
+            }
+            if (session != null) {
+                try {
+                    session.close();
+                } catch (jakarta.jms.JMSException e) {
+                    LOG.debug("Error closing session", e);
+                }
+            }
         }
     }
 
     @PreDestroy
     void shutdown() {
-        LOG.info("Shutting down JMS connection pool");
+        LOG.info("Shutting down JMS connection");
         try {
-            // Clean up thread-local sessions
-            sessionPool.remove();
             connection.close();
         } catch (Exception e) {
             LOG.warn("Error during JMS shutdown", e);
-        }
-    }
-
-    /**
-     * Holds a JMS session and producer per thread for reuse. This dramatically improves performance
-     * by avoiding session/producer creation overhead.
-     */
-    private static class SessionHolder {
-        final jakarta.jms.Session session;
-        final jakarta.jms.MessageProducer producer;
-
-        SessionHolder(jakarta.jms.Session session) throws jakarta.jms.JMSException {
-            this.session = session;
-            // Create a generic producer (destination set per send call)
-            this.producer = session.createProducer(null);
-        }
-
-        void close() {
-            try {
-                if (producer != null) {
-                    producer.close();
-                }
-            } catch (jakarta.jms.JMSException e) {
-                LOG.debug("Error closing producer", e);
-            }
-            try {
-                if (session != null) {
-                    session.close();
-                }
-            } catch (jakarta.jms.JMSException e) {
-                LOG.debug("Error closing session", e);
-            }
         }
     }
 }
