@@ -152,7 +152,7 @@ services:
       MQ_PORT: 1414
       MQ_QMGR: ${MQ_QMGR:-QM1}
       MQ_CHANNEL: ${MQ_CHANNEL:-DEV.APP.SVRCONN}
-      MQ_USER: ${MQ_USER:-mqm}
+      MQ_USER: ${MQ_USER:-app}
       MQ_PASS: ${MQ_PASS:-passw0rd}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       REDIS_HOST: redis
